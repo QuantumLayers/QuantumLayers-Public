@@ -1,0 +1,280 @@
+.ql-api-tokens-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+    color: #E0E0E0;
+}
+
+.ql-api-tokens-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.ql-api-tokens-header h2 {
+    margin: 0;
+    color: #FFFFFF;
+    font-size: 22px;
+}
+
+.ql-api-tokens-section {
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    padding: 30px;
+    border-radius: 2px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(139, 127, 219, 0.15);
+    margin-bottom: 30px;
+}
+
+.ql-api-tokens-section h3 {
+    margin: 0 0 8px;
+    color: #FFFFFF;
+    font-size: 16px;
+    border-bottom: 2px solid rgba(139, 127, 219, 0.2);
+    padding-bottom: 10px;
+}
+
+.ql-api-tokens-section p {
+    color: #A0A0A0;
+    margin: 0 0 20px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.ql-tokens-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.ql-tokens-table th {
+    text-align: left;
+    padding: 10px 12px;
+    color: #9B8FE8;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(139, 127, 219, 0.2);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ql-tokens-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #E0E0E0;
+    vertical-align: middle;
+}
+
+.ql-tokens-table tr:last-child td {
+    border-bottom: none;
+}
+
+.ql-token-name {
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.ql-no-tokens {
+    text-align: center;
+    color: #666;
+    padding: 30px 12px !important;
+    font-style: italic;
+}
+
+.ql-tokens-loading {
+    text-align: center;
+    padding: 40px;
+    color: #A0A0A0;
+}
+
+.ql-tokens-error {
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    color: #E74C3C;
+    padding: 12px 16px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    display: none;
+}
+
+.ql-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.ql-btn-primary {
+    background: linear-gradient(135deg, #8B7FDB 0%, #9B8FE8 100%);
+    color: #FFFFFF;
+}
+
+.ql-btn-primary:hover {
+    background: linear-gradient(135deg, #7B6FCB 0%, #8B7FD8 100%);
+    box-shadow: 0 2px 8px rgba(139, 127, 219, 0.4);
+}
+
+.ql-btn-secondary {
+    background: transparent;
+    color: #A0A0A0;
+    border: 1px solid #555;
+}
+
+.ql-btn-secondary:hover {
+    border-color: #888;
+    color: #E0E0E0;
+}
+
+.ql-btn-danger {
+    background: transparent;
+    color: #E74C3C;
+    border: 1px solid rgba(231, 76, 60, 0.4);
+    font-size: 13px;
+    padding: 6px 12px;
+}
+
+.ql-btn-danger:hover {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: #E74C3C;
+}
+
+.ql-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ql-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9998;
+    display: none;
+}
+
+.ql-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #2A2A2A;
+    border: 1px solid rgba(139, 127, 219, 0.3);
+    border-radius: 4px;
+    padding: 28px;
+    z-index: 9999;
+    width: 420px;
+    max-width: calc(100vw - 40px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    display: none;
+}
+
+.ql-modal h3 {
+    margin: 0 0 16px;
+    color: #FFFFFF;
+    font-size: 18px;
+}
+
+.ql-modal label {
+    display: block;
+    color: #A0A0A0;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.ql-modal input,
+.ql-modal select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(139, 127, 219, 0.3);
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #FFFFFF;
+    font-size: 14px;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+}
+
+.ql-modal input:focus,
+.ql-modal select:focus {
+    outline: none;
+    border-color: #8B7FDB;
+    box-shadow: 0 0 0 2px rgba(139, 127, 219, 0.2);
+}
+
+.ql-modal select option {
+    background: #2A2A2A;
+}
+
+.ql-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.ql-modal-error {
+    color: #E74C3C;
+    font-size: 13px;
+    margin-bottom: 12px;
+    display: none;
+}
+
+.ql-reveal-token-box {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 16px 0;
+}
+
+.ql-reveal-token-box input {
+    flex: 1;
+    font-family: monospace;
+    font-size: 13px;
+    margin-bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    color: #9B8FE8;
+    letter-spacing: 0.02em;
+}
+
+.ql-copy-feedback {
+    color: #2ECC71;
+    font-size: 13px;
+    margin-top: 6px;
+    display: none;
+}
+
+.ql-reveal-warning {
+    background: rgba(243, 156, 18, 0.1);
+    border: 1px solid rgba(243, 156, 18, 0.3);
+    color: #F39C12;
+    padding: 10px 14px;
+    border-radius: 2px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+.ql-confirm-body {
+    color: #A0A0A0;
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.ql-confirm-body strong {
+    color: #FFFFFF;
+}
+
+.ql-usage-pre {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(139, 127, 219, 0.15);
+    padding: 16px;
+    border-radius: 2px;
+    font-size: 13px;
+    overflow: auto;
+    color: #C0C0C0;
+    line-height: 1.5;
+}

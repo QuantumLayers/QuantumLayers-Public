@@ -1,0 +1,652 @@
+/**
+ * QuantumLayers Dashboard Styles
+ */
+
+.ql-dashboard {
+    min-height: 100vh;
+    padding: 0;
+}
+
+.ql-dashboard-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 0px;
+}
+
+/* Header */
+.ql-dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    padding: 20px;
+    border: 2px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.5);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.ql-user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.ql-user-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #667eea;
+}
+
+.ql-user-avatar-placeholder {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #5873E0 0%, #6883F0 100%);
+    color: #1d2327;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    border: 3px solid #667eea;
+}
+
+.ql-user-details h2 {
+    margin: 0;
+    font-size: 28px;
+    color: #1d2327;
+}
+
+.ql-user-details p {
+    margin: 5px 0 0 0;
+    color: #1d2327;
+    font-size: 14px;
+}
+
+.ql-badge {
+    display: inline-block;
+    background: #e7f3ff;
+    color: #2271b1;
+    padding: 3px 10px;
+    border-radius: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.ql-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+
+/* Stats Grid */
+.ql-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.ql-stat-card {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ql-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.ql-stat-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.ql-stat-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 8px;
+}
+
+.ql-stat-label {
+    color: #666;
+    font-size: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Section */
+.ql-section {
+    border: 2px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.5);
+    padding: 30px;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.ql-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.ql-section-header h3 {
+    margin: 0;
+    font-size: 22px;
+    color: #1d2327;
+}
+
+/* Empty State */
+.ql-empty-state {
+    text-align: left;
+    padding: 60px 30px;
+}
+
+.ql-empty-state-icon {
+    font-size: 64px;
+    text-align: center;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.ql-empty-state p {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* Datasets List - Vertical Layout */
+.ql-datasets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.ql-dataset-row {
+    background: #f6f0ff;
+    border: 1px solid #e0e0e0;
+    border-bottom: none;
+    padding: 20px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s;
+    cursor: pointer;
+    flex-wrap: wrap;
+}
+
+.ql-dataset-row:first-child {
+    border-radius: 2px 2px 0 0;
+}
+
+.ql-dataset-row:last-child {
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 0 0 2px 2px;
+}
+
+.ql-dataset-row:only-child {
+    border-radius: 2px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.ql-dataset-row:hover {
+    /*background: #f9f9f9;*/
+    border-color: #667eea;
+    position: relative;
+    z-index: 1;
+}
+
+.ql-dataset-row:hover + .ql-dataset-row {
+    border-top-color: #667eea;
+}
+
+.ql-dataset-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 200px;
+}
+
+.ql-dataset-name-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ql-dataset-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+    margin: 0;
+}
+
+.ql-dataset-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #666;
+    flex-wrap: wrap;
+}
+
+.ql-dataset-info span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ql-dataset-right {
+    flex: 0 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ql-privacy-toggle {
+    max-width: 120px;
+    white-space: nowrap;
+    padding: 8px 16px;
+    margin: 5px 8px;
+    color: #666;
+}
+
+.ql-dataset-action-btn {
+    padding: 8px 16px;
+    border: 1px solid #2271b1;
+    background: white;
+    color: #2271b1;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 2px;
+    transition: all 0.2s;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.ql-dataset-action-btn:hover {
+    background: #2271b1;
+    color: white;
+    text-decoration: none;
+}
+
+.ql-dataset-action-btn.ql-btn-sync,
+.ql-dataset-action-btn.ql-run-report-btn,
+.ql-dataset-action-btn.ql-run-monitor-btn {
+    border-color: #46b450;
+    color: #46b450;
+}
+
+.ql-dataset-action-btn.ql-btn-sync:hover,
+.ql-dataset-action-btn.ql-run-report-btn:hover,
+.ql-dataset-action-btn.ql-run-monitor-btn:hover {
+    background: #46b450;
+    color: white;
+}
+
+.ql-dataset-action-btn.ql-btn-delete,
+.ql-dataset-action-btn.ql-delete-report-btn,
+.ql-dataset-action-btn.ql-delete-monitor-btn {
+    border-color: #dc3232;
+    color: #dc3232;
+}
+
+.ql-dataset-action-btn.ql-btn-delete:hover,
+.ql-dataset-action-btn.ql-delete-report-btn:hover,
+.ql-dataset-action-btn.ql-delete-monitor-btn:hover {
+    background: #dc3232;
+    color: white;
+}
+
+.ql-dataset-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ql-status-ready {
+    background: #d4edda;
+    color: #155724;
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ql-status-processing {
+    background: #fff3cd;
+    color: #856404;
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.ql-status-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Loading State */
+.ql-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.ql-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f0f0f1;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ql-loading-text {
+    margin-top: 20px;
+    color: #666;
+    font-size: 16px;
+}
+
+/* Success Message */
+.ql-success-banner {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 15px 20px;
+    border-radius: 2px;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ql-success-banner strong {
+    font-weight: 600;
+}
+
+.ql-success-banner .ql-close {
+    cursor: pointer;
+    font-size: 20px;
+    opacity: 0.7;
+}
+
+.ql-success-banner .ql-close:hover {
+    opacity: 1;
+}
+
+/* Quick Actions */
+.ql-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.ql-quick-action {
+    background: white;
+    padding: 20px;
+    border-radius: 2px;
+    border: 2px solid #e0e0e0;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.ql-quick-action:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.ql-quick-action-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.ql-quick-action-label {
+    color: #1d2327;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Sync Upload Modal */
+.ql-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    align-items: center;
+    justify-content: center;
+}
+
+.ql-modal-overlay.active {
+    display: flex;
+}
+
+.ql-modal {
+    background: white;
+    padding: 30px;
+    border-radius: 4px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.ql-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.ql-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #1d2327;
+}
+
+.ql-modal-close {
+    cursor: pointer;
+    font-size: 24px;
+    color: #666;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ql-modal-close:hover {
+    color: #000;
+}
+
+.ql-modal-body {
+    margin-bottom: 20px;
+}
+
+.ql-modal-body p {
+    margin-bottom: 15px;
+    color: #666;
+}
+
+.ql-file-input-wrapper {
+    border: 2px dashed #ccc;
+    padding: 30px;
+    text-align: center;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    transition: all 0.2s;
+}
+
+.ql-file-input-wrapper:hover {
+    border-color: #667eea;
+    background: #f9f9f9;
+}
+
+.ql-file-input-wrapper input[type="file"] {
+    display: none;
+}
+
+.ql-file-input-label {
+    cursor: pointer;
+    color: #2271b1;
+    font-weight: 600;
+}
+
+.ql-file-selected {
+    margin-top: 10px;
+    color: #155724;
+    font-weight: 600;
+}
+
+.ql-modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.ql-modal-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 2px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ql-modal-btn-cancel {
+    background: #f0f0f1;
+    color: #666;
+}
+
+.ql-modal-btn-cancel:hover {
+    background: #e0e0e0;
+}
+
+.ql-modal-btn-upload {
+    background: #2271b1;
+    color: white;
+}
+
+.ql-modal-btn-upload:hover {
+    background: #135e96;
+}
+
+.ql-modal-btn-upload:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ql-dashboard-wrapper {
+        padding: 20px 0px;
+    }
+
+    .ql-dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .ql-user-info {
+        /*flex-direction: column;*/
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .ql-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ql-dataset-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 20px;
+    }
+
+    .ql-dataset-right {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .ql-dataset-action-btn {
+        flex: 1;
+        text-align: center;
+    }
+
+    .ql-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ql-user-details h2 {
+        font-size: 22px;
+    }
+
+    .ql-stat-value {
+        font-size: 28px;
+    }
+
+    .ql-header-actions {
+        width: 100%;
+    }
+
+    .ql-btn {
+        flex: 1;
+    }
+
+    .ql-dataset-info {
+        /*flex-direction: column;*/
+        align-items: flex-start;
+        gap: 8px;
+    }
+}

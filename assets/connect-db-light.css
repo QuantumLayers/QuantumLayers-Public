@@ -1,0 +1,399 @@
+/**
+ * QuantumLayers Database Connection Styles
+ */
+
+.ql-connect-page {
+    min-height: 100vh;
+    padding: 40px 0px;
+}
+
+.ql-connect-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.ql-connect-header {
+    text-align: center;
+    color: white;
+    margin-bottom: 40px;
+}
+
+.ql-connect-header h2 {
+    font-size: 36px;
+    margin: 0 0 10px 0;
+}
+
+.ql-connect-header p {
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+.ql-connect-box {
+    background: white;
+    border-radius: 2px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    margin-bottom: 30px;
+}
+
+.ql-connect-box h2, 
+.ql-connect-box h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.ql-source-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #f0f0f1;
+}
+
+.ql-tab-btn {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.ql-tab-btn:hover {
+    color: #667eea;
+}
+
+.ql-tab-btn.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+}
+
+.ql-tab-content {
+    display: none;
+}
+
+.ql-tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.ql-query-mode-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.ql-query-tab-btn {
+    padding: 5px 12px;
+    background: none;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.15s;
+}
+
+.ql-query-tab-btn:hover {
+    color: #667eea;
+    border-color: rgba(102, 126, 234, 0.6);
+}
+
+.ql-query-tab-btn.active {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.08);
+    border-color: #667eea;
+}
+
+.ql-query-panel {
+    display: none;
+}
+
+.ql-query-panel.active {
+    display: block;
+}
+
+
+.ql-google-auth-wrapper {
+    margin-bottom: 20px;
+}
+
+#google-auth-btn {
+    width: 100% !important;
+}
+
+.ql-picker-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fafafa;
+}
+
+.ql-picker-file-name {
+    flex: 1;
+    font-size: 14px;
+    color: #555;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#ql-picker-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+.picker-dialog-bg {
+    display: none !important;
+}
+
+.picker-dialog {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 10000 !important;
+}
+
+.ql-connection-status {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: none;
+}
+
+.ql-connection-status.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ql-connection-status.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.ql-connection-status.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.ql-info-box {
+    background: #e7f3ff;
+    border-left: 4px solid #2271b1;
+    padding: 20px;
+    color: #333;
+    border-radius: 2px;
+    margin-bottom: 20px;
+}
+
+.ql-info-box h3 {
+    margin: 0 0 10px 0;
+    color: #1d2327;
+    font-size: 16px;
+}
+
+.ql-info-box p {
+    margin: 0;
+    color: #333;
+    line-height: 1.6;
+}
+
+.ql-info-box ul {
+    margin: 10px 0 0 20px;
+    color: #555;
+}
+
+.ql-info-box li {
+    margin: 5px 0;
+}
+
+.ql-warning-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+}
+
+.ql-warning-box strong {
+    color: #856404;
+}
+
+.ql-warning-box p {
+    margin: 10px 0 0 0;
+    color: #856404;
+}
+
+.ql-code-example {
+    background: #f5f5f5;
+    padding: 15px;
+    color: #333;
+    border-radius: 2px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    margin-top: 10px;
+    overflow-x: auto;
+}
+
+.ql-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ql-connect-page {
+        padding: 20px 0px;
+    }
+
+    .ql-connect-box {
+        padding: 25px 20px;
+    }
+
+    .ql-connect-header h1 {
+        font-size: 28px;
+    }
+
+    .ql-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .ql-source-tabs {
+        flex-wrap: wrap;
+    }
+}
+
+
+.ql-btn-google {
+    background: #fff;
+    border: 1px solid #dadce0;
+    color: #3c4043;
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ql-btn-google:hover {
+    background: #f8f9fa;
+    border-color: #d2d4d8;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3);
+}
+
+.ql-btn-google:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ql-auth-section {
+    background: #f8f9fa;
+    padding: 20px;
+    color: #333;
+    border-radius: 2px;
+    border: 1px solid #e8eaed;
+}
+
+.ql-auth-success {
+    background: #e6f4ea;
+    color: #137333;
+    padding: 12px 16px;
+    border-radius: 4px;
+    border: 1px solid #c6ede0;
+    display: inline-flex;
+    align-items: center;
+}
+
+.ql-help-box {
+    background: #f0f7ff;
+    color: #333;
+    border: 1px solid #d0e3ff;
+    border-radius: 2px;
+    padding: 20px;
+}
+
+.ql-help-box h4 {
+    margin-top: 0;
+    color: #1967d2;
+}
+
+
+.ql-alert {
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.ql-alert-warning {
+    background: #fef7e0;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+#connection-status {
+    display: none;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 16px 0;
+    font-weight: 500;
+}
+
+#connection-status.show {
+    display: block;
+}
+
+#connection-status.success {
+    background: #e6f4ea;
+    color: #137333;
+    border: 1px solid #c6ede0;
+}
+
+#connection-status.error {
+    background: #fce8e6;
+    color: #c5221f;
+    border: 1px solid #f5c2c1;
+}
+

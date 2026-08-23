@@ -1,0 +1,319 @@
+:root {
+    --ql-wave-bg: url("https://quantumlayers.com/wp-content/uploads/2026/01/light-background-1.png");
+}
+
+body {
+    position: relative; /* Essential for positioning the pseudo-element */
+    overflow-x: hidden; /* Prevent scrollbar from scaled background */
+}
+
+/* Two overlapping, semi-transparent copies of the same wave image drifting
+   at different speeds/angles create a more complex, layered motion than a
+   single background could, without needing extra image assets. */
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    top: -10%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
+    background-image: var(--ql-wave-bg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1;
+    will-change: transform;
+    pointer-events: none;
+}
+
+body::before {
+    opacity: 1;
+    animation: ql-bg-drift-3 26s ease-in-out infinite;
+}
+
+body::after {
+    position: fixed;
+    inset: -15%;
+    background-image: var(--ql-wave-bg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.3;
+    mix-blend-mode: multiply;
+    filter: blur(1px) hue-rotate(24deg) saturate(1.35);
+    animation: ql-bg-drift-1 32s ease-in-out infinite;
+    will-change: transform;
+    pointer-events: none;
+}
+
+@keyframes ql-bg-drift-1 {
+    0%   { transform: scale(1)    translate(0%, 0%)    rotate(180deg); }
+    33%  { transform: scale(1.12) translate(-2%, 1.5%)  rotate(182deg); }
+    66%  { transform: scale(1.2)  translate(2%, -1%)    rotate(178deg); }
+    100% { transform: scale(1)    translate(0%, 0%)    rotate(180deg); }
+}
+
+@keyframes ql-bg-drift-2 {
+    0%   { transform: scaleX(-2) scale(1.15) translate(0%, 0%)    rotate(0deg); }
+    50%  { transform: scaleX(-1) scale(1.3)  translate(3%, -2%)  rotate(1.2deg); }
+    100% { transform: scaleX(-2) scale(1.15) translate(0%, 0%)    rotate(0deg); }
+}
+
+@keyframes ql-bg-drift-3 {
+    0%   { transform: scale(1.25) translate(0%, 0%)   rotate(0deg); }
+    50%  { transform: scale(1.4)  translate(-3%, 2%)  rotate(-2deg); }
+    100% { transform: scale(1.25) translate(0%, 0%)   rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before,
+    body::after {
+        animation: none !important;
+    }
+}
+
+/* On phones, `cover` already has to scale the (landscape) wave image up
+   aggressively to fill a narrow, tall viewport, cropping most of its
+   width. Stacking the desktop drift animation's extra scale (up to 1.4x)
+   on top of that pushes the visible slice well past the image's native
+   resolution, reading as blurry/zoomed in. Swap in a near-static, much
+   lower-amplitude drift on small screens so the background stays closer
+   to its source resolution and shows more of the image. */
+@media (max-width: 600px) {
+    body::before {
+        animation-name: ql-bg-drift-3-mobile;
+    }
+
+    body::after {
+        animation-name: ql-bg-drift-1-mobile;
+    }
+
+    @keyframes ql-bg-drift-3-mobile {
+        0%   { transform: scale(1)    translate(0%, 0%)  rotate(0deg); }
+        50%  { transform: scale(1.06) translate(-2%, 1%) rotate(-1deg); }
+        100% { transform: scale(1)    translate(0%, 0%)  rotate(0deg); }
+    }
+
+    @keyframes ql-bg-drift-1-mobile {
+        0%   { transform: scale(1)    translate(0%, 0%)  rotate(180deg); }
+        50%  { transform: scale(1.05) translate(-1%, 1%) rotate(179deg); }
+        100% { transform: scale(1)    translate(0%, 0%)  rotate(180deg); }
+    }
+}
+
+/* Buttons */
+.ql-btn {
+    line-height: 0;
+    border: none;
+    border-radius: 2px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    text-decoration: none;
+	padding: 20px 20px;
+}
+
+.ql-btn-primary {
+    background: linear-gradient(135deg, #5873D0 0%, #7893F0 100%);
+    color: #fff;
+}
+
+.ql-btn-primary:hover {
+    background: linear-gradient(135deg, #4863C0 0%, #6883E0 100%);
+    color: #fff;
+}
+
+.ql-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.ql-btn-secondary {
+    background: #f0f0f1;
+    color: #1d2327;
+}
+
+.ql-btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+
+.ql-btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.ql-btn-danger:hover {
+    background: #c82333;
+}
+
+.ql-form {
+    margin: 0;
+}
+
+.ql-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 0px;
+    gap: 10px;
+}
+
+.ql-form-actions {
+    margin-bottom: 25px;
+    color: #333;
+}
+
+.ql-form-group {
+    margin-bottom: 25px;
+    color: #333;
+}
+
+.ql-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #1d2327;
+    font-size: 14px;
+}
+
+.ql-form-group input[type="text"],
+.ql-form-group input[type="email"],
+.ql-form-group input[type="password"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    font-size: 15px;
+    color: #333;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.ql-form-group input::placeholder {
+    color: #333;
+}
+
+.ql-form-group small {
+    display: block;
+    margin-top: 6px;
+    color: #666;
+    font-size: 13px;
+}
+
+.ql-form-group.has-error input {
+    border-color: #dc3545;
+}
+
+.ql-form-group.has-error .ql-error-message {
+    display: block;
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+
+.ql-form-group select, 
+.ql-form-group input[type="number"] {
+    color: #333;
+}
+
+.ql-form-group input[type="text"],
+.ql-form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    color: #333;
+    border-radius: 2px;
+    font-size: 15px;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.ql-form-group input:focus,
+.ql-form-group textarea:focus {
+    outline: none;
+    color: #333;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.ql-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ql-radio {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 2px;
+    cursor: pointer;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.ql-radio input[type="radio"] {
+    margin-right: 12px;
+    
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.ql-radio input[type="radio"]:checked ~ span {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.ql-radio span {
+    flex: 1;
+}
+
+
+/* Actions Bar */
+.ql-actions-bar {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Loading State */
+.ql-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.ql-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f0f0f1;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ql-loading-text {
+    margin-top: 20px;
+    color: #666;
+    font-size: 16px;
+}
+
+

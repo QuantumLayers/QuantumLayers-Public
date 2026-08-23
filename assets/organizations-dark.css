@@ -1,0 +1,731 @@
+/**
+ * QuantumLayers Organization Management - Dark Mode
+ * File: wp-content/plugins/quantumlayers/assets/organizations-dark.css
+ */
+
+/* Container */
+#ql-organizations-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+.ql-org-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+}
+
+.ql-org-header h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #FFFFFF;
+}
+
+
+.ql-btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* Organization Cards */
+.ql-organizations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.ql-org-card {
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    border: 1px solid rgba(139, 127, 219, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.ql-org-card:hover {
+    background: linear-gradient(135deg, #2C2C2C 0%, #342840 100%);
+    border-color: #8B7FDB;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 4px 16px rgba(139, 127, 219, 0.2);
+}
+
+.ql-org-card-header {
+    padding: 20px;
+    background: rgba(26, 26, 26, 0.5);
+    border-bottom: 2px solid rgba(26, 26, 26, 0.5);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ql-org-card-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.ql-org-badge {
+    padding: 4px 12px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ql-org-badge.ql-startup {
+    background-color: rgba(111, 207, 151, 0.2);
+    color: #6FCF97;
+    border: 1px solid rgba(111, 207, 151, 0.3);
+}
+
+.ql-org-badge.ql-enterprise {
+    background-color: rgba(242, 201, 76, 0.2);
+    color: #F2C94C;
+    border: 1px solid rgba(242, 201, 76, 0.3);
+}
+
+.ql-org-card-body {
+    padding: 20px;
+}
+
+.ql-org-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(139, 127, 219, 0.2);
+}
+
+.ql-org-stat:last-child {
+    border-bottom: none;
+}
+
+.ql-stat-label {
+    color: #B8B8B8;
+    font-size: 13px;
+}
+
+.ql-stat-value {
+    font-weight: 600;
+    color: #FFFFFF;
+}
+
+.ql-org-card-footer {
+    padding: 15px 20px;
+    background-color: rgba(0, 0, 0, 0.2);
+    text-align: right;
+    border-top: 1px solid rgba(139, 127, 219, 0.2);
+}
+
+/* Role Badges */
+.ql-role-manager {
+    color: #F2C94C;
+    font-weight: 600;
+}
+
+.ql-role-admin {
+    color: #6FCF97;
+    font-weight: 600;
+}
+
+.ql-role-member {
+    color: #B8B8B8;
+}
+
+/* Status Badges */
+.ql-status-active {
+    color: #6FCF97;
+    font-weight: 600;
+}
+
+.ql-status-suspended {
+    color: #F2C94C;
+    font-weight: 600;
+}
+
+.ql-status-cancelled {
+    color: #EB5757;
+    font-weight: 600;
+}
+
+/* Forms */
+.ql-form-group {
+    margin-bottom: 20px;
+}
+
+.ql-form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #FFFFFF;
+    font-size: 14px;
+}
+
+.ql-form-group input[type="text"],
+.ql-form-group input[type="email"],
+.ql-form-group input[type="number"],
+.ql-form-group select,
+.ql-form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(139, 127, 219, 0.3);
+    border-radius: 2px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.05);
+    color: #FFFFFF;
+}
+
+.ql-form-group input:focus,
+.ql-form-group select:focus,
+.ql-form-group textarea:focus {
+    outline: none;
+    border-color: #8B7FDB;
+    box-shadow: 0 0 0 2px rgba(139, 127, 219, 0.2);
+}
+
+.ql-form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.ql-form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.ql-form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(139, 127, 219, 0.2);
+}
+
+/* Organization Detail View */
+.ql-org-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(26, 26, 26, 0.5);
+    border-bottom: 2px solid rgba(26, 26, 26, 0.5);
+    border-radius: 2px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.ql-org-detail-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.ql-org-detail-title h2 {
+    margin: 0;
+    color: white;
+    font-size: 24px;
+}
+
+/* Tabs */
+.ql-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid rgba(139, 127, 219, 0.2);
+    margin-bottom: 30px;
+}
+
+.ql-tab {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: #B8B8B8;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ql-tab:hover {
+    color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.ql-tab.active {
+    color: #9B8FE8;
+    border-bottom-color: #9B8FE8;
+}
+
+.ql-tab-content {
+    display: none;
+}
+
+.ql-tab-content.active {
+    display: block;
+}
+
+/* Stats Boxes */
+.ql-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.ql-stat-box {
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    padding: 20px;
+    border: 1px solid rgba(139, 127, 219, 0.15);
+    border-radius: 2px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.ql-stat-label {
+    font-size: 12px;
+    color: #B8B8B8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.ql-stat-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+/* Tables */
+.ql-table-container {
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    border: 1px solid rgba(139, 127, 219, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.ql-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ql-table thead {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.ql-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #FFFFFF;
+    font-size: 13px;
+    border-bottom: 2px solid rgba(139, 127, 219, 0.2);
+}
+
+.ql-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(139, 127, 219, 0.2);
+    font-size: 14px;
+    color: #FFFFFF;
+}
+
+.ql-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.ql-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Member Table Specific */
+.ql-member-name {
+    font-weight: 600;
+    color: #FFFFFF;
+}
+
+.ql-member-email {
+    font-size: 12px;
+    color: #B8B8B8;
+    margin-top: 4px;
+}
+
+.ql-member-role-select {
+    padding: 6px 10px;
+    border: 1px solid rgba(139, 127, 219, 0.3);
+    border-radius: 2px;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #FFFFFF;
+}
+
+.ql-role-badge {
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.ql-role-badge.ql-role-manager {
+    background-color: rgba(242, 201, 76, 0.2);
+    color: #F2C94C;
+    border: 1px solid rgba(242, 201, 76, 0.3);
+}
+
+.ql-role-badge.ql-role-admin {
+    background-color: rgba(111, 207, 151, 0.2);
+    color: #6FCF97;
+    border: 1px solid rgba(111, 207, 151, 0.3);
+}
+
+.ql-role-badge.ql-role-member {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #B8B8B8;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ql-primary-badge {
+    padding: 4px 10px;
+    background-color: rgba(242, 201, 76, 0.2);
+    color: #F2C94C;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: 0px;
+    border: 1px solid rgba(242, 201, 76, 0.3);
+}
+
+/* Billing Table */
+.ql-invoice-status {
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.ql-invoice-status.ql-status-paid {
+    background-color: rgba(111, 207, 151, 0.2);
+    color: #6FCF97;
+    border: 1px solid rgba(111, 207, 151, 0.3);
+}
+
+.ql-invoice-status.ql-status-pending {
+    background-color: rgba(242, 201, 76, 0.2);
+    color: #F2C94C;
+    border: 1px solid rgba(242, 201, 76, 0.3);
+}
+
+.ql-invoice-status.ql-status-failed {
+    background-color: rgba(235, 87, 87, 0.2);
+    color: #EB5757;
+    border: 1px solid rgba(235, 87, 87, 0.3);
+}
+
+/* Empty State */
+.ql-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #B8B8B8;
+}
+
+.ql-empty-state p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Notifications */
+.ql-notification {
+    display: block;
+    padding: 16px 24px;
+    border-radius: 2px;
+    margin-top: 16px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.ql-notification.show {
+    opacity: 1;
+}
+
+.ql-notification-success {
+    background-color: rgba(111, 207, 151, 0.15);
+    color: #6FCF97;
+    border: 1px solid rgba(111, 207, 151, 0.4);
+    border-left: 4px solid #6FCF97;
+}
+
+.ql-notification-error {
+    background-color: rgba(235, 87, 87, 0.15);
+    color: #EB5757;
+    border: 1px solid rgba(235, 87, 87, 0.4);
+    border-left: 4px solid #EB5757;
+}
+
+/* Panels */
+.ql-panel {
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    border: 1px solid rgba(139, 127, 219, 0.15);
+    border-radius: 2px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.ql-panel-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(139, 127, 219, 0.2);
+}
+
+.ql-panel-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #FFFFFF;
+}
+
+/* View Management */
+.ql-view {
+    display: none;
+}
+
+.ql-view.active {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #ql-organizations-container {
+        padding: 12px;
+    }
+
+    .ql-organizations-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ql-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .ql-org-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .ql-org-header h1 {
+        font-size: 20px;
+    }
+
+    .ql-org-detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .ql-org-detail-title h2 {
+        font-size: 18px;
+    }
+
+    .ql-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 0;
+    }
+
+    .ql-tab {
+        padding: 10px 16px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .ql-tab {
+        padding: 10px 14px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .ql-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ql-table {
+        min-width: 500px;
+    }
+
+    .ql-panel {
+        padding: 16px;
+    }
+
+    .ql-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .ql-panel {
+        padding: 20px 15px;
+    }
+
+    .ql-form-actions {
+        flex-wrap: wrap;
+    }
+
+    .ql-form-actions .ql-btn {
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+    }
+
+    .ql-org-card-footer {
+        text-align: left;
+    }
+
+    .ql-btn {
+        padding: 10px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    #ql-organizations-container {
+        padding: 8px;
+    }
+
+    .ql-org-header h1 {
+        font-size: 18px;
+    }
+
+    .ql-org-detail-header {
+        padding: 12px;
+    }
+
+    .ql-org-detail-title {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .ql-org-detail-title h2 {
+        font-size: 16px;
+    }
+
+    .ql-table th,
+    .ql-table td {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    .ql-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ql-org-header h1 {
+        font-size: 22px;
+    }
+
+    .ql-panel {
+        padding: 15px 12px;
+    }
+
+    .ql-table th,
+    .ql-table td {
+        padding: 10px 10px;
+        font-size: 13px;
+    }
+
+    .ql-stat-number {
+        font-size: 22px;
+    }
+
+    .ql-tab {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+}
+
+
+/* Utility Classes */
+.ql-text-muted {
+    color: #B8B8B8;
+}
+
+.ql-text-center {
+    text-align: center;
+}
+
+.ql-mt-20 {
+    margin-top: 20px;
+}
+
+.ql-mb-20 {
+    margin-bottom: 20px;
+}
+
+.ql-hidden {
+    display: none !important;
+}
+
+/* Alert Styles */
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 2px;
+}
+
+.alert-danger {
+    background-color: rgba(235, 87, 87, 0.15);
+    border: 1px solid rgba(235, 87, 87, 0.4);
+    color: #EB5757;
+}
+
+.alert-info {
+    background-color: rgba(139, 127, 219, 0.15);
+    border: 1px solid rgba(139, 127, 219, 0.4);
+    color: #9B8FE8;
+}
+
+.alert h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #FFFFFF;
+}
+
+.alert ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+/* Text Colors */
+.text-success {
+    color: #6FCF97;
+    font-weight: 600;
+}
+
+.text-danger {
+    color: #EB5757;
+    font-weight: 600;
+}
+
+.text-warning {
+    color: #F2C94C;
+    font-weight: 600;
+}
+
+.text-muted {
+    color: #B8B8B8;
+}
+
