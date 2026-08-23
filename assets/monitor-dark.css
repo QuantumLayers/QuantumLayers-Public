@@ -1,0 +1,427 @@
+/**
+ * QuantumLayers Monitor Styles - Dark Mode
+ */
+
+/* Main Container */
+.ql-monitors-page {
+    min-height: 100vh;
+    padding: 0;
+}
+
+.ql-monitors-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 0px;
+}
+
+/* Header */
+.ql-monitors-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    padding: 20px;
+    border-bottom: 2px solid rgba(26,26,26,0.5);
+    background: rgba(26,26,26,0.5);
+}
+
+.ql-monitors-header h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #FFFFFF;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.ql-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Section */
+.ql-section {
+    color: #FFFFFF;
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    padding: 30px;
+    border-radius: 2px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    margin-bottom: 30px;
+    border: 2px solid rgba(26,26,26,0.5);
+}
+
+.ql-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(26,26,26,0.5);
+}
+
+.ql-section-header h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #FFFFFF;
+}
+
+/* Currently Tracked findings panel */
+.ql-monitor-findings-panel {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(139, 127, 219, 0.08);
+    border: 1px solid rgba(139, 127, 219, 0.3);
+    border-radius: 2px;
+}
+
+.ql-monitor-findings-panel h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #FFFFFF;
+}
+
+.ql-monitor-findings-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ql-monitor-finding-badge {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(139, 127, 219, 0.3);
+    border-left: 3px solid #9B8FE8;
+    border-radius: 2px;
+    font-size: 13px;
+    color: #FFFFFF;
+}
+
+.ql-monitor-finding-badge small {
+    color: #B8B8B8;
+    font-size: 11px;
+}
+
+/* Form Sections */
+.ql-form-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    border-radius: 2px;
+    border: 1px solid rgba(139, 127, 219, 0.3);
+}
+
+.ql-form-section h3 {
+    margin-top: 0;
+    font-size: 18px;
+    color: #FFFFFF;
+}
+
+.ql-form-group {
+    margin-bottom: 20px;
+}
+
+.ql-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #FFFFFF;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.ql-form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #B8B8B8;
+    font-size: 12px;
+}
+
+.ql-form-control {
+    width: 100%;
+    border: 1px solid rgba(139, 127, 219, 0.3) !important;
+    border-radius: 2px !important;
+    color: #FFFFFF !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.ql-form-control:focus {
+    outline: none;
+    border-color: #8B7FDB !important;
+    box-shadow: 0 0 0 2px rgba(139, 127, 219, 0.2);
+}
+
+.ql-form-control[multiple] {
+    min-height: 120px;
+}
+
+.ql-form-control[multiple] option {
+    color: white;
+}
+
+.ql-form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+/* Date Filter Inputs - match analytics styling */
+.filter-date-column,
+.filter-date-from-input,
+.filter-date-to-input,
+.filter-date-from-custom,
+.schedule-time,
+.filter-date-to-custom {
+    border: 1px solid rgba(139, 127, 219, 0.3) !important;
+    border-radius: 2px !important;
+    color: #FFFFFF !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.filter-date-column:focus,
+.filter-date-from-input:focus,
+.filter-date-to-input:focus,
+.filter-date-from-custom:focus,
+.schedule-time,
+.filter-date-to-custom:focus {
+    outline: none;
+    border-color: #8B7FDB !important;
+    box-shadow: 0 0 0 2px rgba(139, 127, 219, 0.2);
+}
+
+
+/* Dataset Section */
+.ql-dataset-section {
+    margin-bottom: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #1C1C1C 0%, #241830 100%);
+    border: 1px solid rgba(139, 127, 219, 0.3);
+    border-radius: 2px;
+}
+
+.ql-dataset-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(139, 127, 219, 0.3);
+    cursor: pointer;
+    user-select: none;
+}
+
+.ql-dataset-header.collapsed {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.ql-dataset-header h4::before {
+    content: '▼';
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 10px;
+    color: #9B8FE8;
+    transition: transform 0.3s;
+}
+
+.ql-dataset-header.collapsed h4::before {
+    transform: rotate(-90deg);
+}
+
+.ql-dataset-header h4 {
+    margin: 0;
+    color: #FFFFFF;
+    font-size: 16px;
+}
+
+#datasets-container {
+    margin-top: 15px;
+}
+
+/* Buttons */
+.ql-btn {
+    padding: 10px 20px;
+    border: 1px solid #8B7FDB;
+    background: rgba(139, 127, 219, 0.1);
+    color: #9B8FE8;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ql-btn:hover {
+    background: #8B7FDB;
+    color: #FFFFFF;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(139, 127, 219, 0.4);
+}
+
+.ql-btn-primary {
+    background: linear-gradient(135deg, #7C6FD6 0%, #9B8FE8 100%);
+    color: #FFFFFF;
+    border: 1px solid rgba(139, 127, 219, 0.5);
+}
+
+.ql-btn-primary:hover {
+    background: linear-gradient(135deg, #8B7FDB 0%, #AA9EED 100%);
+    box-shadow: 0 4px 12px rgba(139, 127, 219, 0.4);
+}
+
+.ql-btn-secondary {
+    background: rgba(184, 184, 184, 0.1);
+    color: #B8B8B8;
+    border-color: rgba(184, 184, 184, 0.3);
+}
+
+.ql-btn-secondary:hover {
+    background: rgba(184, 184, 184, 0.2);
+    border-color: rgba(184, 184, 184, 0.5);
+    color: #FFFFFF;
+    box-shadow: none;
+}
+
+.ql-btn-danger {
+    border-color: #EB5757;
+    color: #EB5757;
+    background: rgba(235, 87, 87, 0.1);
+}
+
+.ql-btn-danger:hover {
+    background: #EB5757;
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(235, 87, 87, 0.4);
+}
+
+.ql-btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.ql-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Form Actions */
+.ql-form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(139, 127, 219, 0.3);
+}
+
+/* Loading State */
+.ql-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.ql-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(139, 127, 219, 0.2);
+    border-top-color: #9B8FE8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    box-shadow: 0 0 20px rgba(155, 143, 232, 0.3);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ql-loading-text {
+    margin-top: 20px;
+    color: #B8B8B8;
+    font-size: 16px;
+}
+
+/* Success/Error Messages */
+.ql-success-message {
+    background: rgba(111, 207, 151, 0.15);
+    border: 1px solid rgba(111, 207, 151, 0.4);
+    border-left: 4px solid #6FCF97;
+    color: #6FCF97;
+    padding: 15px 20px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.ql-error-message {
+    background: rgba(235, 87, 87, 0.15);
+    border: 1px solid rgba(235, 87, 87, 0.4);
+    border-left: 4px solid #EB5757;
+    color: #EB5757;
+    padding: 15px 20px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+}
+
+/* Empty State */
+.ql-empty-state {
+    text-align: center;
+    padding: 60px 30px;
+    color: #B8B8B8;
+}
+
+.ql-empty-state-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.4;
+    filter: drop-shadow(0 2px 8px rgba(139, 127, 219, 0.3));
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ql-section {
+        padding: 15px;
+    }
+
+    .ql-monitors-wrapper {
+        padding: 20px 0px;
+    }
+
+    .ql-monitors-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .ql-header-actions {
+        width: 100%;
+    }
+
+    .ql-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .ql-dataset-header {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ql-monitors-header h1 {
+        font-size: 22px;
+    }
+
+    .ql-form-section {
+        padding: 15px;
+    }
+}

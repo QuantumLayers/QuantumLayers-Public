@@ -1,0 +1,606 @@
+/**
+ * QuantumLayers Agent Interface - Dark Mode
+ * File: assets/agent-dark.css
+ */
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Kill WordPress admin bar, theme headers/footers, and body margins */
+#wpadminbar,
+#masthead, #ct-header, .site-header, header.ct-header,
+#colophon, #ct-footer, .site-footer, footer.ct-footer,
+.wp-site-blocks > header, .wp-site-blocks > footer { display: none !important; }
+html { margin-top: 0 !important; }
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 15px;
+    background: #1A1A1A;
+    color: #FFFFFF;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("https://quantumlayers.com/wp-content/uploads/2025/12/1000013672-purple.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: 0.6;
+    z-index: -1;
+}
+
+/* ============================================
+   WINDOW LAYOUT
+   ============================================ */
+
+.ql-agent-window {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99999;
+    width: 100% !important;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.ql-agent-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    border-bottom: 1px solid rgba(139, 127, 219, 0.25);
+    flex-shrink: 0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.ql-agent-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 0.3px;
+}
+
+.ql-agent-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #7C6FD6 0%, #9B8FE8 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 4px 12px rgba(139, 127, 219, 0.35);
+    color: #fff;
+    font-style: normal;
+    flex-shrink: 0;
+}
+
+.ql-agent-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.ql-agent-new-btn {
+    padding: 7px 14px;
+    background: rgba(139, 127, 219, 0.15);
+    border: 1px solid rgba(139, 127, 219, 0.35);
+    color: #9B8FE8;
+    border-radius: 2px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.ql-agent-new-btn:hover {
+    background: rgba(139, 127, 219, 0.25);
+    border-color: rgba(139, 127, 219, 0.55);
+    color: #FFFFFF;
+}
+
+/* ============================================
+   MESSAGES AREA
+   ============================================ */
+
+.ql-agent-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+}
+
+.ql-agent-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ql-agent-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ql-agent-messages::-webkit-scrollbar-thumb {
+    background: rgba(139, 127, 219, 0.35);
+    border-radius: 3px;
+}
+
+.ql-agent-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 127, 219, 0.55);
+}
+
+/* ============================================
+   WELCOME STATE
+   ============================================ */
+
+.ql-agent-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    text-align: center;
+    padding: 40px 20px;
+    gap: 20px;
+}
+
+.ql-agent-welcome-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #7C6FD6 0%, #9B8FE8 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    box-shadow: 0 8px 24px rgba(139, 127, 219, 0.4);
+    margin-bottom: 8px;
+}
+
+.ql-agent-welcome h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-bottom: 8px;
+}
+
+.ql-agent-welcome p {
+    font-size: 14px;
+    color: #B8B8B8;
+    line-height: 1.7;
+    max-width: 420px;
+}
+
+.ql-agent-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 480px;
+    margin-top: 8px;
+}
+
+.ql-agent-suggestion {
+    padding: 10px 16px;
+    background: rgba(139, 127, 219, 0.08);
+    border: 1px solid rgba(139, 127, 219, 0.25);
+    border-radius: 2px;
+    color: #B8B8B8;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.ql-agent-suggestion:hover {
+    background: rgba(139, 127, 219, 0.18);
+    border-color: rgba(139, 127, 219, 0.45);
+    color: #FFFFFF;
+}
+
+/* ============================================
+   MESSAGE BUBBLES
+   ============================================ */
+
+.ql-agent-message {
+    display: flex;
+    gap: 12px;
+    max-width: 100%;
+    animation: ql-message-in 0.2s ease-out;
+}
+
+@keyframes ql-message-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* User messages – right-aligned */
+.ql-agent-message--user {
+    flex-direction: row-reverse;
+}
+
+.ql-agent-message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    margin-top: 2px;
+}
+
+.ql-agent-message--assistant .ql-agent-message-avatar {
+    background: linear-gradient(135deg, #7C6FD6 0%, #9B8FE8 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(139, 127, 219, 0.35);
+}
+
+.ql-agent-message--user .ql-agent-message-avatar {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.ql-agent-message-body {
+    max-width: calc(100% - 48px);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ql-agent-message--user .ql-agent-message-body {
+    align-items: flex-end;
+}
+
+.ql-agent-message-content {
+    padding: 12px 16px;
+    border-radius: 2px;
+    line-height: 1.65;
+    font-size: 14px;
+    word-break: break-word;
+}
+
+.ql-agent-message--user .ql-agent-message-content {
+    background: linear-gradient(135deg, #7C6FD6 0%, #9B8FE8 100%);
+    color: #fff;
+    border-bottom-right-radius: 2px;
+    box-shadow: 0 2px 8px rgba(139, 127, 219, 0.3);
+}
+
+.ql-agent-message--assistant .ql-agent-message-content {
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    color: #DEDEDE;
+    border: 1px solid rgba(139, 127, 219, 0.15);
+    border-bottom-left-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Markdown rendering inside assistant messages */
+.ql-agent-message--assistant .ql-agent-message-content h1,
+.ql-agent-message--assistant .ql-agent-message-content h2,
+.ql-agent-message--assistant .ql-agent-message-content h3 {
+    color: #FFFFFF;
+    font-weight: 700;
+    margin: 16px 0 8px;
+    line-height: 1.3;
+}
+
+.ql-agent-message--assistant .ql-agent-message-content h1:first-child,
+.ql-agent-message--assistant .ql-agent-message-content h2:first-child,
+.ql-agent-message--assistant .ql-agent-message-content h3:first-child {
+    margin-top: 0;
+}
+
+.ql-agent-message--assistant .ql-agent-message-content h1 { font-size: 18px; }
+.ql-agent-message--assistant .ql-agent-message-content h2 { font-size: 16px; color: #9B8FE8; }
+.ql-agent-message--assistant .ql-agent-message-content h3 { font-size: 14px; }
+
+.ql-agent-message--assistant .ql-agent-message-content p {
+    margin: 8px 0;
+    color: #DEDEDE;
+}
+
+.ql-agent-message--assistant .ql-agent-message-content p:first-child { margin-top: 0; }
+.ql-agent-message--assistant .ql-agent-message-content p:last-child  { margin-bottom: 0; }
+
+.ql-agent-message--assistant .ql-agent-message-content ul,
+.ql-agent-message--assistant .ql-agent-message-content ol {
+    padding-left: 22px;
+    margin: 8px 0;
+}
+
+.ql-agent-message--assistant .ql-agent-message-content li {
+    margin: 5px 0;
+    color: #DEDEDE;
+    line-height: 1.6;
+}
+
+.ql-agent-message--assistant .ql-agent-message-content li::marker {
+    color: #9B8FE8;
+}
+
+.ql-agent-message--assistant .ql-agent-message-content strong {
+    color: #FFFFFF;
+    font-weight: 700;
+}
+
+.ql-agent-message--assistant .ql-agent-message-content em {
+    color: #B8B8B8;
+}
+
+.ql-agent-message--assistant .ql-agent-message-content code {
+    background: rgba(139, 127, 219, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 0.88em;
+    color: #9B8FE8;
+    border: 1px solid rgba(139, 127, 219, 0.25);
+}
+
+.ql-agent-message--assistant .ql-agent-message-content pre {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(139, 127, 219, 0.2);
+    border-radius: 4px;
+    padding: 14px;
+    overflow-x: auto;
+    margin: 10px 0;
+}
+
+.ql-agent-message--assistant .ql-agent-message-content pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #B8B8B8;
+    font-size: 13px;
+}
+
+.ql-agent-message--assistant .ql-agent-message-content blockquote {
+    border-left: 3px solid #9B8FE8;
+    padding: 8px 14px;
+    margin: 10px 0;
+    background: rgba(139, 127, 219, 0.08);
+    border-radius: 0 4px 4px 0;
+    color: #B8B8B8;
+    font-style: italic;
+}
+
+.ql-agent-message-time {
+    font-size: 11px;
+    color: rgba(184, 184, 184, 0.5);
+    padding: 0 4px;
+}
+
+/* ============================================
+   LOADING / THINKING STATE
+   ============================================ */
+
+.ql-agent-thinking {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    animation: ql-message-in 0.2s ease-out;
+}
+
+.ql-agent-thinking-avatar {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #7C6FD6 0%, #9B8FE8 100%);
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    box-shadow: 0 2px 8px rgba(139, 127, 219, 0.35);
+    margin-top: 2px;
+}
+
+.ql-agent-thinking-bubble {
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    border: 1px solid rgba(139, 127, 219, 0.15);
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ql-agent-dot {
+    width: 7px;
+    height: 7px;
+    background: #9B8FE8;
+    border-radius: 50%;
+    animation: ql-bounce 1.2s ease-in-out infinite;
+}
+
+.ql-agent-dot:nth-child(2) { animation-delay: 0.2s; }
+.ql-agent-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes ql-bounce {
+    0%, 60%, 100% { transform: translateY(0);    opacity: 0.6; }
+    30%            { transform: translateY(-5px); opacity: 1;   }
+}
+
+/* ============================================
+   INPUT AREA
+   ============================================ */
+
+.ql-agent-input-area {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    border-top: 1px solid rgba(139, 127, 219, 0.2);
+    flex-shrink: 0;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.ql-agent-textarea-wrapper {
+    position: relative;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(139, 127, 219, 0.3);
+    border-radius: 2px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ql-agent-textarea-wrapper:focus-within {
+    border-color: #8B7FDB;
+    box-shadow: 0 0 0 3px rgba(139, 127, 219, 0.2);
+}
+
+#ql-agent-input {
+    width: 100%;
+    padding: 14px 16px 40px 16px;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    font-size: 14px;
+    color: #FFFFFF;
+    line-height: 1.6;
+    min-height: 90px;
+    max-height: 200px;
+    display: block;
+}
+
+#ql-agent-input::placeholder {
+    color: rgba(184, 184, 184, 0.45);
+    font-style: italic;
+}
+
+.ql-agent-input-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+}
+
+.ql-agent-hint {
+    font-size: 11px;
+    color: rgba(184, 184, 184, 0.4);
+    pointer-events: none;
+}
+
+.ql-agent-send-btn {
+    padding: 7px 18px;
+    background: linear-gradient(135deg, #7C6FD6 0%, #9B8FE8 100%);
+    color: #fff;
+    border: none;
+    border-radius: 2px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(139, 127, 219, 0.35);
+    pointer-events: all;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.ql-agent-send-btn:hover {
+    background: linear-gradient(135deg, #8B7FDB 0%, #AA9EED 100%);
+    box-shadow: 0 4px 12px rgba(139, 127, 219, 0.45);
+}
+
+.ql-agent-send-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.ql-agent-error {
+    padding: 12px 16px;
+    background: rgba(235, 87, 87, 0.12);
+    border: 1px solid rgba(235, 87, 87, 0.35);
+    border-radius: 2px;
+    color: #EB5757;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ============================================
+   SCROLLBAR (Firefox)
+   ============================================ */
+
+.ql-agent-messages {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 127, 219, 0.35) transparent;
+}
+
+/* ============================================
+   INLINE CHART EMBEDS
+   ============================================ */
+
+.ql-agent-chart-embed {
+    width: 100%;
+    max-width: 560px;
+    height: 300px;
+    margin: 12px 0;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(139, 127, 219, 0.2);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ql-agent-chart-embed canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.ql-agent-chart-loading {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.ql-agent-chart-error {
+    font-size: 13px;
+    color: #f87171;
+    margin: 0;
+    padding: 12px;
+}

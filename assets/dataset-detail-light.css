@@ -1,0 +1,394 @@
+/**
+ * QuantumLayers Dataset Detail Page Styles
+ */
+
+.ql-dataset-detail {
+    min-height: 100vh;
+    padding: 40px 0;
+}
+
+.ql-dataset-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Breadcrumb */
+.ql-breadcrumb {
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #666;
+}
+
+.ql-breadcrumb a {
+    color: #2271b1;
+    text-decoration: none;
+}
+
+.ql-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.ql-breadcrumb span {
+    margin: 0 8px;
+}
+
+/* Header */
+.ql-dataset-header {
+    background: white;
+    padding: 30px;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.ql-dataset-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+    color: #1d2327;
+}
+
+.ql-dataset-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+    color: #666;
+    font-size: 14px;
+}
+
+.ql-dataset-meta-row > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ql-status-badge {
+    padding: 6px 12px;
+    border-radius: 2px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.ql-status-ready {
+    background: #d4edda;
+    color: #155724;
+}
+
+.ql-status-processing {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.ql-status-error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Stats Grid */
+.ql-detail-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.ql-stat-card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.ql-stat-label {
+    color: #666;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.ql-stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #667eea;
+}
+
+/* Insights Section */
+.ql-insights-section {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.ql-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f1;
+}
+
+.ql-section-header h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #1d2327;
+}
+
+.ql-insights-filter {
+    display: flex;
+    gap: 10px;
+}
+
+.ql-filter-btn {
+    padding: 8px 16px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.ql-filter-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.ql-filter-btn.active {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.ql-insights-grid {
+    display: grid;
+    gap: 20px;
+}
+
+
+.ql-insight-card.warning {
+    border-left-color: #f39c12;
+    background: #fef9e7;
+}
+
+.ql-insight-card.highlight {
+    border-left-color: #3498db;
+    background: #ebf5fb;
+}
+
+.ql-insight-card.info {
+    border-left-color: #95a5a6;
+    background: #f6f0ff;
+}
+
+.ql-insight-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 12px;
+}
+
+.ql-insight-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+    margin: 0;
+}
+
+.ql-insight-category {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.ql-insight-body {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.ql-insight-body strong {
+    color: #1d2327;
+}
+
+.ql-insight-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #999;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Columns Section */
+.ql-columns-section {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.ql-columns-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.ql-column-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    padding: 20px;
+    background: #f6f0ff;
+    transition: all 0.2s;
+}
+
+.ql-column-card:hover {
+    border-color: #667eea;
+}
+
+.ql-column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.ql-column-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.ql-type-badge {
+    background: #2271b1;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.ql-column-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    font-size: 13px;
+    color: #666;
+}
+
+.ql-column-stats > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.ql-column-stats strong {
+    color: #1d2327;
+    margin-bottom: 4px;
+}
+
+.ql-sample-values {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.ql-sample-values strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.ql-sample-list {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #555;
+    background: white;
+    padding: 10px;
+    border-radius: 2px;
+}
+
+/* Empty State */
+.ql-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.ql-empty-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.ql-empty-state p {
+    font-size: 16px;
+    color: #666;
+}
+
+/* Loading */
+.ql-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.ql-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f0f0f1;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ql-dataset-detail {
+        padding: 20px 0px;
+    }
+
+    .ql-dataset-header h1 {
+        font-size: 24px;
+    }
+
+    .ql-dataset-meta-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ql-detail-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .ql-insights-filter {
+        flex-wrap: wrap;
+    }
+
+    .ql-actions-bar {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .ql-column-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
