@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!--
+  Browser embed using the QuantumLayers JavaScript Development Kit (JDK).
+
+  Loads QLAuth from the JDK for session-token handling (Option A —
+  "QL Session Token" — see docs/embedded-analytics.html#authentication),
+  then renders a chart by calling the ql_get_chart_data endpoint directly
+  and handing the returned Chart.js config straight to `new Chart()`.
+
+  This is the right starting point when your page already lives under
+  quantumlayers.com (or you control a flow that signs the user in on QL
+  first) and you want the same charts QL itself renders, without pulling
+  in the full QLAnalytics module and its page-specific DOM wiring.
+
+  See docs/embedded-analytics-jdk.html for the full JDK class/function
+  reference, and docs/embedded-analytics-api.html for the ql_get_chart_data
+  parameter reference (chart types, per-type params, response shape).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QuantumLayers — Browser Embed Example</title>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://quantumlayers.com/jdk/auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <h1>Dataset chart</h1>
+  <canvas id="ql-chart" width="600" height="320"></canvas>
+  <p id="ql-status">Loading…</p>
+
+  <script>
+    // Replace with the dataset you want to chart, and a chart type/column
+    // mapping valid for it (see the API guide's "Type-specific params" table).
+    const DATASET_ID = 42;
+    const CHART_TYPE = 'bar';
+    const CHART_PARAMS = {
+      category_column: 'product_category',
+      value_columns: ['revenue'], // jQuery serializes this as value_columns[]=revenue
+      aggregation: 'sum',
+    };
+
+    $(function () {
+      const token = QLAuth.getSessionToken();
+      if (!token) {
+        $('#ql-status').text('Not signed in to QuantumLayers — sign in first, then reload this page.');
+        return;
+      }
+
+      $.ajax({
+        url: 'https://quantumlayers.com/wp-admin/admin-ajax.php',
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token },
+        data: Object.assign(
+          { action: 'ql_get_chart_data', dataset_id: DATASET_ID, chart_type: CHART_TYPE },
+          CHART_PARAMS
+        ),
+      })
+        .done(function (res) {
+          if (!res.success) {
+            $('#ql-status').text('Error: ' + (res.data && res.data.error));
+            return;
+          }
+          // res.data is a ready-to-use Chart.js config (type + data + options).
+          new Chart(document.getElementById('ql-chart').getContext('2d'), res.data);
+          $('#ql-status').remove();
+        })
+        .fail(function (xhr) {
+          $('#ql-status').text('Request failed: ' + xhr.status);
+        });
+    });
+  </script>
+</body>
+</html>

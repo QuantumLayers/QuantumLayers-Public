@@ -1,0 +1,2190 @@
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"40px","right":"40px","bottom":"40px","left":"40px"},"margin":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50"}},"border":{"radius":"8px"},"color":{"background":"#1a1a1af0"}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group has-background" style="border-radius:8px;background-color:#1a1a1af0;margin-top:var(--wp--preset--spacing--50);margin-bottom:var(--wp--preset--spacing--50);padding-top:40px;padding-right:40px;padding-bottom:40px;padding-left:40px"><!-- wp:heading {"level":1,"style":{"color":{"text":"#ffffff"}}} -->
+<h1 class="wp-block-heading has-text-color" style="color:#ffffff">Embedded Analytics Developer Guide (API)</h1>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Version 0.4.4</strong> | Last Updated: June 2026</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">QuantumLayers exposes its chart data, statistical analysis, and AI insights through standard WordPress AJAX endpoints secured with Bearer token authentication. This guide explains how to pull live data from QuantumLayers into any page, without rebuilding the data pipeline.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">This guide assumes you already understand QL's authentication model and have Chart.js set up. If you haven't read it yet, start with <a href="https://quantumlayers.com/embedded-analytics" style="color:#7dd3fc">Embedded Analytics Developer Guide</a> for prerequisites, Chart.js setup, and a full walkthrough of all three authentication options with code examples.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}}} -->
+<h2 class="wp-block-heading has-text-color" style="color:#ffffff">Table of Contents</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list {"style":{"color":{"text":"#7dd3fc"}}} -->
+<ul style="color:#7dd3fc" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><a href="#authentication" style="color:#7dd3fc">Authentication Endpoints</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#analytics-charting">Analytics &amp; Charting Endpoints</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a style="color:#7dd3fc" href="#dataset-management">Dataset Management Endpoints</a> </li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#scheduled-reports-endpoints" style="color:#7dd3fc">Scheduled Reports Endpoints</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#organization-management" style="color:#7dd3fc">Organization Management Endpoints</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#utility-endpoints" style="color:#7dd3fc">Utility &amp; Connection Endpoints</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#ql-agent-endpoint" style="color:#7dd3fc">QL-Agent Endpoint</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#complete-example" style="color:#7dd3fc">Complete Code Example</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#chart-type-reference" style="color:#7dd3fc">Chart Type Quick Reference</a></li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"authentication"} -->
+<h2 id="authentication" class="wp-block-heading has-text-color" style="color:#ffffff">Authentication Endpoints</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Every AJAX request below (and every endpoint in the rest of this guide) must carry a <strong style="color:#9b87f5">Bearer token</strong> in the <code>Authorization</code> header. There are three ways to obtain that token — see <a href="https://quantumlayers.com/embedded-analytics#authentication" style="color:#7dd3fc">Authentication</a> in the developer guide for the concepts, trade-offs, and full JWT-minting code samples. This section only covers how to invoke the two authentication endpoints themselves.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}}} -->
+<h3 class="wp-block-heading has-text-color" style="color:#9b87f5">ql_third_party_signin</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Exchanges a third-party-signed HS256 JWT (<code>kid</code> header set to your registered <code>provider_id</code>) for a QL session token. Finds or creates a shadow user keyed on <code>provider_id + sub</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> none required — this endpoint issues the token.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong> <code>action=ql_third_party_signin</code>, <code>jwt</code> (string, required) — the signed JWT.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>curl -s -X POST https://quantumlayers.com/wp-admin/admin-ajax.php \
+     -d "action=ql_third_party_signin" \
+     --data-urlencode "jwt=$SIGNED_JWT"</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "session_token": "...", "user": { "email": "...", ... } }</code>. Use <code>session_token</code> as the Bearer token on all subsequent requests.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}}} -->
+<h3 class="wp-block-heading has-text-color" style="color:#9b87f5">Bearer token usage (session token or API token)</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Both the session token returned above and a long-lived API token created on the <strong style="color:#7dd3fc">API Tokens</strong> page are used identically — as an <code>Authorization: Bearer &lt;token&gt;</code> header on every request:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>curl -s -X POST https://quantumlayers.com/wp-admin/admin-ajax.php \
+     -H "Authorization: Bearer $TOKEN" \
+     -d "action=ql_get_dashboard_data"</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Note:</strong> <code>ql_try_auth()</code> allows unauthenticated access for public datasets; <code>ql_verify_auth()</code> requires a valid token and is used by all write and analysis endpoints — each endpoint below states which one it uses.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"analytics-charting"} -->
+<h2 id="analytics-charting" class="wp-block-heading has-text-color" style="color:#ffffff">Analytics &amp; Charting Endpoints</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">All analytics endpoints are reached via POST to <code>https://quantumlayers.com/wp-admin/admin-ajax.php</code> with the <code>action</code> field set as shown.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"endpoint-dataset"} -->
+<h3 id="endpoint-dataset" class="wp-block-heading has-text-color" style="color:#9b87f5">Dataset Metadata</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_dataset_detail</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Queries the <code>ql_datasets</code> table for the dataset record and <code>ql_dataset_columns</code> for its column schema. Access is checked via <code>ql_user_can_read_dataset()</code>, which allows access to datasets owned by the user or shared with their organisation. The column rows include pre-computed statistics (min, max, mean, stddev, distinct count, null count) calculated at upload time — these are the cheapest way to understand a dataset without loading raw rows.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>{
+  "dataset": {
+    "id": 42,
+    "name": "sales_2024",
+    "row_count": 15000,
+    "created_at": "2024-01-15 10:30:00"
+    // ... full ql_datasets row
+  },
+  "columns": &#91;
+    {
+      "col_name": "product_category",
+      "inferred_type": "string",   // string | integer | float | date | datetime
+      "col_index": 0,
+      "distinct_count": 8,
+      "null_count": 0,
+      "min_val": null,
+      "max_val": null,
+      "mean_val": null,
+      "stddev_val": null
+    }
+    // ... one object per column, ordered by col_index
+  ]
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"endpoint-charts"} -->
+<h3 id="endpoint-charts" class="wp-block-heading has-text-color" style="color:#9b87f5">Chart Data</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_chart_data</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Routes to a private method based on <code>chart_type</code>, then returns a complete Chart.js config object (type + data + options) ready to pass to <code>new Chart(ctx, data)</code>. All data is loaded from the raw dataset rows up to the plan row limit. Filters are applied in PHP before aggregation. Below is what each chart type actually does internally:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><strong style="color:#9b87f5">histogram</strong> — validates the column is numeric, loads raw values, auto-computes 20 equal-width bins using Sturges-style bin width (<code>(max−min)/20</code>), returns a <code>bar</code> chart config with bin ranges as labels and frequency counts as data.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">time_series / stacked_area</strong> — parses every value in <code>time_column</code> via <code>strtotime()</code>, sorts points chronologically, then optionally aggregates into calendar buckets (<code>interval</code>: day/week/month/year) using sum/avg/count/min/max. If <code>cumulative=1</code>, a running total is applied per series after aggregation. Gaps (null Y values) are preserved; Chart.js is instructed not to interpolate across them (<code>spanGaps: false</code>). Returns a <code>line</code> chart config; <code>stacked_area</code> sets <code>fill: true</code> on each dataset.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">bar / horizontal_bar</strong> — validates that <code>category_column</code> is either a string column or a numeric column with fewer distinct values than 10% of row count (i.e. categorical). Groups all rows by category, applies the chosen aggregation (sum/avg/count/min/max) across each <code>value_columns</code> entry, and returns a <code>bar</code> config (<code>indexAxis: 'y'</code> for horizontal).</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">pie / doughnut</strong> — groups by <code>category_column</code>, aggregates <code>value_column</code>, sorts descending, and trims to <code>limit</code> categories (default 10). Returns a <code>pie</code> or <code>doughnut</code> config with auto-assigned colours.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">scatter</strong> — loads raw <code>x_column</code> and <code>y_column</code> values as <code>{x, y}</code> point pairs. If <code>color_column</code> is provided, points are split into one dataset per distinct category value. If <code>size_column</code> is provided, the point radius is scaled proportionally to the column value.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">bubble</strong> — identical to scatter but always requires <code>size_column</code>; the radius (<code>r</code>) of each bubble is normalised to a 5–30 px range across the column's min/max.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">box_plot / violin</strong> — groups raw <code>y_column</code> values by the categories in <code>x_column</code>. Returns data in the format expected by <code>@sgratzl/chartjs-chart-boxplot</code>: arrays of raw values per group, from which the library computes quartiles, whiskers, and outlier dots client-side.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">heatmap</strong> — aggregates <code>z_column</code> for every unique <code>(x_column, y_column)</code> coordinate pair and returns a dataset in the matrix format required by <code>chartjs-chart-matrix</code>: an array of <code>{x, y, v}</code> objects.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">regression</strong> — delegates to <code>analytics.performLinearRegression()</code> (OLS, supports multiple predictors). Returns a bar chart of coefficients with error bars (±1 std error), colour-coded by p-value significance.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_try_auth()</code> — token optional for public datasets, required for private.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Common POST params (all chart types):</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>chart_type</code> (string, required) — see table below</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>filter_category_column</code> (string, optional) — column to filter rows by exact value</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>filter_category_value</code> (string, optional) — value to match in <code>filter_category_column</code></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>filter_date_column</code> (string, optional) — date column to range-filter</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>filter_date_from</code> / <code>filter_date_to</code> (string, optional) — ISO date bounds for the date filter</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Type-specific params:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"style":{"color":{"text":"#e0e0e0"}}} -->
+<figure class="wp-block-table"><table class="has-text-color has-fixed-layout" style="color:#e0e0e0"><thead><tr><th>chart_type</th><th>Additional POST params</th><th>Defaults</th></tr></thead><tbody><tr><td><code>bar</code></td><td><code>category_column</code>, <code>value_columns[]</code>, <code>aggregation</code></td><td>aggregation: <code>sum</code></td></tr><tr><td><code>horizontal_bar</code></td><td><code>category_column</code>, <code>value_columns[]</code>, <code>aggregation</code></td><td>aggregation: <code>sum</code></td></tr><tr><td><code>pie</code> / <code>doughnut</code></td><td><code>category_column</code>, <code>value_column</code>, <code>aggregation</code>, <code>limit</code></td><td>aggregation: <code>sum</code>, limit: <code>10</code></td></tr><tr><td><code>scatter</code></td><td><code>x_column</code>, <code>y_column</code>, <code>color_column</code> (opt), <code>size_column</code> (opt)</td><td>—</td></tr><tr><td><code>bubble</code></td><td><code>x_column</code>, <code>y_column</code>, <code>size_column</code>, <code>color_column</code> (opt)</td><td>—</td></tr><tr><td><code>box_plot</code> / <code>violin</code></td><td><code>x_column</code> (categories), <code>y_column</code> (values)</td><td>—</td></tr><tr><td><code>heatmap</code></td><td><code>x_column</code>, <code>y_column</code>, <code>z_column</code>, <code>aggregation</code></td><td>aggregation: <code>average</code></td></tr><tr><td><code>time_series</code></td><td><code>time_column</code>, <code>value_columns[]</code>, <code>aggregation</code>, <code>interval</code>, <code>cumulative</code></td><td>aggregation: <code>sum</code>, interval: <code>day</code>, cumulative: <code>0</code></td></tr><tr><td><code>stacked_area</code></td><td><code>time_column</code>, <code>value_columns[]</code>, <code>aggregation</code>, <code>interval</code></td><td>aggregation: <code>none</code>, interval: <code>day</code></td></tr><tr><td><code>histogram</code></td><td><code>column_name</code></td><td>—</td></tr><tr><td><code>regression</code></td><td><code>y_column</code>, <code>x_columns[]</code></td><td>—</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> A Chart.js config object you can pass directly to <code>new Chart(ctx, data)</code>. On error: <code>{ success: false, data: { error: "..." } }</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_recommended_charts</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Runs the full rule-based insight pipeline (same as <code>ql_get_insights</code> but without the AI call) and converts each insight into a chart candidate. Candidates are scored by <code>insight_score</code> (0–100), the top <code>max_charts</code> are kept, and actual Chart.js data is generated for each one via <code>generateChartData()</code>. Any candidate whose chart generation returns an error is silently dropped. The result is an opinionated, ranked list of charts that best reveal patterns in the data — useful for auto-populating a dashboard without any user configuration.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>max_charts</code> (int, optional, default: 20)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>selected_columns[]</code> (array of strings, optional) — restrict analysis to these columns</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>Filter params: same <code>filter_category_column/value</code> and <code>filter_date_*</code> as <code>ql_get_chart_data</code></li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>{
+  "charts": &#91;
+    {
+      "chart_type": "scatter",
+      "chart_data": { /* Chart.js config — pass directly to new Chart() */ },
+      "insight_score": 87,          // 0–100 relevance ranking
+      "reason": "Strong correlation (r=0.91) between price and revenue",
+      "params": { "x_column": "price", "y_column": "revenue" },
+      "metadata": {}
+    }
+    // ... up to max_charts entries, sorted by insight_score desc
+  ],
+  "analysis_summary": {
+    "total_columns": 12,
+    "numeric_columns": 7,
+    "categorical_columns": 4,
+    "datetime_columns": 1,
+    "candidates_evaluated": 43,
+    "filter_applied": false
+  }
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_save_chart</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Recursively sanitises the <code>chart_params</code> array and serialises it to JSON, then inserts a row into <code>ql_saved_charts</code> (columns: <code>dataset_id</code>, <code>user_id</code>, <code>chart_name</code>, <code>chart_type</code>, <code>chart_params</code>, <code>created_at</code>). The <code>chart_params</code> value is the exact set of type-specific params you would pass to <code>ql_get_chart_data</code> — store the params from a chart you already rendered and you can reconstruct it later without re-running analysis.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>chart_type</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>chart_params</code> (array, required) — the same type-specific params used in <code>ql_get_chart_data</code>, stored as JSON</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>chart_name</code> (string, optional) — human-readable label</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Chart saved successfully", "chart_id": 17 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_saved_charts</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Selects all rows from <code>ql_saved_charts</code> where <code>dataset_id</code> and <code>user_id</code> match, ordered newest-first. The <code>chart_params</code> field is a JSON string — parse it with <code>JSON.parse()</code> and pass the result directly to <code>ql_get_chart_data</code> to re-render the chart on demand.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong> <code>dataset_id</code> (int, required)</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>{
+  "charts": &#91;
+    {
+      "id": 17,
+      "dataset_id": 42,
+      "user_id": 5,
+      "chart_name": "Revenue by Category",
+      "chart_type": "bar",
+      "chart_params": "{\"category_column\":\"product_category\",\"value_columns\":&#91;\"revenue\"]}",
+      "created_at": "2024-03-01 14:22:00"
+    }
+  ]
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Note:</strong> <code>chart_params</code> is a JSON string. Parse it and pass to <code>ql_get_chart_data</code> to re-render the chart.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_delete_saved_chart</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Fetches the <code>ql_saved_charts</code> row by <code>chart_id</code> <strong style="color:#9b87f5">and</strong> <code>user_id</code> before deleting — a chart belonging to a different user returns a 404-style error even if the <code>chart_id</code> exists. This ownership check is the only authorisation gate; no dataset access check is performed.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong> <code>chart_id</code> (int, required)</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Chart deleted successfully" }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"endpoint-stats"} -->
+<h3 id="endpoint-stats" class="wp-block-heading has-text-color" style="color:#9b87f5">Statistical Analysis</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_statistical_summary</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Iterates every numeric column (<code>inferred_type</code> of <code>integer</code> or <code>float</code>) whose <code>distinct_count</code> exceeds 10% of the dataset's row count — this threshold filters out effectively categorical numerics like status codes or boolean flags. For each qualifying column, min/max/mean/std are read directly from the pre-computed <code>ql_dataset_columns</code> row (no raw-data load needed). The raw column values are then loaded once to compute median, Q1, Q3, skewness (third standardised moment), and kurtosis (fourth standardised moment minus 3 — i.e. excess kurtosis).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong> <code>dataset_id</code> (int, required)</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> array of per-column objects:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>&#91;
+  {
+    "column":   "revenue",
+    "type":     "float",
+    "count":    14850,   // non-null rows
+    "missing":  150,     // null count
+    "min":      0.99,
+    "max":      9999.0,
+    "mean":     312.45,
+    "std":      198.72,
+    "median":   265.10,
+    "q1":       124.00,
+    "q3":       478.50,
+    "skewness": 1.34,
+    "kurtosis": 2.87
+  }
+]</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_correlation_matrix</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Selects all continuous numeric columns (same 10%-distinct threshold as the statistical summary), loads their raw values, then computes the full Pearson r matrix in PHP. The result is cached as a WordPress transient for one hour — the cache key includes the dataset ID, so a second call within the hour returns instantly without reloading data. Requires at least two qualifying columns; returns an error otherwise. The cache is per-dataset (not per-user), so all users sharing a dataset see the same cached matrix.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong> <code>dataset_id</code> (int, required)</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>{
+  "columns": &#91;"price", "quantity", "revenue"],
+  "matrix": &#91;
+    &#91;1.0,   -0.12,  0.91],
+    &#91;-0.12,  1.0,   0.43],
+    &#91;0.91,   0.43,  1.0]
+  ],
+  "method": "pearson"
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><code>matrix[i][j]</code> is the Pearson r between <code>columns[i]</code> and <code>columns[j]</code>. Values range from −1 to 1.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_distribution_analysis</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Loads all non-null numeric values for the requested column, sorts them, and computes: mean, variance, std, range, IQR, full percentile set (p5/Q1/median/Q3/p95), skewness (third standardised moment), and excess kurtosis. Outliers are detected using the 1.5×IQR fence rule: values below <code>Q1 − 1.5×IQR</code> or above <code>Q3 + 1.5×IQR</code> are flagged. Up to 50 outlier values are returned in the response. Normality is classified as <code>approximately normal</code> (|skewness| &lt; 0.5 and |kurtosis| &lt; 0.5), <code>non-normal</code> (either exceeds 1), or <code>moderately skewed</code> otherwise. The column must be <code>integer</code> or <code>float</code>; string and date columns return an error.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong> <code>dataset_id</code> (int, required), <code>column_name</code> (string, required)</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>{
+  "column_name": "revenue",
+  "count":    14850,
+  "mean":     312.45,
+  "std":      198.72,
+  "variance": 39489.48,
+  "range":    9998.01,
+  "iqr":      354.50,
+  "percentiles": {
+    "min": 0.99, "p5": 12.50, "q1": 124.00,
+    "median": 265.10, "q3": 478.50, "p95": 720.00, "max": 9999.00
+  },
+  "skewness": 1.34,
+  "kurtosis": 2.87,
+  "normality": "non-normal",   // "approximately normal" | "moderately skewed" | "non-normal"
+  "outliers": {
+    "count": 312,
+    "percentage": 2.10,
+    "lower_fence": -407.75,
+    "upper_fence": 1010.25,
+    "values": &#91;1200.00, 1350.00]  // up to 50 outlier values
+  }
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_pca_analysis</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Selects continuous numeric columns (10%-distinct threshold), loads raw values, z-score standardises each column (subtract mean, divide by std), then builds the covariance matrix. Eigenvalues and eigenvectors are computed using the Power Iteration method implemented in PHP. Components are sorted by eigenvalue descending. The transformed data (PC scores) is capped at the first 1,000 rows in the response to limit payload size. Results are cached for one hour keyed by <code>dataset_id + n_components</code>. If <code>n_components</code> is less than 2 or omitted, all components are returned. Requires at least 2 qualifying columns and 10 rows.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>n_components</code> (int, optional) — number of components to return; if omitted or less than 2, defaults to the total number of eligible columns</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>{
+  "n_components": 3,
+  "feature_names": &#91;"price", "quantity", "revenue"],
+  "explained_variance":       &#91;4.21, 1.83, 0.96],
+  "explained_variance_ratio": &#91;0.60, 0.26, 0.14],
+  "cumulative_variance":      &#91;0.60, 0.86, 1.00],
+  "total_variance_explained": 1.00,
+  "components": &#91;&#91;...], &#91;...], &#91;...]],   // eigenvectors (loadings)
+  "transformed_data": &#91;                  // PC scores, first 1000 rows
+    &#91;2.31, -0.84, 0.12],
+    ...
+  ]
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_anova_analysis</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">For every pair of (categorical column × continuous numeric column), runs a one-way ANOVA: groups numeric values by category label, computes Sum of Squares Between (<code>SSB</code>) and Within (<code>SSW</code>), derives the F-statistic (<code>MSB/MSW</code>), and approximates the p-value using an incomplete beta function (no external statistics library). Additionally computes Cohen's d between the two groups with the largest pairwise mean difference, as a standardised effect-size measure. <code>eta_squared = SSB / (SSB + SSW)</code> gives the proportion of variance explained by the grouping. The <code>significance</code> label is derived from the p-value: <code>not_significant</code> (p ≥ 0.05), <code>moderately_significant</code> (p &lt; 0.05), <code>highly_significant</code> (p &lt; 0.01), or <code>insufficient_data</code> (fewer than 3 rows or fewer than 2 groups).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong> <code>dataset_id</code> (int, required)</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>{
+  "categorical_columns": &#91;"region", "product_category"],
+  "numerical_columns":   &#91;"revenue", "quantity"],
+  "sample_size": 14850,
+  "anova_matrix": {
+    "region": {
+      "revenue": {
+        "f_statistic":     18.43,
+        "p_value":         0.000021,
+        "confidence_level": 0.99998,
+        "significance":    "highly_significant",
+        // possible values: "insufficient_data" | "not_significant"
+        //   | "moderately_significant" | "highly_significant"
+        "df_between": 4,
+        "df_within":  14845,
+        "groups":     5,
+        "sample_size": 14850,
+        "ssb":  12450.3,
+        "ssw":  98231.7,
+        "msb":  3112.6,
+        "msw":  6.62,
+        "eta_squared":  0.112,   // effect size (0–1)
+        "cohens_d":     0.84,    // largest pairwise effect size
+        "cohens_d_groups": &#91;"North", "South"]
+      }
+    }
+  }
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"endpoint-ai"} -->
+<h3 id="endpoint-ai" class="wp-block-heading has-text-color" style="color:#9b87f5">AI Insights</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_insights</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Two-stage pipeline. <strong style="color:#9b87f5">Stage 1 — rule-based insights</strong> (always runs): nine parallel analyses each produce typed insight objects, which are merged into one list:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Correlation</strong> — flags strong Pearson r relationships (|r| &gt; threshold) between numeric columns.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">ANOVA</strong> — flags categorical columns that significantly explain variance in a numeric column (F-test p &lt; 0.05).</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Distribution</strong> — flags high skewness, excess kurtosis, and columns with a high outlier rate.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Temporal</strong> — detects monotonic trends and seasonality in date/time columns.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Regression</strong> — runs OLS on numeric column pairs and surfaces strong predictive relationships.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Categorical</strong> — measures distribution entropy per categorical column; flags highly imbalanced or highly uniform distributions.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Categorical relationships</strong> — runs chi-square tests between pairs of categorical columns to detect non-independence.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Cross-correlation</strong> — detects lagged relationships between time series; first runs an ADF stationarity test and differences non-stationary series before computing cross-correlation.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Multicollinearity (VIF)</strong> — computes Variance Inflation Factor for each numeric column; flags predictors with VIF above threshold as redundant.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">All insights that carry a p-value in their <code>metadata</code> are then subjected to <strong style="color:#9b87f5">Benjamini-Hochberg FDR correction</strong> at α = 0.05, removing insights that become non-significant after accounting for multiple comparisons. The surviving insights are sorted by <code>importance</code> descending and truncated to <code>max_insights</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Stage 2 — AI holistic analysis</strong> (runs only if an Anthropic or OpenAI key is configured and the user's monthly token budget is not exhausted): compiles a dataset context object (column stats, top rule-based insights, top 5 chart candidates) and sends it to <code>ql_call_llm()</code> with a 4,000-token budget and the system prompt <em>"You are an expert data analyst who provides clear, actionable insights for business users."</em> If a <code>user_prompt</code> is supplied, it is appended to steer the analysis. The AI response is prepended to the insight array as a <code>holistic_analysis</code> type object with <code>importance: 100</code>. If the token budget is exceeded, a warning insight is prepended instead and the AI call is skipped.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>selected_columns[]</code> (array, optional) — restrict insights to these columns</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>max_insights</code> (int, optional) — capped at the plan limit; defaults to plan maximum</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>user_prompt</code> (string, optional) — freeform question or instruction passed to the AI for the holistic analysis</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>include_ai</code> (bool, optional) — defaults to <code>true</code>. Set to <code>false</code> to skip Stage 2 (AI holistic analysis) entirely and return only the rule-based statistical insights, saving tokens.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>Filter params: <code>filter_category_column</code>, <code>filter_category_value</code>, <code>filter_date_column</code>, <code>filter_date_from</code>, <code>filter_date_to</code></li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>{
+  "insights": &#91;
+    {
+      "type":       "holistic_analysis",  // or "correlation" | "distribution" | "outlier" | etc.
+      "severity":   "info",              // "info" | "warning" | "critical"
+      "importance": 95,                  // 0–100 sort key
+      "title":      "Holistic Dataset Analysis",
+      "message":    "Revenue is strongly driven by region...",
+      "ai_analysis": "## Key Findings\n...",  // markdown; null for rule-based insights
+      "recommendation": "Focus acquisition spend on the North region.",
+      "chart_suggestion": null           // chart_type string or null
+    }
+  ],
+  "generated_at": "2024-04-25 12:00:00",
+  "count": 14
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Note:</strong> The first element is the AI holistic insight (if AI is configured and the token budget is not exhausted). Remaining elements are rule-based insights sorted by <code>importance</code> descending.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"dataset-management"} -->
+<h2 id="dataset-management" class="wp-block-heading has-text-color" style="color:#ffffff">Dataset Management Endpoints</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">These endpoints create, update, sync, and delete datasets. Every source type (CSV upload, SQL, REST API, SFTP, Google Sheets, and merged) has its own set of handlers. All write operations use <code>ql_verify_auth()</code> and check dataset ownership via <code>ql_user_can_write_dataset()</code> before acting. The <code>visibility</code> parameter is accepted by all create/update handlers and must be one of <code>private</code>, <code>public</code>, <code>org</code>, or <code>group</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"dm-list"} -->
+<h3 id="dm-list" class="wp-block-heading has-text-color" style="color:#9b87f5">Listing Datasets</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_get_dashboard_data</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Returns all datasets owned by the authenticated user, ordered newest-first. This is the natural starting point for any integration: call it once to discover which dataset IDs you want to pass to the analytics, charting, and insight endpoints.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required. <strong style="color:#9b87f5">POST params:</strong> none.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>{
+  "user": {
+    "id": 5,
+    "email": "jane@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "role": "user",
+    "auth_provider": "email"
+  },
+  "datasets": &#91;
+    {
+      "id": 42,
+      "name": "sales_2024",
+      "source_type": "upload",   // "upload" | "db" | "api" | "sftp" | "google_sheet" | "merged"
+      "status": "ready",         // "ready" | "processing" | "failed"
+      "row_count": 15000,
+      "visibility": "private",   // "private" | "public" | "org" | "group"
+      "created_at": "2024-01-15 10:30:00"
+      // ... full ql_datasets row
+    }
+  ],
+  "datasets_count": 7
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"dm-csv"} -->
+<h3 id="dm-csv" class="wp-block-heading has-text-color" style="color:#9b87f5">CSV Upload</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_upload_dataset</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Creates a new dataset from a CSV file upload. The file is validated against an allowlist of MIME types (<code>text/csv</code>, <code>text/plain</code>, <code>application/csv</code>, <code>application/vnd.ms-excel</code>) using <code>finfo</code> — not just the file extension. File size is checked against the plan limit before the file is moved. The file is saved to <code>wp-uploads/quantumlayers/&lt;dataset_id&gt;_&lt;timestamp&gt;.csv</code> and its SHA-256 checksum stored in <code>ql_dataset_files</code>. The dataset row is created with <code>status = 'processing'</code> and then <code>ql_process_csv_file()</code> is called synchronously: it reads the CSV header to detect column names, samples rows to infer types (integer/float/string/date/datetime), and computes per-column statistics (min, max, mean, stddev, distinct count, null count) stored in <code>ql_dataset_columns</code>. The status is set to <code>ready</code> on success.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code>. <strong style="color:#9b87f5">Request type:</strong> <code>multipart/form-data</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>csv_file</code> (file, required) — the CSV file</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>dataset_name</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>visibility</code> (string, optional, default: <code>private</code>)</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Upload successful!", "dataset_id": 42, "dataset_name": "sales_2024" }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_update_upload_dataset</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Updates metadata and/or replaces the CSV data for an existing <code>source_type = 'upload'</code> dataset. Rejects datasets of other source types with an explicit error. If a new <code>csv_file</code> is included it is processed via the shared <code>ql_process_uploaded_csv()</code> helper, which replaces the stored file, re-runs column analysis, and updates <code>ql_dataset_columns</code> and <code>row_count</code>. Metadata changes (<code>dataset_name</code>, <code>visibility</code>) and CSV replacement can be combined in a single call — the response message describes which operations occurred.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check. <strong style="color:#9b87f5">Request type:</strong> <code>multipart/form-data</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>dataset_name</code> (string, optional)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>visibility</code> (string, optional)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>csv_file</code> (file, optional) — if provided, replaces the dataset's data</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "...", "row_count": 15000 }</code> (<code>row_count</code> present only when a CSV was processed).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_resync_upload_dataset</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Replaces a CSV upload dataset's data with a newly uploaded file, without changing any metadata. Equivalent to <code>ql_update_upload_dataset</code> with only a <code>csv_file</code> and no metadata fields. A convenience endpoint for sync-only workflows.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check. <strong style="color:#9b87f5">Request type:</strong> <code>multipart/form-data</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>csv_file</code> (file, required)</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "success": true, "message": "...", "row_count": 15000 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"dm-sql"} -->
+<h3 id="dm-sql" class="wp-block-heading has-text-color" style="color:#9b87f5">SQL Database</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_connect_sql_database</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Creates a live SQL-backed dataset. Supported <code>db_type</code> values are <code>mysql</code> and <code>postgresql</code>. The connection is tested via <code>ql_test_database_connection()</code> before any database rows are written — a failed test returns an error immediately. On success: a <code>ql_datasets</code> row is created with <code>source_type = 'db'</code>, the password is encrypted with <code>ql_encrypt_credential()</code> and stored in <code>ql_sql_connections</code>, then <code>ql_sync_sql_connection()</code> executes <code>sql_query</code> against the remote database, streams the result set into QL's internal storage, and runs full column analysis. The default port is 3306 for MySQL and 5432 for PostgreSQL if omitted.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_name</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>db_type</code> (string, required) — <code>mysql</code> or <code>postgresql</code></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>host</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>port</code> (int, optional) — defaults to 3306 / 5432</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>database</code> (string, required) — database/schema name</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>username</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>password</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>sql_query</code> (string, required) — the SELECT query whose result set becomes the dataset</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>visibility</code> (string, optional)</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Database connected successfully", "dataset_id": 42, "connection_id": 7, "rows_fetched": 5000 }</code>. If the initial sync fails but the connection was stored, a <code>"warning": true</code> flag is added and <code>rows_fetched</code> is omitted.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_update_sql_connection</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Updates credentials, query, or metadata for an existing SQL connection. Identified by <code>connection_id</code>. Any field can be omitted to leave it unchanged; if a new <code>password</code> is supplied it is re-encrypted. Does not re-sync data — call <code>ql_resync_connection</code> after updating to pull fresh data.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check on <code>connection_id</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>connection_id</code> (int, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>dataset_name</code>, <code>db_type</code>, <code>host</code>, <code>port</code>, <code>database_name</code>, <code>username</code>, <code>password</code>, <code>sql_query</code>, <code>visibility</code> (all optional)</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Connection updated successfully" }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"dm-api"} -->
+<h3 id="dm-api" class="wp-block-heading has-text-color" style="color:#9b87f5">REST API</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_connect_api</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Creates a dataset backed by a REST API endpoint. The URL is validated with a scheme check (<code>http://</code> or <code>https://</code>) rather than <code>FILTER_VALIDATE_URL</code> to support URLs with colons in path segments (e.g. GA4's <code>/properties/123:runReport</code>). A live connection test is performed before any rows are written. The API key is encrypted with <code>ql_encrypt_credential()</code>. Supports OAuth2: if a <code>refresh_token</code> is provided, QL stores it and automatically refreshes the access token when it is within 5 minutes of expiry at sync time. Custom <code>request_headers</code> are stored as a JSON string and merged with the default <code>Authorization</code> and <code>Accept: application/json</code> headers on every sync. <code>response_path</code> is a dot-notation path into the JSON response used to locate the array of records (e.g. <code>data.items</code>).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_name</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>api_url</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>http_method</code> (string, optional) — <code>GET</code> (default) or <code>POST</code></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>api_key</code> (string, optional) — sent as <code>Authorization: Bearer &lt;key&gt;</code></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>request_headers</code> (JSON string or array, optional) — extra headers merged at sync time</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>request_body</code> (string, optional) — raw body for POST requests; sets <code>Content-Type: application/json</code></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>response_path</code> (string, optional) — dot-notation path to the records array in the JSON response</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>refresh_token</code> (string, optional) — OAuth2 refresh token</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>oauth_provider_name</code> (string, optional)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>oauth_scope</code> (string, optional)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>visibility</code> (string, optional)</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "API connected successfully", "dataset_id": 42, "connection_id": 9, "rows_fetched": 1200 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_update_api_connection</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Updates credentials, headers, URL, or metadata for an existing API connection identified by <code>connection_id</code>. Any field can be omitted to leave it unchanged. Does not re-sync — call <code>ql_resync_connection</code> afterwards.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check. <strong style="color:#9b87f5">POST params:</strong> <code>connection_id</code> (required) + any subset of the fields accepted by <code>ql_connect_api</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"dm-sftp"} -->
+<h3 id="dm-sftp" class="wp-block-heading has-text-color" style="color:#9b87f5">SFTP</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_create_sftp_connection</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Creates a dataset backed by a file on an SFTP server. Supports password auth or private key auth — at least one must be supplied. Both credentials are encrypted with <code>ql_encrypt_credential()</code> before storage. A live connection test (<code>ql_sftp_test_connection()</code>) is performed first; if it fails no rows are written. On success, <code>ql_sftp_sync_dataset()</code> downloads the file at <code>remote_path/filename</code>, processes it as a CSV, and runs full column analysis. The dataset is created with <code>source_type = 'sftp'</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_name</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>host</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>port</code> (int, optional, default: 22)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>username</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>password</code> (string, optional) — required if <code>private_key</code> not provided</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>private_key</code> (string, optional) — PEM private key; required if <code>password</code> not provided</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>remote_path</code> (string, required) — directory path on the SFTP server</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>filename</code> (string, required) — filename within <code>remote_path</code></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>visibility</code> (string, optional)</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "dataset_id": 42, "connection_id": 3, "rows_fetched": 8000 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_update_sftp_connection</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Updates host, credentials, remote path, filename, or metadata for an existing SFTP connection. Any field can be omitted. Does not re-sync — call <code>ql_sync_sftp_dataset</code> after updating.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check. <strong style="color:#9b87f5">POST params:</strong> <code>connection_id</code> (required) + any subset of <code>ql_create_sftp_connection</code> fields.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_sync_sftp_dataset</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Triggers an immediate re-download and re-import of the file from the SFTP server for an existing SFTP connection. Decrypts stored credentials, opens the SSH connection, downloads the file, replaces the stored CSV data, and re-runs column analysis.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check. <strong style="color:#9b87f5">POST params:</strong> <code>connection_id</code> (int, required).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Dataset synced successfully", "row_count": 8500 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_delete_sftp_connection</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Deletes an SFTP connection record. Pass <code>delete_dataset: true</code> to also drop the associated dataset and its data table.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check. <strong style="color:#9b87f5">POST params:</strong> <code>connection_id</code> (int, required), <code>delete_dataset</code> (bool, optional).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Connection deleted successfully" }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"dm-google"} -->
+<h3 id="dm-google" class="wp-block-heading has-text-color" style="color:#9b87f5">Google Sheets</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_connect_google_sheet</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Creates a dataset backed by a Google Sheet. Requires an OAuth2 <code>access_token</code> obtained via the Google Picker flow (scope: <code>drive.file</code>). Because <code>drive.file</code> tokens are rejected by the Sheets API, QL uses the <strong style="color:#9b87f5">Drive API export endpoint</strong> (<code>/export?mimeType=text/csv</code>) to download the sheet as CSV. A connection test is performed before writing any rows. The access token is stored in plaintext in <code>ql_google_sheet_connections</code> and a 1-hour expiry is calculated; at sync time, if the token is within 1 hour of expiry, <code>ql_refresh_google_token()</code> is called automatically using the stored <code>refresh_token</code>. If <code>range_notation</code> is omitted, the entire sheet is imported.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>spreadsheet_id</code> (string, required) — Google Sheets spreadsheet ID</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>access_token</code> (string, required) — current OAuth2 access token</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>connection_name</code> (string, optional, default: <code>"Google Sheet Connection"</code>) — becomes the dataset name</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>sheet_name</code> (string, optional, default: <code>"Sheet1"</code>)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>range_notation</code> (string, optional) — A1 notation range, e.g. <code>A1:F500</code></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>refresh_token</code> (string, optional)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>visibility</code> (string, optional)</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Google Sheets connected successfully", "dataset_id": 42, "connection_id": 5 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_update_google_sheet_connection</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Updates the spreadsheet ID, sheet name, range, tokens, or dataset metadata for an existing Google Sheet connection. Any field can be omitted. Does not re-sync — call <code>ql_resync_connection</code> after updating.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check. <strong style="color:#9b87f5">POST params:</strong> <code>connection_id</code> (required) + any subset of <code>ql_connect_google_sheet</code> fields.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"dm-kaggle"} -->
+<h3 id="dm-kaggle" class="wp-block-heading has-text-color" style="color:#9b87f5">Kaggle</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Connect directly to a public or private Kaggle dataset using your Kaggle credentials. QuantumLayers calls the Kaggle API v1 download endpoint, receives a ZIP archive, extracts the first CSV file it finds, and processes it the same way as a regular upload — running column type inference and computing per-column statistics. The connection is stored internally as an API connection, so <code>ql_update_api_connection</code> can be used to update credentials or metadata, and <code>ql_resync_connection</code> (or the dedicated sync below) triggers a fresh download.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_connect_kaggle</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Creates a new dataset by downloading a Kaggle dataset. <code>kaggle_owner</code> and <code>kaggle_dataset</code> are the two slug segments in the Kaggle dataset URL — e.g. for <code>kaggle.com/datasets/acmecorp/sales-data</code> the owner is <code>acmecorp</code> and the dataset is <code>sales-data</code>. The API key is your Kaggle account API token (found under Account → API in your Kaggle profile).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_name</code> (string, required) — name for the dataset in QuantumLayers</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>kaggle_username</code> (string, required) — your Kaggle account username</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>kaggle_api_key</code> (string, required) — your Kaggle API key</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>kaggle_owner</code> (string, required) — the dataset owner slug from the Kaggle URL</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>kaggle_dataset</code> (string, required) — the dataset slug from the Kaggle URL</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>visibility</code> (string, optional, default: <code>private</code>)</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Kaggle dataset connected successfully", "dataset_id": 42, "connection_id": 11, "rows": 8000 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_sync_kaggle_dataset</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Re-downloads the Kaggle dataset ZIP using the stored credentials, extracts the first CSV, replaces the stored data, and re-runs column analysis. Use this to pull an updated version of the Kaggle dataset on demand.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check. <strong style="color:#9b87f5">POST params:</strong> <code>dataset_id</code> (int, required).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "success": true, "row_count": 8500 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_update_kaggle_dataset</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Updates the Kaggle connection metadata (name, owner/dataset slugs, visibility, optionally new credentials) and immediately re-syncs the dataset. Omit <code>kaggle_username</code> and <code>kaggle_api_key</code> to keep the existing stored credentials.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check. <strong style="color:#9b87f5">POST params:</strong> <code>dataset_id</code> (required), <code>dataset_name</code> (required), <code>kaggle_owner</code> (required), <code>kaggle_dataset</code> (required), <code>kaggle_username</code> (optional), <code>kaggle_api_key</code> (optional), <code>visibility</code> (optional).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "success": true, "row_count": 8500 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"dm-merged"} -->
+<h3 id="dm-merged" class="wp-block-heading has-text-color" style="color:#9b87f5">Merged Datasets</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_create_merged_dataset</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Joins two or more existing datasets on shared columns and materialises the result as a new dataset with <code>source_type = 'merged'</code>. Requires at least 2 datasets. The first dataset in the array is the base; each subsequent entry specifies a join column (which must exist in that dataset) and a join type. Joins are chained left-to-right: dataset 2 joins onto dataset 1, dataset 3 joins onto the result of that join, and so on. Join records are stored in <code>ql_dataset_joins</code>. After the join records are created, <code>ql_build_merged_columns()</code> reads the column schemas of all source datasets and writes the merged column schema. The actual row data is assembled at query time from the source datasets — no copy of the rows is stored. Always created as <code>visibility = 'private'</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>// POST body
+{
+  "name": "Sales + Customers",
+  "datasets": &#91;
+    { "dataset_id": 10 },                                     // base (no join needed)
+    { "dataset_id": 11, "join_column": "customer_id", "join_type": "inner" },
+    { "dataset_id": 12, "join_column": "customer_id", "join_type": "left" }
+  ]
+}
+// join_type: "inner" | "left" | "right" | "outer"</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "success": true, "dataset_id": 55 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_update_merged_dataset</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Replaces the name and entire join configuration of an existing merged dataset. All existing <code>ql_dataset_joins</code> rows for the dataset are deleted and re-created from the new <code>datasets</code> array using the same chaining logic as <code>ql_create_merged_dataset</code>. The underlying source data is not touched.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required) — must be a <code>source_type = 'merged'</code> dataset</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>name</code> (string, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>datasets</code> (array, required) — same structure as <code>ql_create_merged_dataset</code></li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Merged dataset updated successfully" }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"dm-common"} -->
+<h3 id="dm-common" class="wp-block-heading has-text-color" style="color:#9b87f5">Common Operations</h3>
+<!-- /wp:heading -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_resync_connection</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Re-fetches data from the remote source for any connected dataset (<code>source_type</code> of <code>db</code>, <code>api</code>, or <code>google_sheet</code>). Looks up the connection record for the dataset's source type, then delegates to the appropriate sync function: <code>ql_sync_sql_connection()</code>, <code>ql_sync_api_connection()</code>, or <code>ql_sync_google_sheet_connection()</code>. For Google Sheets, optional fresh <code>access_token</code> / <code>refresh_token</code> values can be passed in the same request to update tokens before syncing.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + ownership check.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>access_token</code> (string, optional) — Google Sheets only</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>refresh_token</code> (string, optional) — Google Sheets only</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Data synced successfully", "row_count": 5200 }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_delete_dataset</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Permanently deletes a dataset and all associated data. Access is checked via <code>ql_user_can_write_dataset()</code>. Deletion cascades through every related table in order: physical CSV files are deleted from <code>wp-uploads/quantumlayers/</code> first, then rows are removed from <code>ql_dataset_files</code>, <code>ql_dataset_columns</code>, <code>ql_dataset_joins</code>, <code>ql_google_sheet_connections</code>, <code>ql_api_connections</code>, <code>ql_sql_connections</code>, <code>ql_sftp_connections</code>, and finally <code>ql_datasets</code>. Saved charts and insights for the dataset are also removed. This operation is irreversible.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + <code>ql_user_can_write_dataset()</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Dataset deleted successfully" }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_set_dataset_visibility</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Changes the visibility of any dataset. Also registered as <code>ql_toggle_dataset_privacy</code> for backward compatibility. Accepts the modern <code>visibility</code> string parameter or the legacy <code>is_public</code> boolean (0 = private, 1 = public); if both are sent, <code>visibility</code> takes precedence. Access is checked via <code>ql_user_can_write_dataset()</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> + <code>ql_user_can_write_dataset()</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>dataset_id</code> (int, required)</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>visibility</code> (string) — <code>private</code> | <code>public</code> | <code>org</code> | <code>group</code></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>is_public</code> (int, legacy) — <code>0</code> = private, <code>1</code> = public; ignored if <code>visibility</code> is present</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "message": "Visibility updated to public" }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"scheduled-reports-endpoints"} -->
+<h2 id="scheduled-reports-endpoints" class="wp-block-heading has-text-color" style="color:#ffffff">Scheduled Reports Endpoints</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Scheduled reports automatically generate PDF or HTML summaries of your datasets and email them to recipients on a recurring schedule. All endpoints require authentication.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"sr-list"} -->
+<h3 id="sr-list" class="wp-block-heading has-text-color" style="color:#9b87f5">List Reports</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_get_scheduled_reports</code><br><strong style="color:#9b87f5">Params:</strong> none</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_scheduled_reports' });
+// res.data.reports — array of report objects
+// res.data.count   — total count</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong> <code>{ "reports": [{ "id", "report_name", "frequency", "schedule_time", "timezone", "recipients", "format", "is_active", "next_run", "last_run" }], "count": N }</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"sr-create"} -->
+<h3 id="sr-create" class="wp-block-heading has-text-color" style="color:#9b87f5">Create Report</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_create_scheduled_report</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"hasFixedLayout":false,"style":{"color":{"text":"#e0e0e0"}}} -->
+<figure class="wp-block-table"><table class="has-text-color" style="color:#e0e0e0"><thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>report_name</code></td><td>string</td><td>Display name for the report</td></tr><tr><td><code>frequency</code></td><td>string</td><td><code>daily</code>, <code>weekly</code>, <code>monthly</code>, or <code>custom</code></td></tr><tr><td><code>schedule_time</code></td><td>string</td><td>Time in <code>HH:MM:SS</code> format (UTC unless timezone set)</td></tr><tr><td><code>timezone</code></td><td>string</td><td>IANA timezone, e.g. <code>America/New_York</code></td></tr><tr><td><code>schedule_day_of_week</code></td><td>int</td><td>0–6 (Sun–Sat); used when frequency is <code>weekly</code></td></tr><tr><td><code>schedule_day_of_month</code></td><td>int</td><td>1–31; used when frequency is <code>monthly</code></td></tr><tr><td><code>recipients</code></td><td>string</td><td>Comma-separated email addresses</td></tr><tr><td><code>format</code></td><td>string</td><td><code>pdf</code>, <code>html</code>, or <code>both</code></td></tr><tr><td><code>datasets</code></td><td>JSON</td><td>Array of dataset config objects (see below)</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Each object in the <code>datasets</code> array supports these fields:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"hasFixedLayout":false,"style":{"color":{"text":"#e0e0e0"}}} -->
+<figure class="wp-block-table"><table class="has-text-color" style="color:#e0e0e0"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>dataset_id</code></td><td>int</td><td>Required. Dataset to include</td></tr><tr><td><code>include_insights</code></td><td>bool</td><td>Generate AI insights for this dataset</td></tr><tr><td><code>include_suggested_charts</code></td><td>bool</td><td>Auto-generate chart suggestions</td></tr><tr><td><code>suggested_chart_count</code></td><td>int</td><td>Number of charts to suggest (default 3)</td></tr><tr><td><code>saved_chart_ids</code></td><td>array</td><td>IDs of saved charts to include</td></tr><tr><td><code>insight_columns</code></td><td>array</td><td>Columns to focus AI insights on</td></tr><tr><td><code>insight_filter_column</code></td><td>string</td><td>Column name to filter data before insights</td></tr><tr><td><code>insight_filter_value</code></td><td>string</td><td>Value to match in the filter column</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({
+    action: 'ql_create_scheduled_report',
+    report_name: 'Weekly Sales Summary',
+    frequency: 'weekly',
+    schedule_time: '08:00:00',
+    timezone: 'America/New_York',
+    schedule_day_of_week: 1,   // Monday
+    recipients: 'alice@example.com,bob@example.com',
+    format: 'pdf',
+    datasets: JSON.stringify(&#91;{
+        dataset_id: 42,
+        include_insights: true,
+        include_suggested_charts: true,
+        suggested_chart_count: 3,
+    }]),
+});
+// res.data.report_id — ID of the new report
+// res.data.next_run  — ISO timestamp of the first scheduled run</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"sr-update"} -->
+<h3 id="sr-update" class="wp-block-heading has-text-color" style="color:#9b87f5">Update Report</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_update_scheduled_report</code><br>Send <code>report_id</code> plus any subset of the fields from <strong>Create Report</strong> that you want to change.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({
+    action: 'ql_update_scheduled_report',
+    report_id: 7,
+    recipients: 'newteam@example.com',
+    format: 'both',
+});
+// res.data.message — confirmation string</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"sr-delete"} -->
+<h3 id="sr-delete" class="wp-block-heading has-text-color" style="color:#9b87f5">Delete Report</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_delete_scheduled_report</code><br><strong style="color:#9b87f5">Params:</strong> <code>report_id</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_delete_scheduled_report', report_id: 7 });
+// res.data.message — "Report deleted successfully"</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"sr-details"} -->
+<h3 id="sr-details" class="wp-block-heading has-text-color" style="color:#9b87f5">Get Report Details</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_get_report_details</code><br><strong style="color:#9b87f5">Params:</strong> <code>report_id</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_report_details', report_id: 7 });
+// res.data.report      — report metadata object
+// res.data.datasets    — array of dataset configs attached to this report
+// res.data.executions  — recent execution history (status, sent_at, error)</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"sr-run-now"} -->
+<h3 id="sr-run-now" class="wp-block-heading has-text-color" style="color:#9b87f5">Run Report Now</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_run_report_now</code><br><strong style="color:#9b87f5">Params:</strong> <code>report_id</code><br>Triggers an immediate out-of-schedule execution and emails the recipients.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_run_report_now', report_id: 7 });
+// res.data.message      — "Report queued for immediate execution"
+// res.data.execution_id — ID of the execution record created</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"sr-toggle"} -->
+<h3 id="sr-toggle" class="wp-block-heading has-text-color" style="color:#9b87f5">Toggle Report Status</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_toggle_report_status</code><br><strong style="color:#9b87f5">Params:</strong> <code>report_id</code>, <code>is_active</code> (<code>1</code> to enable, <code>0</code> to pause)</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_toggle_report_status', report_id: 7, is_active: 0 });
+// res.data.message   — "Report paused"
+// res.data.is_active — 0 or 1</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"organization-management"} -->
+<h2 id="organization-management" class="wp-block-heading has-text-color" style="color:#ffffff">Organization Management Endpoints</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Organizations allow multiple users to share datasets and collaborate under a single subscription. Seats are billed through Paddle; adding or removing members automatically adjusts the seat quantity. All endpoints require authentication; admin-level operations additionally require that the caller holds an <code>admin</code> or <code>manager</code> role within the org.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"org-list"} -->
+<h3 id="org-list" class="wp-block-heading has-text-color" style="color:#9b87f5">List My Organizations</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_get_my_organizations</code><br><strong style="color:#9b87f5">Params:</strong> none</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_my_organizations' });
+// res.data.organizations — array of org objects (id, name, role, license_type, max_users, …)
+// res.data.count         — total count</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"org-create"} -->
+<h3 id="org-create" class="wp-block-heading has-text-color" style="color:#9b87f5">Create Organization</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_create_organization</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"hasFixedLayout":false,"style":{"color":{"text":"#e0e0e0"}}} -->
+<figure class="wp-block-table"><table class="has-text-color" style="color:#e0e0e0"><thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>name</code></td><td>string</td><td>Organization display name</td></tr><tr><td><code>license_type</code></td><td>string</td><td><code>startup</code> or <code>enterprise</code></td></tr><tr><td><code>max_users</code></td><td>int</td><td>Maximum number of seats</td></tr><tr><td><code>billing_email</code></td><td>string</td><td>Email used for Paddle billing</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({
+    action: 'ql_create_organization',
+    name: 'Acme Analytics',
+    license_type: 'startup',
+    max_users: 10,
+    billing_email: 'billing@acme.com',
+});
+// res.data.organization            — created org object
+// res.data.checkout_url            — Paddle checkout URL to complete billing
+// res.data.checkout_transaction_id — Paddle transaction ID</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"org-get"} -->
+<h3 id="org-get" class="wp-block-heading has-text-color" style="color:#9b87f5">Get Organization</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_get_organization</code><br><strong style="color:#9b87f5">Params:</strong> <code>organization_id</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_organization', organization_id: 3 });
+// res.data.organization — org object with metadata and seat counts</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"org-update"} -->
+<h3 id="org-update" class="wp-block-heading has-text-color" style="color:#9b87f5">Update Organization</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_update_organization</code><br>Send <code>organization_id</code> plus any subset of <code>name</code>, <code>license_type</code>, <code>max_users</code>, <code>billing_email</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({
+    action: 'ql_update_organization',
+    organization_id: 3,
+    name: 'Acme Data Team',
+    max_users: 20,
+});
+// res.data.message      — confirmation
+// res.data.organization — updated org object</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"org-delete"} -->
+<h3 id="org-delete" class="wp-block-heading has-text-color" style="color:#9b87f5">Delete Organization</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_delete_organization</code><br><strong style="color:#9b87f5">Params:</strong> <code>organization_id</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_delete_organization', organization_id: 3 });
+// res.data.message — "Organization deleted successfully"</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"org-members"} -->
+<h3 id="org-members" class="wp-block-heading has-text-color" style="color:#9b87f5">Member Management</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">List members</strong> — <code>ql_get_organization_members</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({
+    action: 'ql_get_organization_members',
+    organization_id: 3,
+    include_inactive: 'true',  // optional — include removed members
+});
+// res.data.members — array of { user_id, email, role, is_active, joined_at }
+// res.data.count   — total</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Add member</strong> — <code>ql_add_organization_member</code><br>Role must be one of <code>member</code>, <code>admin</code>, or <code>manager</code>. The seat count is synced to Paddle automatically.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({
+    action: 'ql_add_organization_member',
+    organization_id: 3,
+    user_email: 'alice@example.com',
+    role: 'member',
+});
+// res.data.message — "Member added successfully"
+// res.data.user    — { user_id, email, role }</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Remove member</strong> — <code>ql_remove_organization_member</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({
+    action: 'ql_remove_organization_member',
+    organization_id: 3,
+    user_id: 99,
+});
+// res.data.message — "Member removed successfully"</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Update role</strong> — <code>ql_update_member_role</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({
+    action: 'ql_update_member_role',
+    organization_id: 3,
+    user_id: 99,
+    role: 'admin',
+});
+// res.data.message — "Role updated successfully"</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"org-billing"} -->
+<h3 id="org-billing" class="wp-block-heading has-text-color" style="color:#9b87f5">Billing History</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_get_organization_billing</code><br><strong style="color:#9b87f5">Params:</strong> <code>organization_id</code>, <code>limit</code> (optional, default 12)</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({
+    action: 'ql_get_organization_billing',
+    organization_id: 3,
+    limit: 12,
+});
+// res.data.billing_history — array of { amount, currency, status, billed_at }
+// res.data.count           — total records returned</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"utility-endpoints"} -->
+<h2 id="utility-endpoints" class="wp-block-heading has-text-color" style="color:#ffffff">Utility &amp; Connection Endpoints</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">These endpoints cover auth introspection, user profile, subscription limits, connection metadata, merged-dataset internals, and template lookups. All require a valid Bearer token unless noted otherwise.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"util-check-auth"} -->
+<h3 id="util-check-auth" class="wp-block-heading has-text-color" style="color:#9b87f5">Check Auth</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_check_auth</code><br><strong style="color:#9b87f5">Params:</strong> none — always succeeds (never returns an HTTP error). Returns <code>logged_in: false</code> when the token is missing or invalid instead of an error response.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_check_auth' });
+if (res.data.logged_in) {
+    const { id, email, first_name, last_name, avatar } = res.data.user;
+} else {
+    // token is missing or expired — redirect to login
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"util-get-profile"} -->
+<h3 id="util-get-profile" class="wp-block-heading has-text-color" style="color:#9b87f5">Get Profile</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_get_profile</code><br><strong style="color:#9b87f5">Params:</strong> none</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_profile' });
+// res.user — { id, email, first_name, last_name, company, role,
+//              auth_provider, email_verified, avatar_url,
+//              created_at, last_login, country, ui_mode,
+//              marketing_consent, marketing_consent_at }</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"util-subscription-status"} -->
+<h3 id="util-subscription-status" class="wp-block-heading has-text-color" style="color:#9b87f5">Subscription Status</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Action:</strong> <code>ql_get_subscription_status</code><br><strong style="color:#9b87f5">Params:</strong> none<br>Useful for gating features in your embedded UI before calling endpoints that enforce subscription limits.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_subscription_status' });
+// res.data.has_pro     — boolean
+// res.data.subscription — { plan, status, current_period_end, … }
+// res.data.limits      — {
+//   max_file_size, max_file_size_formatted,
+//   max_rows, max_insights, max_datasets,
+//   can_use_scheduler,
+//   token_budget, token_budget_used
+// }</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"util-connections"} -->
+<h3 id="util-connections" class="wp-block-heading has-text-color" style="color:#9b87f5">Connection Endpoints</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">List all connections</strong> — <code>ql_get_user_connections</code> (no params)<br>Returns all four connection types in a single call.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_user_connections' });
+// res.data.sql_connections   — &#91;{ id, dataset_id, db_type, host, port, database_name, last_synced, sync_status, dataset_name }]
+// res.data.api_connections   — &#91;{ id, dataset_id, api_url, method, auth_type, last_synced, sync_status, dataset_name }]
+// res.data.sftp_connections  — &#91;{ id, dataset_id, host, port, remote_path, is_active, last_synced, sync_status, dataset_name }]
+// res.data.sheet_connections — &#91;{ id, dataset_id, spreadsheet_id, sheet_name, last_synced, sync_status, dataset_name }]</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Get a specific connection</strong> — each getter accepts <code>connection_id</code> or <code>dataset_id</code> (one is required). Credentials are stripped from the response.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"hasFixedLayout":false,"style":{"color":{"text":"#e0e0e0"}}} -->
+<figure class="wp-block-table"><table class="has-text-color" style="color:#e0e0e0"><thead><tr><th>Action</th><th>Returns</th></tr></thead><tbody><tr><td><code>ql_get_sql_connection</code></td><td><code>{ connection }</code> — SQL metadata (no password)</td></tr><tr><td><code>ql_get_api_connection</code></td><td><code>{ connection }</code> — API URL, method, auth type, headers (JSON-decoded)</td></tr><tr><td><code>ql_get_sftp_connection</code></td><td><code>{ connection }</code> — SFTP host/port/path (no password or private key)</td></tr><tr><td><code>ql_get_google_sheet_connection</code></td><td><code>{ connection }</code> — spreadsheet ID, sheet name (no credentials JSON)</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Get connection by dataset ID (any type)</strong> — <code>ql_get_connection_details</code><br>Inspects the dataset's <code>source_type</code> and returns the matching connection object with a <code>type</code> field (<code>sql</code>, <code>api</code>, <code>sftp</code>, <code>google_sheets</code>, <code>kaggle</code>, or <code>upload</code>).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_connection_details', dataset_id: 42 });
+// res.data.connection — { type, name, last_synced, sync_status, sync_error, … }</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"util-merged"} -->
+<h3 id="util-merged" class="wp-block-heading has-text-color" style="color:#9b87f5">Merged Dataset Helpers</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">These complement the <code>ql_create_merged_dataset</code> and <code>ql_update_merged_dataset</code> endpoints already documented in the Dataset Management section.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">List non-merged datasets available for joining</strong> — <code>ql_get_available_datasets</code> (no params)<br>Only returns datasets with <code>status = ready</code> and <code>source_type != merged</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_available_datasets' });
+// res.data.datasets — &#91;{ id, name, slug, row_count, source_type, column_count }]</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Get columns of a dataset (for join key selection)</strong> — <code>ql_get_dataset_columns_for_merge</code><br>Params: <code>dataset_id</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_dataset_columns_for_merge', dataset_id: 7 });
+// res.data.columns — &#91;{ col_name, inferred_type, distinct_count }]</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Get a merged dataset with its join config</strong> — <code>ql_get_merged_dataset</code><br>Params: <code>dataset_id</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_merged_dataset', dataset_id: 15 });
+// res.data.merged_dataset — dataset row (source_type='merged')
+// res.data.joins          — &#91;{ left_dataset_id, left_dataset_name, right_dataset_id,
+//                              right_dataset_name, join_type, join_key_left,
+//                              join_key_right, join_order }]</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Get join config only (lightweight)</strong> — <code>ql_get_merge_config</code><br>Params: <code>dataset_id</code> — same as above but skips the parent dataset row. Returns an error if the dataset is not of <code>source_type = merged</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_merge_config', dataset_id: 15 });
+// res.data.dataset — dataset metadata
+// res.data.joins   — same join array as ql_get_merged_dataset</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Delete a merged dataset</strong> — <code>ql_delete_merged_dataset</code><br>Params: <code>dataset_id</code></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_delete_merged_dataset', dataset_id: 15 });
+// res.data — { success: true } on success</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"util-templates"} -->
+<h3 id="util-templates" class="wp-block-heading has-text-color" style="color:#9b87f5">Templates</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Pre-built connection templates stored in the plugin database. Both endpoints accept an optional <code>service</code> filter.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">SQL query templates</strong> — <code>ql_get_query_templates</code><br>Params: <code>service</code> (optional, e.g. <code>MySQL</code> — omit or pass <code>Other</code> for all)</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_query_templates', service: 'MySQL' });
+// res.data.templates — &#91;{ id, service_name, template_name, sql_query, description }]
+// res.data.services  — distinct service names available</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">REST API templates</strong> — <code>ql_get_api_templates</code><br>Params: <code>service</code> (optional, e.g. <code>Stripe</code> — omit or pass <code>Custom</code> for all)</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const res = await _ajax({ action: 'ql_get_api_templates', service: 'Stripe' });
+// res.data.templates — &#91;{ id, service_name, template_name, api_url, http_method,
+//                         request_body, response_path, description,
+//                         auth_type, oauth_provider_name, oauth_scope }]
+// res.data.services  — distinct service names available</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"ql-agent-endpoint"} -->
+<h2 id="ql-agent-endpoint" class="wp-block-heading has-text-color" style="color:#ffffff">QL-Agent Endpoint</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">The QL-Agent is a multi-turn conversational AI that can autonomously list datasets, generate charts, run statistical analysis, create and modify scheduled reports, and more. You can embed the agent loop directly in your own UI by calling <code>ql_run_agent</code> for each user turn.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4,"style":{"color":{"text":"#e0e0e0"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#e0e0e0">ql_run_agent</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Runs one turn of the agentic loop. The agent receives the user's natural-language message plus the prior conversation history, calls Claude with a set of QL tool definitions (list datasets, generate charts, get insights, manage reports, etc.), executes any tool calls autonomously, and returns both the updated message history and a final plain-text reply. The loop runs up to 10 iterations per call. Requires an Anthropic API key to be configured in QuantumLayers settings.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Auth:</strong> <code>ql_verify_auth()</code> — valid Bearer token required. Token budget is checked against the user's plan before each iteration.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">POST params:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><code>message</code> (string, required) — the user's natural-language request for this turn</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><code>history</code> (JSON string, optional) — the <code>messages</code> array returned by the previous call; pass <code>[]</code> or omit for the first turn</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Response:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>{
+  "messages": &#91;           // full updated conversation — pass back as "history" on the next turn
+    { "role": "user",      "content": "Which dataset has the most rows?" },
+    { "role": "assistant", "content": &#91;...] },  // may contain tool_use blocks
+    { "role": "user",      "content": &#91;...] },  // tool_result blocks
+    { "role": "assistant", "content": &#91;{ "type": "text", "text": "Your largest dataset is..." }] }
+  ],
+  "final_text": "Your largest dataset is sales_2024 with 15,000 rows."
+}</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Multi-turn usage:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const QL_AJAX  = 'https://quantumlayers.com/wp-admin/admin-ajax.php';
+const API_TOKEN = 'qlat_xxxxxxxxxxxxxxxx';
+
+let history = &#91;];
+
+async function chat(userMessage) {
+    const res = await fetch(QL_AJAX, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${API_TOKEN}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            action:  'ql_run_agent',
+            message: userMessage,
+            history: JSON.stringify(history),
+        }),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.data?.message);
+
+    history = json.data.messages;   // store for next turn
+    return json.data.final_text;    // display to the user
+}
+
+// First turn
+console.log(await chat('List my datasets'));
+// Second turn — context is preserved
+console.log(await chat('Show me a bar chart of revenue by region for the first one'));</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"complete-example"} -->
+<h2 id="complete-example" class="wp-block-heading has-text-color" style="color:#ffffff">Complete Code Example</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">End-to-end: authenticate via a third-party JWT, fetch a bar chart for dataset 42, and render it with Chart.js.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>&lt;!-- Load libraries --&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://quantumlayers.com/wp-content/plugins/quantumlayers/assets/auth.js"&gt;&lt;/script&gt;
+
+&lt;!-- Canvas target --&gt;
+&lt;canvas id="my-chart" width="800" height="400"&gt;&lt;/canvas&gt;
+
+&lt;script&gt;
+const QL_AJAX  = 'https://quantumlayers.com/wp-admin/admin-ajax.php';
+const SIGNED_JWT = '&lt;jwt-minted-by-your-backend&gt;';
+
+// Step 1: exchange JWT for QL session token
+$.post(QL_AJAX, { action: 'ql_third_party_signin', jwt: SIGNED_JWT }, function(res) {
+    if (!res.success) return console.error('Sign-in failed', res);
+    QLAuth.setSessionToken(res.data.session_token);
+
+    // Step 2: fetch chart data
+    $.ajax({
+        url: QL_AJAX,
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + QLAuth.getSessionToken() },
+        data: {
+            action:      'ql_get_chart_data',
+            dataset_id:  42,
+            chart_type:  'bar',
+            x_column:    'product_category',
+            y_column:    'total_amount',
+            aggregation: 'sum'
+        },
+        success: function(chartRes) {
+            if (!chartRes.success) return console.error('Chart error', chartRes);
+
+            // Step 3: render
+            const ctx = document.getElementById('my-chart').getContext('2d');
+            new Chart(ctx, chartRes.data);
+        }
+    });
+});
+&lt;/script&gt;</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"chart-type-reference"} -->
+<h2 id="chart-type-reference" class="wp-block-heading has-text-color" style="color:#ffffff">Chart Type Quick Reference</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Pass one of the following values as <code>chart_type</code> to <code>ql_get_chart_data</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"style":{"color":{"text":"#e0e0e0"}}} -->
+<figure class="wp-block-table"><table class="has-text-color has-fixed-layout" style="color:#e0e0e0"><thead><tr><th>chart_type</th><th>Required params</th><th>Chart.js type rendered</th></tr></thead><tbody><tr><td><code>bar</code></td><td><code>x_column</code>, <code>y_column</code>, <code>aggregation</code></td><td>bar</td></tr><tr><td><code>horizontal_bar</code></td><td><code>x_column</code>, <code>y_column</code>, <code>aggregation</code></td><td>bar (indexAxis: 'y')</td></tr><tr><td><code>line</code></td><td><code>x_column</code>, <code>y_column</code>, <code>aggregation</code></td><td>line</td></tr><tr><td><code>scatter</code></td><td><code>x_column</code>, <code>y_column</code></td><td>scatter</td></tr><tr><td><code>pie</code></td><td><code>category_column</code>, <code>value_column</code>, <code>aggregation</code></td><td>pie</td></tr><tr><td><code>doughnut</code></td><td><code>category_column</code>, <code>value_column</code>, <code>aggregation</code></td><td>doughnut</td></tr><tr><td><code>bubble</code></td><td><code>x_column</code>, <code>y_column</code>, <code>size_column</code></td><td>bubble</td></tr><tr><td><code>box_plot</code></td><td><code>category_column</code>, <code>value_column</code></td><td>boxplot (chartjs-chart-boxplot)</td></tr><tr><td><code>heatmap</code></td><td><code>x_column</code>, <code>y_column</code>, <code>value_column</code></td><td>matrix (chartjs-chart-matrix)</td></tr><tr><td><code>time_series</code></td><td><code>date_column</code>, <code>value_column</code>, <code>aggregation</code></td><td>line (time scale)</td></tr><tr><td><code>histogram</code></td><td><code>column_name</code>, optional <code>bins</code></td><td>bar (computed bins)</td></tr><tr><td><code>area</code></td><td><code>x_column</code>, <code>y_column</code>, <code>aggregation</code></td><td>line (fill: true)</td></tr></tbody></table></figure>
+<!-- /wp:table --></div>
+<!-- /wp:group -->

@@ -1,0 +1,479 @@
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"40px","right":"40px","bottom":"40px","left":"40px"},"margin":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50"}},"border":{"radius":"8px"},"color":{"background":"#1a1a1af0"}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group has-background" style="border-radius:8px;background-color:#1a1a1af0;margin-top:var(--wp--preset--spacing--50);margin-bottom:var(--wp--preset--spacing--50);padding-top:40px;padding-right:40px;padding-bottom:40px;padding-left:40px"><!-- wp:heading {"level":1,"style":{"color":{"text":"#ffffff"}}} -->
+<h1 class="wp-block-heading has-text-color" style="color:#ffffff">Embedded Analytics Developer Guide</h1>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Version 0.4.4</strong> | Last Updated: July 2026</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">This is the starting point for building against QuantumLayers as a third-party developer. It explains what QL exposes, where its client-side libraries live, how requests are authenticated, and the two ways to reach QL's facilities — raw API calls or the bundled JavaScript Development Kit (JDK). If you already know which path you want, jump to <a href="https://quantumlayers.com/embedded-analytics-api" style="color:#7dd3fc">Embedded Analytics Developer Guide (API)</a> for the full endpoint reference or <a href="https://quantumlayers.com/embedded-analytics-jdk" style="color:#7dd3fc">Embedded Analytics Developer Guide (JDK)</a> for the full class/function reference.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}}} -->
+<h2 class="wp-block-heading has-text-color" style="color:#ffffff">Table of Contents</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list {"style":{"color":{"text":"#7dd3fc"}}} -->
+<ul style="color:#7dd3fc" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><a href="#overview" style="color:#7dd3fc">Overview</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#prerequisites" style="color:#7dd3fc">Prerequisites</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#chartjs-setup" style="color:#7dd3fc">Chart.js Setup</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#authentication" style="color:#7dd3fc">Authentication</a></li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><a href="#accessing-ql-facilities" style="color:#7dd3fc">Accessing QL Facilities</a></li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"overview"} -->
+<h2 id="overview" class="wp-block-heading has-text-color" style="color:#ffffff">Overview</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">QuantumLayers is a standalone analytics platform built around a few core facilities, all of which are reachable from outside the QL server:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Datasets</strong> — CSV upload, database/API connections, Google Sheets and SFTP sources, dataset merging/joins, and per-column statistics computed at ingestion time.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Charting</strong> — a library of Chart.js-compatible chart generators (bar, line, pie, scatter, box plot, heatmap, regression, and more) driven purely by POST parameters, plus an auto-recommendation engine that ranks the most informative charts for a given dataset.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Statistical analysis</strong> — summary statistics, correlation, PCA, and distribution analysis, backed by the Python scripts in <code>python/</code>.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">AI insights &amp; agent</strong> — rule-based and Claude-powered dataset insights, plus a multi-turn conversational agent that can query and chart a dataset on request.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">Scheduled reports, organizations/teams, and billing</strong> — recurring report delivery, multi-seat org management, and subscription plans that gate the above features.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Every one of these facilities is exposed the same way: a WordPress AJAX endpoint (an <code>action</code> name) secured with Bearer token authentication. There is no separate REST API and no GraphQL layer — <code>action</code> names are the entire surface area.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}}} -->
+<h3 class="wp-block-heading has-text-color" style="color:#9b87f5">Where the JavaScript lives</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Every client-side QL module is published as a standalone file under <strong style="color:#9b87f5">https://quantumlayers.com/jdk/</strong> and can be pulled into any page with a plain <code>&lt;script&gt;</code> tag — no build step, bundler, or npm package required:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>https://quantumlayers.com/jdk/auth.js               // QLAuth        — required by every other module
+https://quantumlayers.com/jdk/upload.js              // QLUpload      — CSV upload / dataset editing
+https://quantumlayers.com/jdk/dashboard.js           // QLDashboard   — dataset inventory, lifecycle actions
+https://quantumlayers.com/jdk/dataset-detail.js      // QLDatasetDetail
+https://quantumlayers.com/jdk/analytics.js           // QLAnalytics   — chart rendering, stats, saved charts
+https://quantumlayers.com/jdk/insights.js            // QLInsights    — AI-powered dataset insights
+https://quantumlayers.com/jdk/merge-datasets.js      // QLMergeDatasets
+https://quantumlayers.com/jdk/report-scheduler.js    // QLReportScheduler
+https://quantumlayers.com/jdk/organizations.js       // QLOrganizations
+https://quantumlayers.com/jdk/agent.js               // QLAgent       — multi-turn AI agent</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><code>auth.js</code> has no dependency on any other QL module, but every other module depends on it (they all call <code>QLAuth.getSessionToken()</code> to build their <code>Authorization</code> header), so it must always be the first QL script loaded on the page, after jQuery. See the <a href="https://quantumlayers.com/embedded-analytics-jdk" style="color:#7dd3fc">JDK guide</a> for the full function/class reference of each module.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}}} -->
+<h3 class="wp-block-heading has-text-color" style="color:#9b87f5">How AJAX/API endpoints are invoked</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">There is a single URL for every endpoint. You select the operation via the <code>action</code> POST field, and authenticate via the <code>Authorization</code> header (see <a href="#authentication" style="color:#7dd3fc">Authentication</a> below):</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>POST https://quantumlayers.com/wp-admin/admin-ajax.php
+Content-Type: application/x-www-form-urlencoded
+Authorization: Bearer &lt;token&gt;
+
+action=ql_get_chart_data&amp;dataset_id=42&amp;chart_type=bar&amp;...</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Every endpoint responds with the standard WordPress AJAX envelope — <code>{ "success": true, "data": {...} }</code> on success, or <code>{ "success": false, "data": { "message": "..." } }</code> on failure. Public endpoints (callable by unauthenticated third parties, e.g. viewing a public dataset's chart) skip nonce checks entirely and rely only on <code>ql_try_auth()</code>/<code>ql_verify_auth()</code> for the Bearer token; endpoints called from within a browser session on the QL site itself additionally expect a <code>nonce</code> field, which is only meaningful for same-origin requests and is not required for cross-origin/API use.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"prerequisites"} -->
+<h2 id="prerequisites" class="wp-block-heading has-text-color" style="color:#ffffff">Prerequisites</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">You need access to a valid QuantumLayers account. The third-party page does not need to sit on the QL server itself — it only needs network access to the QL server.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}}} -->
+<h3 class="wp-block-heading has-text-color" style="color:#9b87f5">QL JavaScript Libraries</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">The following file can be accessed directly from the QL host and can be loaded with a <code>&lt;script&gt;</code> tag:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><strong style="color:#9b87f5">jdk/auth.js</strong> — exposes the <code>QLAuth</code> object: token storage, and sign-in helpers.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>&lt;script src="https://quantumlayers.com/jdk/auth.js"&gt;&lt;/script&gt;</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">If you're only calling endpoints directly (no JDK modules), <code>auth.js</code> is optional — see <a href="#authentication" style="color:#7dd3fc">Authentication</a> for how to obtain a Bearer token without it.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"chartjs-setup"} -->
+<h2 id="chartjs-setup" class="wp-block-heading has-text-color" style="color:#ffffff">Chart.js Setup</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">QuantumLayers uses Chart.js 4.4.0 and three plugins. Load all four CDN scripts before your own code if you intend to render the chart configs returned by the analytics endpoints:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>&lt;script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4.2.5/build/index.umd.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"&gt;&lt;/script&gt;</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">The box-plot, date-adapter, and matrix plugins are only needed if you render <code>box_plot</code>/<code>violin</code>, time-based, or <code>heatmap</code> charts respectively — see <a href="https://quantumlayers.com/embedded-analytics-api" style="color:#7dd3fc">Analytics &amp; Charting Endpoints</a> for the full chart type reference.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"authentication"} -->
+<h2 id="authentication" class="wp-block-heading has-text-color" style="color:#ffffff">Authentication</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Every AJAX request must carry a <strong style="color:#9b87f5">Bearer token</strong> in the <code>Authorization</code> header. Three approaches are available, described below with full code examples. For the raw endpoint invocation (params only, no explanation), see the condensed <a href="https://quantumlayers.com/embedded-analytics-api#authentication" style="color:#7dd3fc">Authentication endpoints</a> section of the API guide.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"auth-option-a"} -->
+<h3 id="auth-option-a" class="wp-block-heading has-text-color" style="color:#9b87f5">Option A — QL Session Token (Same-Origin)</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">After the user signs in through QL, their token is in <code>localStorage</code> under the key <strong style="color:#9b87f5">ql_session_token</strong>. Read it with <code>QLAuth.getSessionToken()</code>:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>$.ajax({
+    url: 'https://quantumlayers.com/wp-admin/admin-ajax.php',
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + QLAuth.getSessionToken() },
+    data: { action: 'ql_get_chart_data', dataset_id: 42, chart_type: 'bar' }
+});</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">This option only works for pages served from the same browser context where the user has already logged into QL — it relies on that browser's <code>localStorage</code> already holding a valid token. It's the simplest option when you're embedding QL on a page that lives under <code>quantumlayers.com</code> itself, or when you fully control a flow that lands the user on a QL login page first.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"auth-option-b"} -->
+<h3 id="auth-option-b" class="wp-block-heading has-text-color" style="color:#9b87f5">Option B — Third-Party Provider Registration (Shadow Users)</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">For cross-origin embeds, the QL operator registers your application in the <code>ql_auth_providers</code> table with three fields:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"style":{"color":{"text":"#e0e0e0"}}} -->
+<ul style="color:#e0e0e0" class="wp-block-list has-text-color"><!-- wp:list-item -->
+<li><strong style="color:#9b87f5">id</strong> — unique slug (e.g. <code>"acme-corp"</code>); becomes the <code>kid</code> in the JWT header.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">name</strong> — human-readable label.</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li><strong style="color:#9b87f5">jwt_secret</strong> — shared HMAC-SHA256 secret (HS256).</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Your backend mints a signed HS256 JWT with the following structure, then POSTs it to <code>ql_third_party_signin</code>. <code>sub</code> and <code>email</code> are required; <code>first_name</code> and <code>last_name</code> are optional but kept in sync on every login.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>// Header  — kid must match the id column in ql_auth_providers
+{ "alg": "HS256", "typ": "JWT", "kid": "&lt;provider_id&gt;" }
+
+// Payload
+{ "sub": "&lt;stable_user_id&gt;", "email": "jane@example.com",
+  "first_name": "Jane", "last_name": "Doe",
+  "exp": &lt;unix timestamp&gt; }</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}}} -->
+<h3 class="wp-block-heading has-text-color" style="color:#9b87f5">Minting the JWT — PHP</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">With firebase/php-jwt</strong> (<code>composer require firebase/php-jwt</code>):</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>use Firebase\JWT\JWT;
+
+$provider_id = 'acme-corp';           // matches ql_auth_providers.id
+$jwt_secret  = 'your-shared-secret';  // matches ql_auth_providers.jwt_secret
+
+$payload = &#91;
+    'sub'        =&gt; 'user-123',       // stable unique ID in your system
+    'email'      =&gt; 'jane@example.com',
+    'first_name' =&gt; 'Jane',
+    'last_name'  =&gt; 'Doe',
+    'exp'        =&gt; time() + 3600,    // 1-hour expiry
+];
+
+// Fourth argument sets the kid header field
+$jwt = JWT::encode($payload, $jwt_secret, 'HS256', $provider_id);</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Without an external library</strong> (PHP built-ins only):</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>function base64url_encode(string $data): string {
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
+
+$provider_id = 'acme-corp';
+$jwt_secret  = 'your-shared-secret';
+
+$header  = base64url_encode(json_encode(&#91;'alg' =&gt; 'HS256', 'typ' =&gt; 'JWT', 'kid' =&gt; $provider_id]));
+$payload = base64url_encode(json_encode(&#91;
+    'sub'        =&gt; 'user-123',
+    'email'      =&gt; 'jane@example.com',
+    'first_name' =&gt; 'Jane',
+    'last_name'  =&gt; 'Doe',
+    'exp'        =&gt; time() + 3600,
+]));
+$signature = base64url_encode(hash_hmac('sha256', "$header.$payload", $jwt_secret, true));
+
+$jwt = "$header.$payload.$signature";</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}}} -->
+<h3 class="wp-block-heading has-text-color" style="color:#9b87f5">Minting the JWT — Node.js</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">With jsonwebtoken</strong> (<code>npm install jsonwebtoken</code>):</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const jwt = require('jsonwebtoken');
+
+const PROVIDER_ID = 'acme-corp';          // matches ql_auth_providers.id
+const JWT_SECRET  = 'your-shared-secret'; // matches ql_auth_providers.jwt_secret
+
+const token = jwt.sign(
+    {
+        sub:        'user-123',            // stable unique ID in your system
+        email:      'jane@example.com',
+        first_name: 'Jane',
+        last_name:  'Doe',
+    },
+    JWT_SECRET,
+    {
+        algorithm: 'HS256',
+        keyid:     PROVIDER_ID,           // sets the kid header field
+        expiresIn: '1h',
+    }
+);</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Without an external library</strong> (Node.js built-in <code>crypto</code>):</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>const crypto = require('crypto');
+
+const PROVIDER_ID = 'acme-corp';
+const JWT_SECRET  = 'your-shared-secret';
+
+function base64url(str) {
+    return Buffer.from(str).toString('base64')
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+const header  = base64url(JSON.stringify({ alg: 'HS256', typ: 'JWT', kid: PROVIDER_ID }));
+const payload = base64url(JSON.stringify({
+    sub:        'user-123',
+    email:      'jane@example.com',
+    first_name: 'Jane',
+    last_name:  'Doe',
+    exp:        Math.floor(Date.now() / 1000) + 3600,
+}));
+const sig = crypto.createHmac('sha256', JWT_SECRET)
+    .update(`${header}.${payload}`)
+    .digest('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+const token = `${header}.${payload}.${sig}`;</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Once you have the signed token, POST it to QL. You can either call the endpoint directly:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>$.post('https://quantumlayers.com/wp-admin/admin-ajax.php',
+    { action: 'ql_third_party_signin', jwt: SIGNED_JWT },
+    function(res) {
+        if (res.success) QLAuth.setSessionToken(res.data.session_token);
+    });</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">...or, if <code>auth.js</code> is loaded, use the <code>QLAuth.thirdPartySignin()</code> helper, which wraps the same request and stores the returned token for you:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>QLAuth.thirdPartySignin(SIGNED_JWT,
+    function(user) { console.log('signed in as', user.email); },
+    function(err)  { console.error('sign-in failed', err); });</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">QL verifies the signature, then finds or creates a <strong style="color:#9b87f5">shadow user</strong> identified by <code>provider_id + provider_sub</code>. Email and name are kept in sync on every login. The response contains a standard <code>session_token</code> for all subsequent requests.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Note:</strong> <code>ql_try_auth()</code> allows unauthenticated access for public datasets; <code>ql_verify_auth()</code> requires a valid token and is used by all write and analysis endpoints.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"auth-option-c"} -->
+<h3 id="auth-option-c" class="wp-block-heading has-text-color" style="color:#9b87f5">Option C — API Token (Long-Lived / Server-to-Server)</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">API tokens created on the <strong style="color:#7dd3fc">API Tokens</strong> page can be used directly as Bearer tokens — no prior call to <code>ql_third_party_signin</code> or any other sign-in endpoint is required. This makes them the simplest option for server-side scripts, CI/CD pipelines, and backend integrations where an interactive login flow is impractical.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">To create a token, go to the <strong style="color:#7dd3fc">API Tokens</strong> page in your account, click <strong style="color:#7dd3fc">+ Create token</strong>, give it a name and an optional expiry, and copy the value shown immediately after creation — it is only displayed once.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Once you have the token, pass it as the <code>Authorization</code> header on every request:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>// Node.js (fetch)
+const API_TOKEN = 'qlat_xxxxxxxxxxxxxxxx';   // token from the API Tokens page
+
+const res = await fetch('https://quantumlayers.com/wp-admin/admin-ajax.php', {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${API_TOKEN}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+        action:     'ql_get_dashboard_data',
+    }),
+});
+const json = await res.json();
+console.log(json.data.datasets);</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code># curl
+curl -s -X POST https://quantumlayers.com/wp-admin/admin-ajax.php \
+     -H "Authorization: Bearer qlat_xxxxxxxxxxxxxxxx" \
+     -d "action=ql_get_dashboard_data"</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0"><strong style="color:#9b87f5">Choosing between the three options:</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"style":{"color":{"text":"#e0e0e0"}}} -->
+<figure class="wp-block-table"><table class="has-text-color has-fixed-layout" style="color:#e0e0e0"><thead><tr><th>Option</th><th>Best for</th><th>Token lifetime</th></tr></thead><tbody><tr><td>A — QL Session Token</td><td>Pages hosted on the same QL origin where the user is already signed in</td><td>30-day session (refreshed on activity)</td></tr><tr><td>B — Third-party JWT</td><td>Cross-origin embeds where your backend needs to provision shadow users automatically</td><td>Exchanged for a 30-day session token</td></tr><tr><td>C — API Token</td><td>Server-side scripts, CI/CD pipelines, backend integrations — no browser involved</td><td>Configurable: 30 days / 90 days / 1 year / never</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
+<hr class="wp-block-separator has-text-color has-alpha-channel-opacity has-background" style="background-color:#333333;color:#333333"/>
+<!-- /wp:separator -->
+
+<!-- wp:heading {"style":{"color":{"text":"#ffffff"}},"anchor":"accessing-ql-facilities"} -->
+<h2 id="accessing-ql-facilities" class="wp-block-heading has-text-color" style="color:#ffffff">Accessing QL Facilities</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Once you can authenticate, there are two ways to reach the facilities described in <a href="#overview" style="color:#7dd3fc">Overview</a>. Both ultimately hit the same <code>admin-ajax.php</code> endpoints — the JDK is a convenience wrapper, not a different transport.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}}} -->
+<h3 class="wp-block-heading has-text-color" style="color:#9b87f5">Direct API / AJAX Calls</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Call <code>action</code> endpoints directly with any HTTP client — <code>$.ajax()</code>, <code>fetch()</code>, <code>curl</code>, or a server-side HTTP library in any language. This is the right choice when you don't want to load any QL JavaScript at all, e.g. server-to-server integrations, or a frontend built in a framework where you'd rather write your own thin API client than depend on jQuery-based modules.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">The full list of endpoints — dataset metadata, chart data, statistical analysis, scheduled reports, organization management, utility/connection endpoints, and the QL-Agent endpoint — along with their parameters and response shapes, is documented in <a href="https://quantumlayers.com/embedded-analytics-api" style="color:#7dd3fc">Embedded Analytics Developer Guide (API)</a>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}}} -->
+<h3 class="wp-block-heading has-text-color" style="color:#9b87f5">JavaScript Development Kit (JDK)</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">Load one or more of the files under <a href="https://quantumlayers.com/jdk" style="color:#7dd3fc">https://quantumlayers.com/jdk</a> and call their exposed objects (<code>QLAuth</code>, <code>QLUpload</code>, <code>QLDashboard</code>, <code>QLAnalytics</code>, <code>QLInsights</code>, <code>QLAgent</code>, etc.) directly — they handle building the request, attaching the Bearer token, and parsing the response for you. This is the right choice for a browser-based embed where you want the same UI logic QuantumLayers itself uses, without re-implementing request plumbing.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">The full list of classes, their callable functions, and the CSS-class event bindings they attach to, is documented in <a href="https://quantumlayers.com/embedded-analytics-jdk" style="color:#7dd3fc">Embedded Analytics Developer Guide (JDK)</a>.</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group -->
