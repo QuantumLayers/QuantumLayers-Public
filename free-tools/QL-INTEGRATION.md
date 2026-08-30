@@ -81,21 +81,110 @@ Full parameter lists for every endpoint above are in
 `docs/embedded-analytics-api.html` — `ql-client.js` mirrors them, but check
 there before adding a new call.
 
-### `box_plot`'s raw values, and why it matters for client-side sensitivity controls
+### `box_plot`'s response shape — CORRECTED against a live call
 
-`ql_get_chart_data` with `chart_type: box_plot` returns, per the
-`@sgratzl/chartjs-chart-boxplot` shape, *every* row's raw value grouped by
-category — not just the ones outside the fence. That's different from
-`ql_get_distribution_analysis`, which computes outliers at a **fixed
-1.5×IQR fence** (not a configurable parameter) and caps its returned
-`outliers.values` list at 50. A tool that wants a user-adjustable outlier
-sensitivity (looser/stricter than 1.5×) can't get that from
-`ql_get_distribution_analysis` alone — but it can recompute IQR fences at
-any multiplier, entirely client-side, from the full raw values a
-`box_plot` chart request already returned (`free-tools/csv-outlier-detector/`
-does exactly this: `ql_get_distribution_analysis`'s output is shown
-separately, labeled as QL's own authoritative read, rather than conflated
-with the client-recomputed slider).
+⚠️ **This section previously said `box_plot` returns raw per-row values.
+That was wrong** — it was inferred from the API docs' prose ("arrays of
+raw values per group... from which the library computes quartiles") and
+never checked against a real response. A live `ql_get_chart_data` call
+with `chart_type: box_plot` actually returns **pre-aggregated per-group
+statistics**, shaped like `@sgratzl/chartjs-chart-boxplot`'s other
+supported input format:
+
+```json
+{
+  "data": {
+    "labels": ["Group A", "Group B"],
+    "datasets": [{ "data": [
+      { "min": 1, "q1": 2, "median": 3, "q3": 4, "max": 5, "mean": 3, "outliers": [9, 10] },
+      { "min": 2, "q1": 3, "median": 4, "q3": 5, "max": 6, "mean": 4, "outliers": [] }
+    ]}]
+  }
+}
+```
+
+QL computed the box-and-whisker stats (and its own outlier detection)
+server-side; there is no raw per-row value array to recompute from. This
+has the same practical limitation as `ql_get_distribution_analysis`
+(fixed 1.5×IQR fence, no configurable sensitivity) — a tool wanting an
+adjustable outlier sensitivity can only ever *narrow* QL's own `outliers`
+list per group (re-filter it against a stricter fence built from that
+group's own `q1`/`q3`), never find outliers QL didn't already flag, since
+the underlying raw distribution was never returned.
+`free-tools/csv-outlier-detector/` was rewritten around this real shape
+after the bug was caught by a live API check — its sensitivity control
+only offers "QL's default" and "a stricter subset of QL's default" for
+exactly this reason.
+
+### `ql_get_recommended_charts`'s response envelope key — CORRECTED
+
+⚠️ Also previously documented wrong: the response's chart-candidates array
+is under the key **`candidates`**, not `charts`. Confirmed against a live
+call — `{ "candidates": [{ "chart_type", "params", "insight_score",
+"reason", "metadata", "dataset_id" }], "columns": [...], "analysis_summary": {...} }`.
+Each candidate does **not** include a ready-to-render `chart_data` field
+(also previously assumed) — fetch it separately via `ql_get_chart_data`
+with the candidate's own `chart_type`/`params`. `free-tools/instant-chart-maker/`
+had this reversed originally, which meant its entire auto-recommendation
+feature silently never fired (it always read `undefined` and fell back to
+a manual default) until this was caught.
+
+### `aggregation: "count"` doesn't do what the docs' prose suggests
+
+Confirmed against a live call: sending `chart_type: "bar"` with
+`aggregation: "count"` does **not** count rows — the response comes back
+titled "Sum of X by Y" and the values are sums, not counts (the parameter
+appears to be silently ignored server-side for bar/horizontal_bar).
+Separately, `value_columns` must always be a **numeric** column for
+bar/horizontal_bar, even when you only want a count — passing a
+categorical column as `value_columns` (the natural move if you don't have
+a spare numeric column) fails outright with `"Column must be numeric"`.
+
+The confirmed, correct way to get real per-category row counts is
+**`pie`/`doughnut` with `value_column` omitted entirely** — the docs'
+"omit for counts" note (easy to miss) is accurate and is the actual
+mechanism, not a `count` aggregation value on any chart type. It also
+comes pre-sorted descending and trimmed to `limit`, with the remainder
+bucketed into an `"Other"` slice. Also confirmed: the correct aggregation
+keyword where one is genuinely needed is **`"average"`, not `"avg"`**
+(both the `get_chart_data` tool's own param schema and a live
+recommended-charts response used "average").
+
+### Numeric-looking JSON fields are often strings, not numbers
+
+Confirmed on `ql_get_dataset_detail`: `row_count`, `distinct_count`,
+`null_count`, `col_index`, and — for numeric columns — `min_val`,
+`max_val`, `mean_val`, `stddev_val` all come back as JSON **strings**
+(`"distinct_count": "13"`, not `13`). `ql_get_statistical_summary` is a
+mix: `count`/`missing`/`min`/`max` are strings, but `mean`/`std`/`median`/
+`q1`/`q3`/`skewness`/`kurtosis` are real numbers (or `null` when QL
+couldn't compute them, e.g. too few non-null values). This is consistent
+with a PHP/MySQL backend returning `$wpdb` query results (which are
+strings by default) directly into `json_encode()` without casting —
+expect it on any endpoint backed by a raw column value, and don't expect
+it on endpoint-computed statistics (means, correlations, p-values, scores)
+which come back as real numbers.
+
+This silently breaks two very common patterns if you don't coerce:
+- **Strict equality** (`===`) against a literal number — e.g. checking
+  `distinct_count === 1` to flag a constant column, or comparing
+  `distinct_count === row_count` to detect a fully-unique column, is
+  `"1" === 1` / `"226" === "226"` — the second happens to still work
+  because both sides are strings from the same API, but the first is
+  reliably false forever. `free-tools/csv-data-profiler/`'s "constant
+  columns" detector had exactly this bug.
+- **`.toLocaleString()`** for thousands-grouping — `String.prototype.toLocaleString()`
+  is not `Number.prototype.toLocaleString()`; it does not add separators
+  or apply `maximumFractionDigits`, so a raw string field just prints
+  unchanged (or, worse, with excessive untruncated decimal places for
+  something like a `stddev_val`).
+
+Coerce with `Number(...)` — but only for genuinely numeric columns. A
+date column's `min_val`/`max_val` are real date strings
+(`"2025-12-06 22:46:41"`), and a text/category column's are the
+alphabetic min/max value (`"Apple AirPods"`) — coercing those to `Number()`
+produces `NaN`, not a bug fix. Coerce based on the column's own
+`inferred_type`, once, at classification time.
 
 ### Chart types (`ql_get_chart_data`'s `chart_type`)
 
@@ -125,15 +214,13 @@ is the only source and what's used. If you hit a `success: false` from
 one of these four chart types, the param names are the first thing to
 double-check against the live API before assuming something else is wrong.
 
-**`bar`/`horizontal_bar`'s result order isn't documented either.** Only
-`pie`/`doughnut`'s docs explicitly promise "sorts descending, trims to
-`limit` categories" — `bar`/`horizontal_bar`'s description says nothing
-about ordering. `free-tools/csv-data-profiler/` needs a genuine "top
-values" bar (not a pie) for its per-column category cards, so rather than
-assume an order QL never promised, it requests a plain count-by-value bar
-and sorts + trims the returned `labels`/`data` arrays client-side before
-rendering — reordering QL's own numbers for presentation, not recomputing
-them. If a "top N" bar chart ever looks unsorted, this is why.
+**`bar`/`horizontal_bar`'s result order isn't documented, and a count-style
+"top values" bar doesn't actually work — see the `aggregation: "count"`
+section below.** Only `pie`/`doughnut`'s docs explicitly promise "sorts
+descending, trims to `limit` categories," which turns out to be accurate
+and is why `free-tools/csv-data-profiler/`'s per-column "top values" cards
+use a doughnut rather than a bar — not a stylistic choice, a correctness
+one.
 
 ## Rendering: Chart.js 4.4.0 + 3 plugins
 

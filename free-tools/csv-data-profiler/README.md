@@ -17,7 +17,8 @@ dictionary as the star feature.
   five-number summary (min/q1/median/q3/max) from a second, richer
   endpoint.
 - Renders every numeric column as a real QL histogram, every category
-  column as a real QL "top values" bar chart, and every date column's
+  column as a real QL "top values" doughnut chart (chosen over a bar for
+  a reason worth knowing about — see below), and every date column's
   range plus an estimated granularity.
 - A data-quality panel flags missing data, constant columns,
   high-cardinality text columns, and columns that share identical
@@ -41,6 +42,19 @@ anonymous ceiling — so there's no meaningful zero-click version of this
 specific tool to build. Once signed in, pick any of your own datasets and
 the full profile — quality panel, histograms, top-values charts, and the
 exportable dictionary — runs against it.
+
+## Why "top values" is a doughnut, not a bar
+
+`bar`/`horizontal_bar`'s `value_columns` must be a numeric column — even
+with `aggregation: "count"`, passing the category column itself (the
+natural way to ask "how many rows per category") fails outright with
+"Column must be numeric". Separately, `aggregation: "count"` turns out to
+be silently ignored server-side for bar charts regardless. `pie`/`doughnut`
+with `value_column` omitted entirely is the confirmed, correct way to get
+real per-category row counts — already sorted descending and trimmed to a
+limit, with the excess bucketed into an "Other" slice — so that's what
+this tool uses, both facts confirmed against the live API rather than
+assumed from the docs.
 
 ## What "duplicates" means here
 

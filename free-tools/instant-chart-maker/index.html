@@ -260,7 +260,13 @@ const PUBLIC_DEMO_READY = !!(PUBLIC_DEMO.datasetId && PUBLIC_DEMO.columns.length
 // QL-INTEGRATION.md addendum on this discrepancy.
 const FIELD_DEFS = {
   category:    { param: "category_column", label: "Category",           kinds: ["category", "text"] },
-  value:       { param: "value_column",    label: "Value",              kinds: ["numeric"] },
+  // Optional: confirmed against the live API that omitting value_column
+  // entirely (not passing aggregation:"count") is what actually makes
+  // pie/doughnut count rows per category — the docs' "omit for counts"
+  // note turned out to be real and load-bearing. See the
+  // QL-INTEGRATION.md addendum on aggregation:"count" being silently
+  // ignored for bar/horizontal_bar.
+  value:       { param: "value_column",    label: "Value (optional — omit to count rows)", kinds: ["numeric"], optional: true },
   valueMulti:  { param: "value_columns",   label: "Value(s)",           kinds: ["numeric"], multi: true },
   x:           { param: "x_column",        label: "X axis",             kinds: ["numeric", "category", "date", "text"] },
   y:           { param: "y_column",        label: "Y axis",             kinds: ["numeric"] },
