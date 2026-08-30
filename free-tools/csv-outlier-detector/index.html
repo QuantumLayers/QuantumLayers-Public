@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Find Outliers in Your Data — free anomaly detector | QuantumLayers</title>
+<meta name="description" content="Find outliers in your data instantly — QL scans every numeric column, flags the values that don't belong, and shows them in context. Free live demo, sign in to run it on your own dataset." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4.2.5/build/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
+<script src="../ql-client.js"></script>
+<style>
+  :root{
+    --font-display:'Space Grotesk',system-ui,sans-serif;
+    --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+
+    --bg:#0b0d10; --bg-raised:#14171c; --bg-inset:#0e1013; --border:#262b32;
+    --text:#e8eaed; --text-dim:#9aa1ab; --text-faint:#5b6270;
+    --accent:#9b87f5; --accent-dim:#7dd3fc;
+
+    --meter-empty:#262b32;
+    --meter-1:#7a5a1e; --meter-2:#96701f; --meter-3:#b28620;
+    --meter-4:#cf9c21; --meter-5:#eab308; --meter-6:#ffcc33;
+
+    --ok:#4ade80; --warn:#eab308; --danger:#f87171;
+  }
+  @media (prefers-color-scheme:light){
+    :root{
+      --bg:#fafafa; --bg-raised:#ffffff; --bg-inset:#f2f2f4; --border:#e2e4e8;
+      --text:#14171c; --text-dim:#565c66; --text-faint:#9aa1ab;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--font-body);
+    font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent-dim)}
+  .wrap{max-width:920px; margin:0 auto; padding:0 20px}
+
+  /* top bar */
+  .top{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px 0 6px; flex-wrap:wrap}
+  .mark{font-family:var(--font-mono); font-weight:600; font-size:13px; letter-spacing:.02em; color:var(--text); text-decoration:none; display:flex; align-items:center; gap:9px}
+  .mark .dot{width:10px; height:10px; border-radius:3px; background:var(--meter-6); box-shadow:0 0 0 4px color-mix(in srgb, var(--meter-6) 22%, transparent)}
+  .top-right{display:flex; align-items:center; gap:16px; font-family:var(--font-mono); font-size:12.5px}
+  .top a.ghlink{color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--border)}
+  .top a.ghlink:hover{color:var(--text); border-color:var(--text-faint)}
+  .auth-status{color:var(--text-dim)}
+  .auth-status b{color:var(--text); font-weight:600}
+  .auth-status button{font-family:var(--font-mono); font-size:12.5px; color:var(--text); background:none; border:1px solid var(--border); padding:5px 10px; border-radius:7px; cursor:pointer}
+  .auth-status button:hover{border-color:var(--text-faint)}
+
+  /* hero */
+  .hero{padding:28px 0 6px}
+  h1{font-family:var(--font-display); font-weight:600; font-size:clamp(28px,5.4vw,42px); line-height:1.08; letter-spacing:-.02em; margin:0 0 12px}
+  .lede{font-size:clamp(16px,2.4vw,18px); color:var(--text-dim); max-width:58ch; margin:0 0 16px}
+  .privacy-line{font-family:var(--font-mono); font-size:12.5px; color:var(--text-faint); margin:0 0 22px}
+
+  /* kind tag + strength meter (house signature) */
+  .kind-tag{
+    font-family:var(--font-mono); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text-dim); border:1px solid var(--border); border-radius:4px; padding:2px 8px; display:inline-block;
+  }
+  .strength-meter{display:inline-flex; gap:3px; vertical-align:middle}
+  .strength-meter span{width:14px; height:6px; border-radius:1px; background:var(--meter-empty); display:block}
+  .strength-meter span.filled:nth-child(1){background:var(--meter-1)}
+  .strength-meter span.filled:nth-child(2){background:var(--meter-2)}
+  .strength-meter span.filled:nth-child(3){background:var(--meter-3)}
+  .strength-meter span.filled:nth-child(4){background:var(--meter-4)}
+  .strength-meter span.filled:nth-child(5){background:var(--meter-5)}
+  .strength-meter span.filled:nth-child(6){background:var(--meter-6)}
+
+  /* invite bar — visible any time we're on a dataset, not just at the end */
+  .invite-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background:var(--bg-raised); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin:0 0 22px;
+  }
+  .invite-bar span{color:var(--text-dim); font-size:14px}
+  .invite-bar a.btn-link{font-family:var(--font-mono); font-size:13px; color:var(--accent-dim); text-decoration:none; white-space:nowrap}
+  .invite-bar a.btn-link:hover{text-decoration:underline}
+
+  /* cards */
+  .card{background:var(--bg-raised); border:1px solid var(--border); border-radius:14px; padding:20px 22px; margin:0 0 16px}
+  .card h3{font-family:var(--font-display); font-weight:600; font-size:19px; margin:0 0 4px; letter-spacing:-.01em}
+  .card .col-meta{font-family:var(--font-mono); font-size:12px; color:var(--text-faint); margin:0 0 14px}
+
+  .chart-box{position:relative; height:190px; margin:4px 0 14px; background:var(--bg-inset); border-radius:10px; padding:10px}
+  .chart-box canvas{max-height:100%}
+
+  .summary-line{font-size:15px; margin:0 0 12px; padding-left:12px; border-left:3px solid var(--meter-6)}
+  .summary-line .n{font-family:var(--font-mono); font-weight:600; font-variant-numeric:tabular-nums; color:var(--text)}
+  .summary-line.ql-verified{border-left-color:var(--accent)}
+
+  .sens-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 14px}
+  .sens-row .label{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint)}
+  .sens-btns{display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden}
+  .sens-btns button{font-family:var(--font-mono); font-size:12px; color:var(--text-dim); background:var(--bg-inset); border:none; padding:6px 11px; cursor:pointer; border-right:1px solid var(--border)}
+  .sens-btns button:last-child{border-right:none}
+  .sens-btns button.active{background:var(--meter-6); color:#20170a; font-weight:600}
+  .sens-btns button:hover:not(.active){color:var(--text)}
+
+  .offenders{width:100%; border-collapse:collapse; font-size:13.5px}
+  .offenders th{font-family:var(--font-mono); font-weight:500; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); text-align:left; padding:6px 8px; border-bottom:1px solid var(--border)}
+  .offenders td{padding:7px 8px; border-bottom:1px solid var(--bg-inset); vertical-align:middle}
+  .offenders td.val{font-family:var(--font-mono); font-weight:600; font-variant-numeric:tabular-nums}
+  .offenders td.group{color:var(--text-dim)}
+  .offenders td.mag{color:var(--meter-6); font-family:var(--font-mono); font-size:12.5px}
+  .offenders-more{font-family:var(--font-mono); font-size:12px; color:var(--text-faint); margin-top:6px}
+
+  .empty-note{color:var(--text-faint); font-size:14px}
+  .err-box{background:color-mix(in srgb, var(--danger) 12%, var(--bg-raised)); border:1px solid color-mix(in srgb, var(--danger) 40%, var(--border)); color:var(--text); border-radius:12px; padding:14px 16px; font-size:14.5px; margin:0 0 16px}
+  .err-box b{color:var(--danger)}
+  .skeleton{color:var(--text-faint); font-family:var(--font-mono); font-size:13px; padding:18px 0}
+
+  /* auth / dataset picker panel */
+  .panel{background:var(--bg-raised); border:1px solid var(--border); border-radius:16px; padding:26px 26px 24px; margin:0 0 22px}
+  .panel h2{font-family:var(--font-display); font-weight:600; font-size:22px; margin:0 0 8px; letter-spacing:-.01em}
+  .panel p.sub{color:var(--text-dim); font-size:14.5px; margin:0 0 20px; max-width:60ch}
+  .tabs{display:flex; gap:4px; margin:0 0 18px; border-bottom:1px solid var(--border)}
+  .tabs button{font-family:var(--font-mono); font-size:13px; color:var(--text-faint); background:none; border:none; padding:8px 4px; margin-right:18px; cursor:pointer; border-bottom:2px solid transparent}
+  .tabs button.active{color:var(--text); border-bottom-color:var(--accent)}
+  form.auth-form{display:grid; gap:12px; max-width:360px}
+  form.auth-form label{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-faint); display:block; margin:0 0 5px}
+  form.auth-form input{width:100%; background:var(--bg-inset); border:1px solid var(--border); border-radius:8px; padding:9px 11px; color:var(--text); font-family:var(--font-body); font-size:14.5px}
+  form.auth-form input:focus{outline:none; border-color:var(--accent)}
+  form.auth-form .field{display:block}
+  form.auth-form .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  form.auth-form .terms{display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--text-dim)}
+  form.auth-form .terms input{width:auto}
+  .btn-primary{font-family:var(--font-display); font-weight:600; font-size:15px; color:#0b0d10; background:var(--meter-6); border:none; padding:11px 20px; border-radius:9px; cursor:pointer; margin-top:4px; width:max-content}
+  .btn-primary:hover{background:var(--meter-5)}
+  .btn-primary:disabled{opacity:.6; cursor:default}
+  .form-err{color:var(--danger); font-size:13px; margin:0}
+
+  .dataset-list{display:flex; flex-direction:column; gap:8px}
+  .dataset-row{display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--bg-inset); border:1px solid var(--border); border-radius:10px; padding:11px 14px}
+  .dataset-row .name{font-weight:600; font-size:14.5px}
+  .dataset-row .meta{font-family:var(--font-mono); font-size:12px; color:var(--text-faint)}
+  .dataset-row button{font-family:var(--font-mono); font-size:12.5px; color:#0b0d10; background:var(--meter-6); border:none; padding:7px 13px; border-radius:7px; cursor:pointer; white-space:nowrap}
+  .dataset-row button:hover{background:var(--meter-5)}
+
+  /* cta band */
+  .cta{margin:36px 0 0; background:var(--bg-inset); border:1px solid var(--border); border-radius:18px; padding:32px 28px}
+  .cta .eyebrow{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--meter-6); margin:0 0 12px}
+  .cta h2{font-family:var(--font-display); font-weight:600; font-size:clamp(20px,3.2vw,26px); line-height:1.2; letter-spacing:-.01em; margin:0 0 10px; max-width:30ch}
+  .cta p{color:var(--text-dim); font-size:15px; max-width:58ch; margin:0 0 20px}
+  .cta .ladder{display:flex; flex-direction:column; gap:9px; margin:0 0 22px}
+  .cta .ladder div{font-size:14px; color:var(--text); display:flex; gap:11px; align-items:baseline}
+  .cta .ladder .from{font-family:var(--font-mono); font-size:12px; color:var(--text-faint); min-width:78px}
+  .cta .ladder .arrow{color:var(--meter-6)}
+  .btn{display:inline-block; background:var(--meter-6); color:#0b0d10; font-family:var(--font-display); font-weight:600; font-size:15px; text-decoration:none; padding:12px 22px; border-radius:10px}
+  .btn:hover{background:var(--meter-5)}
+
+  footer{margin:30px 0 48px; display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; font-family:var(--font-mono); font-size:12px; color:var(--text-faint)}
+  footer a{color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--border)}
+  footer a:hover{color:var(--text)}
+  footer .sep{color:var(--border)}
+
+  @media (max-width:560px){
+    .row2{grid-template-columns:1fr}
+    form.auth-form .row2{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <a class="mark" href="./"><span class="dot"></span>find outliers in your data</a>
+    <div class="top-right">
+      <span class="auth-status" id="authStatus"></span>
+      <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">open source &nearr;</a>
+    </div>
+  </div>
+
+  <header class="hero">
+    <h1>Find outliers in your data</h1>
+    <p class="lede">QL scans every numeric column, flags the values that don&rsquo;t belong, and shows them in context — as a live chart, a plain-English summary, and the exact values behind it.</p>
+    <p class="privacy-line">Live demo powered by QuantumLayers. Sign in to run it on your own data.</p>
+  </header>
+
+  <main id="app">
+    <p class="skeleton">Loading&hellip;</p>
+  </main>
+
+  <section class="cta">
+    <p class="eyebrow">when one look isn&rsquo;t enough</p>
+    <h2>This found today&rsquo;s outliers. QuantumLayers watches for tomorrow&rsquo;s.</h2>
+    <p>This page runs the check once, on the data you show it. QuantumLayers keeps watching your live sources and emails you the moment a <em>new</em> outlier shows up — you don&rsquo;t have to remember to come back and look.</p>
+    <div class="ladder">
+      <div><span class="from">this tool</span><span class="arrow">&rarr;</span><span>finds outliers once, in whatever dataset you point it at</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span><b>monitors your live data</b> and emails you the moment a new outlier appears &mdash; no manual re-checking</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>scans every numeric column automatically, not one at a time</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>AI explains <em>why</em> a value looks anomalous, not just that it does</span></div>
+    </div>
+    <a class="btn" href="https://quantumlayers.com/ql-register" target="_blank" rel="noopener">Get outlier alerts on your data free &rarr;</a>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span><span class="sep">&middot;</span>
+    <span>built by <a href="https://quantumlayers.com" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+  </footer>
+
+</div>
+
+<script>
+/* =========================================================================
+   find outliers in your data — QL-backed dual-source tool
+   All data comes from QuantumLayers via ql-client.js. Nothing is computed
+   from a locally-uploaded file — see QL-INTEGRATION.md / CONVENTIONS.md.
+   ========================================================================= */
+
+// ---------------------------------------------------------------------
+// Public demo dataset config — see DEPLOYMENT.md
+// ---------------------------------------------------------------------
+// A curated public QL dataset has not been created yet (see the
+// csv-outlier-detector row in DEPLOYMENT.md). Anonymous zero-click mode
+// (ql_get_chart_data works unauthenticated on a PUBLIC dataset — see
+// QL-INTEGRATION.md) is gated entirely on this config being filled in;
+// ql_get_dataset_detail (which would otherwise tell us which columns are
+// numeric/categorical) requires a session even on a public dataset, so
+// there is no way to discover this at runtime for an anonymous visitor —
+// it has to be recorded here once a dataset exists.
+//
+// Fill in once DEPLOYMENT.md has a real row for this tool, then anonymous
+// visitors get the full zero-click experience automatically — no other
+// code changes needed.
+const PUBLIC_DEMO = {
+  datasetId: null,        // e.g. 42
+  datasetLabel: null,     // e.g. "Retail transactions (demo)"
+  numericColumns: [],     // e.g. ["revenue", "refunds", "unit_price"]
+  categoryColumn: null,   // a low-cardinality column to group the box plot by, e.g. "region"
+};
+const PUBLIC_DEMO_READY = !!(
+  PUBLIC_DEMO.datasetId && PUBLIC_DEMO.numericColumns.length && PUBLIC_DEMO.categoryColumn
+);
+
+const MAX_NUMERIC_COLUMNS = 6;
+const SENSITIVITIES = [
+  { key: "loose", label: "Loose", mult: 3 },
+  { key: "standard", label: "Standard", mult: 1.5 },
+  { key: "strict", label: "Strict", mult: 1 },
+];
+
+// ---------------------------------------------------------------------
+// small helpers
+// ---------------------------------------------------------------------
+const $ = (sel, root) => (root || document).querySelector(sel);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmtNum = (v) => {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  const a = Math.abs(v);
+  let d = 0;
+  if (a !== 0 && a < 1) d = a < 0.01 ? 4 : 3;
+  else if (a < 10) d = 2;
+  else if (a < 100) d = 1;
+  return v.toLocaleString(undefined, { maximumFractionDigits: d });
+};
+const fmtPct = (x, d = 0) => (x * 100).toLocaleString(undefined, { maximumFractionDigits: d }) + "%";
+
+function meterHTML(frac /* 0..1 */) {
+  const on = Math.max(1, Math.min(6, Math.round(frac * 6)));
+  let s = '<span class="strength-meter" aria-label="strength">';
+  for (let i = 0; i < 6; i++) s += `<span class="${i < on ? "filled" : ""}"></span>`;
+  return s + "</span>";
+}
+function kindTag(text) { return `<span class="kind-tag">${esc(text)}</span>`; }
+
+function friendlyError(err) {
+  if (!err) return "Something went wrong.";
+  const codes = (window.QL && QL.ErrorCodes) || {};
+  switch (err.code) {
+    case codes.NETWORK:
+      return "Can’t reach the QuantumLayers demo backend right now — this is usually a temporary configuration issue (see DEPLOYMENT.md), not something wrong with your data. Try again shortly.";
+    case codes.AUTH_REQUIRED:
+      return "Sign in to see this — it needs an authenticated session even on a public dataset.";
+    case codes.INVALID_RESPONSE:
+      return "QuantumLayers sent back something this page didn’t expect. Try again in a moment.";
+    default:
+      return err.message || "QuantumLayers rejected that request.";
+  }
+}
+function errBox(err) {
+  return `<div class="err-box"><b>Couldn’t load this.</b> ${esc(friendlyError(err))}</div>`;
+}
+
+// ---------------------------------------------------------------------
+// auth status (top-right) + global auth reactivity
+// ---------------------------------------------------------------------
+function renderAuthStatus() {
+  const el = $("#authStatus");
+  const user = QL.getCurrentUser();
+  if (QL.isSignedIn() && user) {
+    el.innerHTML = `<b>${esc(user.email || "signed in")}</b> &nbsp;<button data-action="sign-out">sign out</button>`;
+  } else {
+    el.innerHTML = `<button data-action="show-auth">sign in</button>`;
+  }
+}
+// IMPORTANT: this listener must call route() (a pure re-render), never
+// boot() (which calls QL.checkAuth()). checkAuth() itself emits
+// 'authchange' whenever a token is stored (via setSession/clearSession),
+// so wiring this to boot() would recheck auth -> emit -> recheck auth
+// forever the moment anyone is signed in.
+QL.on("authchange", () => {
+  renderAuthStatus();
+  route(); // re-derive which state we're in whenever auth flips, in this tab or another
+});
+
+// ---------------------------------------------------------------------
+// column picking (signed-in path — dataset_detail is auth-only, see above)
+// ---------------------------------------------------------------------
+function pickColumns(detail) {
+  const columns = (detail && detail.columns) || [];
+  const rowCount = (detail && detail.dataset && detail.dataset.row_count) || 0;
+  const idLike = (c) =>
+    /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
+    (rowCount > 5 && c.distinct_count === rowCount && c.null_count === 0);
+
+  const numeric = columns
+    .filter((c) => (c.inferred_type === "integer" || c.inferred_type === "float") && !idLike(c))
+    .slice(0, MAX_NUMERIC_COLUMNS)
+    .map((c) => c.col_name);
+
+  const categoryCandidates = columns.filter(
+    (c) => c.inferred_type === "string" && c.distinct_count >= 2 && c.distinct_count <= 15 && !idLike(c)
+  );
+  const category = categoryCandidates.length ? categoryCandidates[0].col_name : null;
+
+  return { numeric, category };
+}
+
+// ---------------------------------------------------------------------
+// box_plot response parsing — best effort. QL-INTEGRATION.md documents
+// box_plot as returning, per @sgratzl/chartjs-chart-boxplot's expected
+// shape, "arrays of raw values per group" keyed by data.labels. If that
+// shape doesn't match at runtime, we still render the chart (Chart.js
+// only needs the config as-is) but skip our own sensitivity/table math
+// for that column rather than guessing.
+// ---------------------------------------------------------------------
+function extractRawPairs(chartConfig) {
+  try {
+    const labels = chartConfig.data.labels || [];
+    const ds = chartConfig.data.datasets && chartConfig.data.datasets[0];
+    if (!ds || !Array.isArray(ds.data)) return null;
+    const pairs = [];
+    ds.data.forEach((group, i) => {
+      const label = labels[i] !== undefined ? String(labels[i]) : `group ${i + 1}`;
+      if (Array.isArray(group)) {
+        group.forEach((v) => { if (typeof v === "number" && Number.isFinite(v)) pairs.push({ group: label, value: v }); });
+      } else if (typeof group === "number") {
+        pairs.push({ group: label, value: group });
+      } else {
+        throw new Error("unrecognized boxplot data shape");
+      }
+    });
+    return pairs.length ? pairs : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function computeOutliers(pairs, mult) {
+  const values = pairs.map((p) => p.value).sort((a, b) => a - b);
+  const q = (p) => {
+    const i = (values.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i);
+    return values[lo] + (values[hi] - values[lo]) * (i - lo);
+  };
+  const q1 = q(0.25), q3 = q(0.75), median = q(0.5), iqr = q3 - q1;
+  const lo = q1 - mult * iqr, hi = q3 + mult * iqr;
+  const flagged = pairs
+    .filter((p) => p.value < lo || p.value > hi)
+    .map((p) => ({ ...p, magnitude: iqr > 0 ? Math.max((lo - p.value) / iqr, (p.value - hi) / iqr) : 0 }))
+    .sort((a, b) => b.magnitude - a.magnitude);
+  return { q1, q3, median, iqr, lo, hi, total: values.length, flagged };
+}
+
+// ---------------------------------------------------------------------
+// per-column card
+// ---------------------------------------------------------------------
+let chartInstances = [];
+const pairsByColumn = {};       // colName -> raw {group,value}[] (from box_plot) or null
+const sensitivityByColumn = {}; // colName -> sensitivity key
+const distributionByColumn = {}; // colName -> ql_get_distribution_analysis response (signed-in only) or null
+
+function offendersTableHTML(result) {
+  if (!result || !result.flagged.length) {
+    return `<p class="empty-note">No values fall outside this fence at the current sensitivity.</p>`;
+  }
+  const shown = result.flagged.slice(0, 8);
+  let html = `<table class="offenders"><thead><tr><th>Value</th><th>Group</th><th>Beyond fence</th></tr></thead><tbody>`;
+  shown.forEach((f) => {
+    html += `<tr><td class="val">${fmtNum(f.value)}</td><td class="group">${esc(f.group)}</td><td class="mag">${f.magnitude.toFixed(1)}&times; IQR</td></tr>`;
+  });
+  html += `</tbody></table>`;
+  if (result.flagged.length > shown.length) {
+    html += `<p class="offenders-more">+ ${result.flagged.length - shown.length} more not shown</p>`;
+  }
+  return html;
+}
+
+function sensitivityRowHTML(colName, activeKey) {
+  const btns = SENSITIVITIES.map(
+    (s) => `<button data-action="set-sensitivity" data-col="${esc(colName)}" data-key="${s.key}" class="${s.key === activeKey ? "active" : ""}">${s.label}</button>`
+  ).join("");
+  return `<div class="sens-row"><span class="label">Sensitivity</span><span class="sens-btns">${btns}</span></div>`;
+}
+
+function summaryHTML(colName, result, signedIn, distribution) {
+  const pctOfTotal = result.total ? result.flagged.length / result.total : 0;
+  const meter = meterHTML(Math.min(1, 0.15 + pctOfTotal * 4 + (result.flagged.length ? 0.25 : 0)));
+  let html = `<p class="summary-line"><span class="n">${result.flagged.length}</span> of <span class="n">${result.total.toLocaleString()}</span> values (${fmtPct(pctOfTotal)}) fall outside the typical range for <b>${esc(colName)}</b>. ${meter}</p>`;
+  if (signedIn && distribution) {
+    const o = distribution.outliers || {};
+    html += `<p class="summary-line ql-verified"><span class="kind-tag">QL verified</span> &nbsp;QL’s own analysis found <span class="n">${o.count ?? "—"}</span> outliers (<span class="n">${o.percentage != null ? o.percentage.toFixed(1) + "%" : "—"}</span>) at its standard 1.5&times;IQR fence, and classifies this column’s distribution as <b>${esc(distribution.normality || "unknown")}</b>.</p>`;
+  }
+  return html;
+}
+
+function renderColumnBody(colName, signedIn, distribution) {
+  const pairs = pairsByColumn[colName];
+  const sensKey = sensitivityByColumn[colName] || "standard";
+  const mult = (SENSITIVITIES.find((s) => s.key === sensKey) || SENSITIVITIES[1]).mult;
+
+  if (!pairs) {
+    // Chart rendered fine (QL's own config), but we couldn't parse raw
+    // values for our own sensitivity/table layer — degrade honestly.
+    return `<p class="empty-note">QL rendered this chart. A detailed outlier breakdown isn’t available for this column right now.</p>`;
+  }
+  const result = computeOutliers(pairs, mult);
+  return (
+    summaryHTML(colName, result, signedIn, distribution) +
+    sensitivityRowHTML(colName, sensKey) +
+    offendersTableHTML(result)
+  );
+}
+
+function columnCardHTML(colName, chartConfig, signedIn) {
+  const canvasId = "chart-" + colName.replace(/[^a-z0-9]/gi, "_");
+  return `
+    <div class="card" data-col="${esc(colName)}">
+      <h3>${esc(colName)}</h3>
+      <p class="col-meta">grouped by ${esc(chartConfig.__categoryColumn || "")}</p>
+      <div class="chart-box"><canvas id="${canvasId}"></canvas></div>
+      <div class="col-body">${renderColumnBody(colName, signedIn, chartConfig.__distribution)}</div>
+    </div>`;
+}
+
+function amberBoxplotConfig(config) {
+  // Theme QL's returned Chart.js config to the house amber signature
+  // without altering the data QL computed — see CONVENTIONS.md's
+  // charting rule (render QL's real config, don't re-derive the chart).
+  try {
+    (config.data.datasets || []).forEach((ds) => {
+      ds.backgroundColor = "rgba(155,135,245,0.18)";
+      ds.borderColor = "#9b87f5";
+      ds.outlierColor = "#ffcc33";
+      ds.outlierRadius = 4;
+      ds.itemRadius = 0;
+    });
+    config.options = config.options || {};
+    config.options.plugins = config.options.plugins || {};
+    config.options.plugins.legend = { display: false };
+  } catch (e) { /* theming is best-effort, never block rendering */ }
+  return config;
+}
+
+function mountCharts(entries) {
+  // entries: [{colName, chartConfig}]
+  chartInstances.forEach((c) => { try { c.destroy(); } catch (e) {} });
+  chartInstances = [];
+  entries.forEach(({ colName, chartConfig }) => {
+    const canvasId = "chart-" + colName.replace(/[^a-z0-9]/gi, "_");
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !chartConfig) return;
+    try {
+      chartInstances.push(new Chart(canvas.getContext("2d"), amberBoxplotConfig(chartConfig)));
+    } catch (e) { /* leave the empty canvas rather than crash the page */ }
+  });
+}
+
+// ---------------------------------------------------------------------
+// fetching + rendering a full column set for a given dataset
+// ---------------------------------------------------------------------
+async function loadColumnResults(datasetId, numericColumns, categoryColumn, signedIn) {
+  const results = await Promise.all(
+    numericColumns.map(async (colName) => {
+      let chartConfig = null, chartErr = null, distribution = null;
+      try {
+        chartConfig = await QL.chart(datasetId, "box_plot", { x_column: categoryColumn, y_column: colName });
+        chartConfig.__categoryColumn = categoryColumn;
+      } catch (e) {
+        chartErr = e;
+      }
+      if (signedIn) {
+        try { distribution = await QL.distributionAnalysis(datasetId, colName); } catch (e) { /* optional enrichment */ }
+      }
+      if (chartConfig) {
+        chartConfig.__distribution = distribution;
+        pairsByColumn[colName] = extractRawPairs(chartConfig);
+        distributionByColumn[colName] = distribution;
+        if (!sensitivityByColumn[colName]) sensitivityByColumn[colName] = "standard";
+      }
+      return { colName, chartConfig, chartErr, distribution };
+    })
+  );
+  return results;
+}
+
+function renderColumnResults(results, signedIn) {
+  const ok = results.filter((r) => r.chartConfig);
+  const failed = results.filter((r) => !r.chartConfig);
+  let html = "";
+  if (!ok.length) {
+    html += errBox(failed[0] ? failed[0].chartErr : null);
+    return html;
+  }
+  html += ok.map((r) => columnCardHTML(r.colName, r.chartConfig, signedIn)).join("");
+  if (failed.length) {
+    html += `<p class="empty-note">${failed.length} column${failed.length > 1 ? "s" : ""} couldn’t be loaded and ${failed.length > 1 ? "are" : "is"} skipped above.</p>`;
+  }
+  return html;
+}
+
+// ---------------------------------------------------------------------
+// states
+// ---------------------------------------------------------------------
+async function renderAnonPublicDemo() {
+  mount(`
+    <div class="invite-bar">
+      <span>${kindTag("PUBLIC DEMO DATASET")} &nbsp;${esc(PUBLIC_DEMO.datasetLabel || "")}</span>
+      <a class="btn-link" href="#" data-action="show-auth">Run this on your own data &rarr;</a>
+    </div>
+    <p class="skeleton">Scanning ${PUBLIC_DEMO.numericColumns.length} numeric column${PUBLIC_DEMO.numericColumns.length === 1 ? "" : "s"} for outliers&hellip;</p>
+  `);
+  try {
+    const results = await loadColumnResults(
+      PUBLIC_DEMO.datasetId, PUBLIC_DEMO.numericColumns, PUBLIC_DEMO.categoryColumn, false
+    );
+    mount(`
+      <div class="invite-bar">
+        <span>${kindTag("PUBLIC DEMO DATASET")} &nbsp;${esc(PUBLIC_DEMO.datasetLabel || "")}</span>
+        <a class="btn-link" href="#" data-action="show-auth">Run this on your own data &rarr;</a>
+      </div>
+      ${renderColumnResults(results, false)}
+    `);
+    mountCharts(results.filter((r) => r.chartConfig).map((r) => ({ colName: r.colName, chartConfig: r.chartConfig })));
+  } catch (e) {
+    mount(errBox(e));
+  }
+}
+
+function renderAuthPanel(opts) {
+  opts = opts || {};
+  const tab = opts.tab || "register";
+  const notice = opts.notice ? `<p class="empty-note">${esc(opts.notice)}</p>` : "";
+  mount(`
+    <div class="panel">
+      <h2>Run this on your own data</h2>
+      <p class="sub">This tool runs on real QuantumLayers datasets. Create a free account (about 30 seconds) and we’ll scan every numeric column in one of your own datasets for outliers &mdash; or sign in if you already have one.</p>
+      ${notice}
+      <div class="tabs">
+        <button data-action="auth-tab" data-tab="register" class="${tab === "register" ? "active" : ""}">Create free account</button>
+        <button data-action="auth-tab" data-tab="login" class="${tab === "login" ? "active" : ""}">Sign in</button>
+      </div>
+      ${tab === "register" ? registerFormHTML() : loginFormHTML()}
+    </div>
+  `);
+}
+
+function loginFormHTML() {
+  return `
+    <form class="auth-form" data-form="login">
+      <div class="field"><label for="li-email">Email</label><input id="li-email" name="email" type="email" required /></div>
+      <div class="field"><label for="li-pass">Password</label><input id="li-pass" name="password" type="password" required /></div>
+      <p class="form-err" id="loginErr"></p>
+      <button class="btn-primary" type="submit">Sign in &rarr;</button>
+    </form>`;
+}
+function registerFormHTML() {
+  return `
+    <form class="auth-form" data-form="register">
+      <div class="row2">
+        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" /></div>
+        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" /></div>
+      </div>
+      <div class="field"><label for="re-email">Email</label><input id="re-email" name="email" type="email" required /></div>
+      <div class="field"><label for="re-pass">Password</label><input id="re-pass" name="password" type="password" required minlength="8" /></div>
+      <label class="terms"><input type="checkbox" name="termsAgreed" required /> I agree to QuantumLayers’ terms of service.</label>
+      <p class="form-err" id="registerErr"></p>
+      <button class="btn-primary" type="submit">Create free account &rarr;</button>
+    </form>`;
+}
+
+async function renderDatasetPicker() {
+  mount(`<p class="skeleton">Loading your datasets&hellip;</p>`);
+  try {
+    const data = await QL.myDatasets();
+    const datasets = (data && data.datasets) || [];
+    if (!datasets.length) {
+      mount(`
+        <div class="panel">
+          <h2>No datasets yet</h2>
+          <p class="sub">You’re signed in, but your QuantumLayers account doesn’t have a dataset to scan yet.</p>
+          <a class="btn" href="https://quantumlayers.com/ql-dashboard" target="_blank" rel="noopener">Add a dataset on QuantumLayers &rarr;</a>
+        </div>`);
+      return;
+    }
+    mount(`
+      <div class="panel">
+        <h2>Pick a dataset</h2>
+        <p class="sub">We’ll scan its numeric columns for outliers, the same way as the demo above.</p>
+        <div class="dataset-list">
+          ${datasets
+            .map(
+              (d) => `
+            <div class="dataset-row">
+              <div><div class="name">${esc(d.name)}</div><div class="meta">${(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
+              <button data-action="pick-dataset" data-id="${d.id}" data-name="${esc(d.name)}">Scan for outliers</button>
+            </div>`
+            )
+            .join("")}
+        </div>
+      </div>`);
+  } catch (e) {
+    mount(errBox(e));
+  }
+}
+
+async function renderOwnResults(datasetId, datasetName) {
+  mount(`<p class="skeleton">Reading ${esc(datasetName)}’s columns&hellip;</p>`);
+  try {
+    const detail = await QL.datasetDetail(datasetId);
+    const { numeric, category } = pickColumns(detail);
+    if (!numeric.length) {
+      mount(`<div class="empty-note">No numeric columns found in <b>${esc(datasetName)}</b> to scan for outliers.</div>${backToPickerLink()}`);
+      return;
+    }
+    if (!category) {
+      mount(`<p class="empty-note">No low-cardinality category column found in <b>${esc(datasetName)}</b> to group the chart by — outlier detection needs at least one to render QL’s box plot.</p>${backToPickerLink()}`);
+      return;
+    }
+    mount(`
+      <div class="invite-bar">
+        <span>${kindTag("YOUR DATA")} &nbsp;${esc(datasetName)}</span>
+        ${backToPickerLink()}
+      </div>
+      <p class="skeleton">Scanning ${numeric.length} numeric column${numeric.length === 1 ? "" : "s"}&hellip;</p>
+    `);
+    const results = await loadColumnResults(datasetId, numeric, category, true);
+    mount(`
+      <div class="invite-bar">
+        <span>${kindTag("YOUR DATA")} &nbsp;${esc(datasetName)}</span>
+        ${backToPickerLink()}
+      </div>
+      ${renderColumnResults(results, true)}
+    `);
+    mountCharts(results.filter((r) => r.chartConfig).map((r) => ({ colName: r.colName, chartConfig: r.chartConfig })));
+  } catch (e) {
+    mount(errBox(e) + backToPickerLink());
+  }
+}
+function backToPickerLink() {
+  return `<a class="btn-link" href="#" data-action="back-to-picker">&larr; pick a different dataset</a>`;
+}
+
+function mount(html) { $("#app").innerHTML = html; }
+
+// ---------------------------------------------------------------------
+// boot / routing
+// ---------------------------------------------------------------------
+// route(): pure re-render from whatever QL.isSignedIn() already says right
+// now. No network call — safe to call from the 'authchange' listener.
+function route() {
+  if (QL.isSignedIn()) {
+    renderDatasetPicker();
+  } else if (PUBLIC_DEMO_READY) {
+    renderAnonPublicDemo();
+  } else {
+    renderAuthPanel();
+  }
+}
+
+// boot(): the one place that calls QL.checkAuth() (re-validates any
+// stored token against the server). Call this once on page load; after
+// that, sign-in/register/sign-out already update the session and emit
+// 'authchange' themselves, so route() is enough — see the comment above
+// the 'authchange' listener for why boot() must not be wired to it.
+async function boot() {
+  renderAuthStatus();
+  await QL.checkAuth();
+  renderAuthStatus();
+  route();
+}
+
+// ---------------------------------------------------------------------
+// delegated event wiring (survives #app being replaced wholesale)
+// ---------------------------------------------------------------------
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-action]");
+  if (!el) return;
+  const action = el.dataset.action;
+
+  if (action === "show-auth") { e.preventDefault(); renderAuthPanel(); }
+  else if (action === "auth-tab") { e.preventDefault(); renderAuthPanel({ tab: el.dataset.tab }); }
+  else if (action === "sign-out") { e.preventDefault(); QL.logout().then(route); }
+  else if (action === "back-to-picker") { e.preventDefault(); renderDatasetPicker(); }
+  else if (action === "pick-dataset") { e.preventDefault(); renderOwnResults(Number(el.dataset.id), el.dataset.name); }
+  else if (action === "set-sensitivity") {
+    e.preventDefault();
+    const col = el.dataset.col, key = el.dataset.key;
+    sensitivityByColumn[col] = key;
+    const card = document.querySelector(`.card[data-col="${CSS.escape(col)}"] .col-body`);
+    if (card) {
+      card.innerHTML = renderColumnBody(col, QL.isSignedIn(), distributionByColumn[col]);
+    }
+  }
+});
+
+document.addEventListener("submit", (e) => {
+  const form = e.target.closest("form[data-form]");
+  if (!form) return;
+  e.preventDefault();
+  const kind = form.dataset.form;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const errEl = form.querySelector(".form-err");
+  errEl.textContent = "";
+  submitBtn.disabled = true;
+
+  const done = () => { submitBtn.disabled = false; };
+  if (kind === "login") {
+    QL.login(data.email, data.password)
+      .then(() => route())
+      .catch((err) => { errEl.textContent = friendlyError(err); done(); });
+  } else if (kind === "register") {
+    QL.register({
+      email: data.email,
+      password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      termsAgreed: !!data.termsAgreed,
+    })
+      .then(() => route())
+      .catch((err) => { errEl.textContent = friendlyError(err); done(); });
+  }
+});
+
+boot();
+</script>
+</body>
+</html>
