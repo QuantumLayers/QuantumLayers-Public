@@ -3,16 +3,16 @@
 Rules every tool in this collection follows. If you're adding a new tool,
 read this end to end before writing HTML.
 
-> **Note on the reference tool:** earlier drafts of this doc pointed at
-> `free-tools/whats-in-this-csv/` as an existing, fully-client-side tool to
-> copy the visual system from. That tool doesn't exist in this repo yet —
-> it's the first tool planned on top of this foundation (see
-> `free-tools/README.md`), not something already built. The visual tokens
-> below are the design system this repo is committing to; when
-> `whats-in-this-csv/` (or any tool) is actually built, it should conform
-> to this doc, not the other way around. If an actual reference
-> implementation shows up later with different values, reconcile this file
-> with it rather than silently drifting.
+> **Note on the reference tool:** [`free-tools/whats-in-this-csv/`](./whats-in-this-csv/)
+> now exists, and it's an intentional exception to the dual-source pattern
+> below, not an oversight — it's fully client-side, never calls QL, and its
+> own README's "your data never leaves your machine" promise is the point
+> of the tool. It predates this repo's QL-backed foundation and is kept
+> that way deliberately. The visual tokens below are still the design
+> system this repo commits to going forward; every tool built *after*
+> `whats-in-this-csv` follows the full dual-source pattern (QL-backed,
+> `ql-client.js`, the states in the next section) rather than
+> `whats-in-this-csv`'s client-only shape.
 
 ## The dual-source pattern
 

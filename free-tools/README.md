@@ -15,6 +15,12 @@ Every tool works two ways behind one UI:
 
 Live demo powered by QuantumLayers. Sign in to run it on your own data.
 
+> **Exception:** [`whats-in-this-csv`](./whats-in-this-csv/) is fully
+> client-side by design — it never calls QL at all, and its own "your data
+> never leaves your machine" promise is the point of the tool. It predates
+> the QL-backed foundation above and doesn't follow the dual-source pattern.
+> Every tool added after it does — see `CONVENTIONS.md`.
+
 ## Before building a tool
 
 Read, in this order:
@@ -34,10 +40,11 @@ Read, in this order:
 
 | Tool | Live demo | What it does |
 |---|---|---|
-| [`whats-in-this-csv`](./whats-in-this-csv/) | _not yet deployed_ | Planned — profiles a CSV/dataset (column types, stats, quick charts) as this collection's first tool. Not built in this PR; only the shared foundation (`ql-client.js`, conventions, deployment prerequisites) lands here. |
+| [`whats-in-this-csv`](./whats-in-this-csv/) | [quantumlayers.github.io/quantumlayers-public/free-tools/whats-in-this-csv/](https://quantumlayers.github.io/quantumlayers-public/free-tools/whats-in-this-csv/) | Drops a CSV, profiles its columns, and ranks plain-language findings (trends, correlations, outliers, data-quality flags) — entirely client-side, no upload. |
 
-_(Table starts empty of live demos on purpose — see `DEPLOYMENT.md`
-before adding a row here that links to something not actually reachable.)_
+_(The live demo link assumes GitHub Pages is enabled for this repo and
+serving from its default branch — unconfirmed as of this writing. If the
+link 404s, that's the prerequisite to check, not a bug in the tool.)_
 
 ## Contributing a tool
 
