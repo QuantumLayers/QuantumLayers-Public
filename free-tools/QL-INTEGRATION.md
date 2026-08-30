@@ -81,6 +81,22 @@ Full parameter lists for every endpoint above are in
 `docs/embedded-analytics-api.html` — `ql-client.js` mirrors them, but check
 there before adding a new call.
 
+### `box_plot`'s raw values, and why it matters for client-side sensitivity controls
+
+`ql_get_chart_data` with `chart_type: box_plot` returns, per the
+`@sgratzl/chartjs-chart-boxplot` shape, *every* row's raw value grouped by
+category — not just the ones outside the fence. That's different from
+`ql_get_distribution_analysis`, which computes outliers at a **fixed
+1.5×IQR fence** (not a configurable parameter) and caps its returned
+`outliers.values` list at 50. A tool that wants a user-adjustable outlier
+sensitivity (looser/stricter than 1.5×) can't get that from
+`ql_get_distribution_analysis` alone — but it can recompute IQR fences at
+any multiplier, entirely client-side, from the full raw values a
+`box_plot` chart request already returned (`free-tools/csv-outlier-detector/`
+does exactly this: `ql_get_distribution_analysis`'s output is shown
+separately, labeled as QL's own authoritative read, rather than conflated
+with the client-recomputed slider).
+
 ### Chart types (`ql_get_chart_data`'s `chart_type`)
 
 `histogram`, `bar` / `horizontal_bar`, `pie` / `doughnut`, `scatter`,
