@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dataset Profiler — exhaustive per-column data dictionary | QuantumLayers</title>
+<meta name="description" content="Dataset profiler: an exhaustive, reference-style profile of every column in your dataset — type, missing %, distinct values, five-number summaries, histograms — exportable as a data dictionary. Powered by QuantumLayers." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4.2.5/build/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
+<script src="../ql-client.js"></script>
+<style>
+  :root{
+    --font-display:'Space Grotesk',system-ui,sans-serif;
+    --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+
+    --bg:#0b0d10; --bg-raised:#14171c; --bg-inset:#0e1013; --border:#262b32;
+    --text:#e8eaed; --text-dim:#9aa1ab; --text-faint:#5b6270;
+    --accent:#9b87f5; --accent-dim:#7dd3fc;
+
+    --meter-empty:#262b32;
+    --meter-1:#7a5a1e; --meter-2:#96701f; --meter-3:#b28620;
+    --meter-4:#cf9c21; --meter-5:#eab308; --meter-6:#ffcc33;
+
+    --ok:#4ade80; --warn:#eab308; --danger:#f87171;
+  }
+  @media (prefers-color-scheme:light){
+    :root{
+      --bg:#fafafa; --bg-raised:#ffffff; --bg-inset:#f2f2f4; --border:#e2e4e8;
+      --text:#14171c; --text-dim:#565c66; --text-faint:#9aa1ab;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--font-body);
+    font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent-dim)}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 20px}
+
+  /* top bar */
+  .top{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px 0 6px; flex-wrap:wrap}
+  .mark{font-family:var(--font-mono); font-weight:600; font-size:13px; letter-spacing:.02em; color:var(--text); text-decoration:none; display:flex; align-items:center; gap:9px}
+  .mark .dot{width:10px; height:10px; border-radius:3px; background:var(--meter-6); box-shadow:0 0 0 4px color-mix(in srgb, var(--meter-6) 22%, transparent)}
+  .top-right{display:flex; align-items:center; gap:16px; font-family:var(--font-mono); font-size:12.5px}
+  .top a.ghlink{color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--border)}
+  .top a.ghlink:hover{color:var(--text); border-color:var(--text-faint)}
+  .auth-status{color:var(--text-dim)}
+  .auth-status b{color:var(--text); font-weight:600}
+  .auth-status button{font-family:var(--font-mono); font-size:12.5px; color:var(--text); background:none; border:1px solid var(--border); padding:5px 10px; border-radius:7px; cursor:pointer}
+  .auth-status button:hover{border-color:var(--text-faint)}
+
+  /* hero */
+  .hero{padding:28px 0 6px}
+  h1{font-family:var(--font-display); font-weight:600; font-size:clamp(28px,5.4vw,42px); line-height:1.08; letter-spacing:-.02em; margin:0 0 12px}
+  .lede{font-size:clamp(16px,2.4vw,18px); color:var(--text-dim); max-width:60ch; margin:0 0 16px}
+  .privacy-line{font-family:var(--font-mono); font-size:12.5px; color:var(--text-faint); margin:0 0 22px}
+
+  /* kind tag + strength meter (house signature) */
+  .kind-tag{
+    font-family:var(--font-mono); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text-dim); border:1px solid var(--border); border-radius:4px; padding:2px 8px; display:inline-block;
+  }
+  .strength-meter{display:inline-flex; gap:3px; vertical-align:middle}
+  .strength-meter span{width:14px; height:6px; border-radius:1px; background:var(--meter-empty); display:block}
+  .strength-meter span.filled:nth-child(1){background:var(--meter-1)}
+  .strength-meter span.filled:nth-child(2){background:var(--meter-2)}
+  .strength-meter span.filled:nth-child(3){background:var(--meter-3)}
+  .strength-meter span.filled:nth-child(4){background:var(--meter-4)}
+  .strength-meter span.filled:nth-child(5){background:var(--meter-5)}
+  .strength-meter span.filled:nth-child(6){background:var(--meter-6)}
+
+  .invite-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background:var(--bg-raised); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin:0 0 22px;
+  }
+  .invite-bar span{color:var(--text-dim); font-size:14px}
+  .invite-bar a.btn-link{font-family:var(--font-mono); font-size:13px; color:var(--accent-dim); text-decoration:none; white-space:nowrap}
+  .invite-bar a.btn-link:hover{text-decoration:underline}
+
+  /* overview tiles */
+  .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin:0 0 22px}
+  .tile{background:var(--bg-raised); border:1px solid var(--border); border-radius:12px; padding:14px 16px}
+  .tile .n{font-family:var(--font-display); font-weight:600; font-size:24px; display:block}
+  .tile .l{font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint)}
+
+  /* generic card / section */
+  .card{background:var(--bg-raised); border:1px solid var(--border); border-radius:14px; padding:20px 22px; margin:0 0 18px}
+  .card h2{font-family:var(--font-display); font-weight:600; font-size:18px; margin:0 0 4px}
+  .card .sub{color:var(--text-faint); font-size:13px; margin:0 0 16px}
+  .sec-label{font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); margin:16px 0 8px}
+  .sec-label:first-child{margin-top:0}
+
+  /* quality lists */
+  .qlist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+  .qlist li{display:flex; align-items:center; gap:10px; font-size:13.5px; background:var(--bg-inset); border:1px solid var(--border); border-radius:8px; padding:8px 11px}
+  .qlist .cn{font-family:var(--font-mono); font-weight:600}
+  .qlist .detail{color:var(--text-faint); margin-left:auto; font-size:12px; font-family:var(--font-mono)}
+  .qlist.ok li{color:var(--ok)}
+  .miss-bar{display:inline-block; width:70px; height:6px; border-radius:3px; background:var(--border); overflow:hidden; vertical-align:middle}
+  .miss-bar i{display:block; height:100%; background:var(--meter-6)}
+
+  /* dictionary table */
+  .dict-actions{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 16px}
+  .dict-actions button{font-family:var(--font-mono); font-size:12.5px; color:var(--text); background:var(--bg-inset); border:1px solid var(--border); padding:8px 13px; border-radius:8px; cursor:pointer}
+  .dict-actions button:hover{border-color:var(--text-faint)}
+  .dict-actions .status{font-family:var(--font-mono); font-size:11.5px; color:var(--ok); align-self:center}
+  .table-scroll{overflow-x:auto}
+  .dict{width:100%; border-collapse:collapse; font-size:13px; min-width:720px}
+  .dict th{font-family:var(--font-mono); font-weight:500; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); text-align:left; padding:7px 10px; border-bottom:1px solid var(--border); white-space:nowrap}
+  .dict td{padding:8px 10px; border-bottom:1px solid var(--bg-inset); vertical-align:top}
+  .dict td.cn{font-family:var(--font-mono); font-weight:600; white-space:nowrap}
+  .dict td.summary{color:var(--text-dim)}
+  .tag{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text); background:var(--bg-inset); border:1px solid var(--border); padding:2px 6px; border-radius:5px; white-space:nowrap}
+
+  /* per-column detail cards */
+  .col-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px}
+  .col-card{background:var(--bg-inset); border:1px solid var(--border); border-radius:12px; padding:16px 18px}
+  .col-card h3{font-family:var(--font-mono); font-weight:600; font-size:14px; margin:0 0 4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .col-card .stat-line{font-size:12.5px; color:var(--text-dim); margin:2px 0}
+  .col-card .stat-line b{color:var(--text); font-family:var(--font-mono); font-weight:600}
+  .chart-box{position:relative; height:140px; margin:10px 0 4px}
+  .chart-box canvas{max-height:100%}
+  .cap-note{font-family:var(--font-mono); font-size:12px; color:var(--text-faint); margin:8px 0 0}
+
+  .empty-note{color:var(--text-faint); font-size:14px}
+  .err-box{background:color-mix(in srgb, var(--danger) 12%, var(--bg-raised)); border:1px solid color-mix(in srgb, var(--danger) 40%, var(--border)); color:var(--text); border-radius:12px; padding:14px 16px; font-size:14.5px; margin:0 0 16px}
+  .err-box b{color:var(--danger)}
+  .skeleton{color:var(--text-faint); font-family:var(--font-mono); font-size:13px; padding:18px 0}
+
+  /* auth / dataset picker panel */
+  .panel{background:var(--bg-raised); border:1px solid var(--border); border-radius:16px; padding:26px 26px 24px; margin:0 0 22px}
+  .panel h2{font-family:var(--font-display); font-weight:600; font-size:22px; margin:0 0 8px; letter-spacing:-.01em}
+  .panel p.sub{color:var(--text-dim); font-size:14.5px; margin:0 0 20px; max-width:60ch}
+  .tabs{display:flex; gap:4px; margin:0 0 18px; border-bottom:1px solid var(--border)}
+  .tabs button{font-family:var(--font-mono); font-size:13px; color:var(--text-faint); background:none; border:none; padding:8px 4px; margin-right:18px; cursor:pointer; border-bottom:2px solid transparent}
+  .tabs button.active{color:var(--text); border-bottom-color:var(--accent)}
+  form.auth-form{display:grid; gap:12px; max-width:360px}
+  form.auth-form label{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-faint); display:block; margin:0 0 5px}
+  form.auth-form input{width:100%; background:var(--bg-inset); border:1px solid var(--border); border-radius:8px; padding:9px 11px; color:var(--text); font-family:var(--font-body); font-size:14.5px}
+  form.auth-form input:focus{outline:none; border-color:var(--accent)}
+  form.auth-form .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  form.auth-form .terms{display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--text-dim)}
+  form.auth-form .terms input{width:auto}
+  .btn-primary{font-family:var(--font-display); font-weight:600; font-size:15px; color:#0b0d10; background:var(--meter-6); border:none; padding:11px 20px; border-radius:9px; cursor:pointer; margin-top:4px; width:max-content}
+  .btn-primary:hover{background:var(--meter-5)}
+  .btn-primary:disabled{opacity:.6; cursor:default}
+  .form-err{color:var(--danger); font-size:13px; margin:0}
+
+  .dataset-list{display:flex; flex-direction:column; gap:8px}
+  .dataset-row{display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--bg-inset); border:1px solid var(--border); border-radius:10px; padding:11px 14px}
+  .dataset-row .name{font-weight:600; font-size:14.5px}
+  .dataset-row .meta{font-family:var(--font-mono); font-size:12px; color:var(--text-faint)}
+  .dataset-row button{font-family:var(--font-mono); font-size:12.5px; color:#0b0d10; background:var(--meter-6); border:none; padding:7px 13px; border-radius:7px; cursor:pointer; white-space:nowrap}
+  .dataset-row button:hover{background:var(--meter-5)}
+
+  /* cta band */
+  .cta{margin:36px 0 0; background:var(--bg-inset); border:1px solid var(--border); border-radius:18px; padding:32px 28px}
+  .cta .eyebrow{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--meter-6); margin:0 0 12px}
+  .cta h2{font-family:var(--font-display); font-weight:600; font-size:clamp(20px,3.2vw,26px); line-height:1.2; letter-spacing:-.01em; margin:0 0 10px; max-width:32ch}
+  .cta p{color:var(--text-dim); font-size:15px; max-width:58ch; margin:0 0 20px}
+  .cta .ladder{display:flex; flex-direction:column; gap:9px; margin:0 0 22px}
+  .cta .ladder div{font-size:14px; color:var(--text); display:flex; gap:11px; align-items:baseline}
+  .cta .ladder .from{font-family:var(--font-mono); font-size:12px; color:var(--text-faint); min-width:78px}
+  .cta .ladder .arrow{color:var(--meter-6)}
+  .btn{display:inline-block; background:var(--meter-6); color:#0b0d10; font-family:var(--font-display); font-weight:600; font-size:15px; text-decoration:none; padding:12px 22px; border-radius:10px}
+  .btn:hover{background:var(--meter-5)}
+
+  footer{margin:30px 0 48px; display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; font-family:var(--font-mono); font-size:12px; color:var(--text-faint)}
+  footer a{color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--border)}
+  footer a:hover{color:var(--text)}
+  footer .sep{color:var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <a class="mark" href="./"><span class="dot"></span>dataset profiler</a>
+    <div class="top-right">
+      <span class="auth-status" id="authStatus"></span>
+      <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">open source &nearr;</a>
+    </div>
+  </div>
+
+  <header class="hero">
+    <h1>Dataset profiler</h1>
+    <p class="lede">An exhaustive, reference-style profile of every column in your dataset — type, missing %, distinct values, five-number summaries, histograms, top values — built from QuantumLayers' own ingestion-time statistics, exportable as a data dictionary.</p>
+    <p class="privacy-line">Live demo powered by QuantumLayers. Sign in to run it on your own data.</p>
+  </header>
+
+  <main id="app">
+    <p class="skeleton">Loading&hellip;</p>
+  </main>
+
+  <section class="cta">
+    <p class="eyebrow">profile once vs. profile forever</p>
+    <h2>This profiled your dataset once. QuantumLayers re-profiles it every time the data changes.</h2>
+    <p>Connect a live source — a database, an API, a spreadsheet that gets edited — and QuantumLayers keeps this same per-column profile current automatically, so the data dictionary you share never quietly goes stale.</p>
+    <div class="ladder">
+      <div><span class="from">this tool</span><span class="arrow">&rarr;</span><span>one profile, one snapshot in time</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span><b>re-profiles continuously</b> as your live source changes — no re-running this by hand</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>flags new data-quality issues the moment they appear, not next time someone checks</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>full stats, correlations, PCA and AI insights beyond a per-column dictionary</span></div>
+    </div>
+    <a class="btn" href="https://quantumlayers.com/ql-register" target="_blank" rel="noopener">Keep your data dictionary current free &rarr;</a>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span><span class="sep">&middot;</span>
+    <span>built by <a href="https://quantumlayers.com" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+  </footer>
+
+</div>
+
+<script>
+/* =========================================================================
+   dataset profiler — QL-backed dual-source tool
+   Every number here comes from QL's own ingestion-time per-column stats
+   (ql_get_dataset_detail) plus ql_get_statistical_summary and per-column
+   chart requests — never re-derived from raw rows, because this tool
+   never sees raw rows (only QL's own aggregates). See the data-quality
+   panel's "possible duplicate columns" note for what that constraint
+   rules out.
+
+   NOTE ON ANONYMOUS MODE: unlike csv-outlier-detector and
+   instant-chart-maker, this tool does NOT gate on a PUBLIC_DEMO dataset
+   config at all — per direction, anonymous visitors go straight to the
+   sign-up panel rather than a zero-click public-dataset demo. There is
+   nothing to configure here later; that's deliberate, not a placeholder.
+   ========================================================================= */
+
+const MAX_DETAILED_NUMERIC = 8;
+const MAX_DETAILED_CATEGORY = 8;
+const TOP_VALUES_LIMIT = 8;
+
+// ---------------------------------------------------------------------
+// small helpers
+// ---------------------------------------------------------------------
+const $ = (sel, root) => (root || document).querySelector(sel);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmtNum = (v) => {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  const a = Math.abs(v);
+  let d = 0;
+  if (a !== 0 && a < 1) d = a < 0.01 ? 4 : 3;
+  else if (a < 10) d = 2;
+  else if (a < 100) d = 1;
+  return Number(v).toLocaleString(undefined, { maximumFractionDigits: d });
+};
+const fmtPct = (x, d = 1) => (x * 100).toLocaleString(undefined, { maximumFractionDigits: d }) + "%";
+
+function meterHTML(frac /* 0..1 */) {
+  const on = Math.max(0, Math.min(6, Math.round(frac * 6)));
+  let s = '<span class="strength-meter" aria-label="strength">';
+  for (let i = 0; i < 6; i++) s += `<span class="${i < on ? "filled" : ""}"></span>`;
+  return s + "</span>";
+}
+function kindTag(text) { return `<span class="kind-tag">${esc(text)}</span>`; }
+function typeTag(type) { return `<span class="tag">${esc(type)}</span>`; }
+
+function friendlyError(err) {
+  if (!err) return "Something went wrong.";
+  const codes = (window.QL && QL.ErrorCodes) || {};
+  switch (err.code) {
+    case codes.NETWORK:
+      return "Can’t reach the QuantumLayers demo backend right now — this is usually a temporary configuration issue (see DEPLOYMENT.md), not something wrong with your data. Try again shortly.";
+    case codes.AUTH_REQUIRED:
+      return "Sign in to see this — it needs an authenticated session even on a public dataset.";
+    case codes.INVALID_RESPONSE:
+      return "QuantumLayers sent back something this page didn’t expect. Try again in a moment.";
+    default:
+      return err.message || "QuantumLayers rejected that request.";
+  }
+}
+function errBox(err) {
+  return `<div class="err-box"><b>Couldn’t load this.</b> ${esc(friendlyError(err))}</div>`;
+}
+function mount(html) { $("#app").innerHTML = html; }
+
+// ---------------------------------------------------------------------
+// auth status + reactivity
+// ---------------------------------------------------------------------
+function renderAuthStatus() {
+  const el = $("#authStatus");
+  const user = QL.getCurrentUser();
+  if (QL.isSignedIn() && user) {
+    el.innerHTML = `<b>${esc(user.email || "signed in")}</b> &nbsp;<button data-action="sign-out">sign out</button>`;
+  } else {
+    el.innerHTML = `<button data-action="show-auth">sign in</button>`;
+  }
+}
+// IMPORTANT: this must call route() (a pure re-render), never boot()
+// (which calls QL.checkAuth()) — checkAuth() itself emits 'authchange'
+// whenever a session token is stored, so wiring this to boot() would
+// recheck auth -> emit -> recheck auth forever the moment anyone signs in.
+QL.on("authchange", () => { renderAuthStatus(); route(); });
+
+// ---------------------------------------------------------------------
+// column classification
+// ---------------------------------------------------------------------
+function classifyColumns(detail) {
+  const columns = (detail && detail.columns) || [];
+  const rowCount = (detail && detail.dataset && detail.dataset.row_count) || 0;
+  const idLike = (c) =>
+    /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
+    (rowCount > 5 && c.distinct_count === rowCount && c.null_count === 0);
+
+  return columns.map((c) => {
+    let type = "text";
+    if (c.inferred_type === "integer" || c.inferred_type === "float") type = "numeric";
+    else if (c.inferred_type === "date" || c.inferred_type === "datetime") type = "date";
+    else if (c.inferred_type === "string") {
+      type = c.distinct_count <= Math.max(20, rowCount * 0.5) ? "category" : "text";
+    }
+    return {
+      name: c.col_name, type, idLike: idLike(c),
+      distinct: c.distinct_count || 0, missing: c.null_count || 0,
+      min: c.min_val, max: c.max_val, mean: c.mean_val, stddev: c.stddev_val,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------
+// data-quality analysis — all derived from dataset_detail's per-column
+// stats alone (no raw rows are ever available to this tool, so "possible
+// duplicate columns" is the closest honest proxy for duplicate detection
+// — see the note rendered alongside it).
+// ---------------------------------------------------------------------
+function analyzeQuality(columns, rowCount) {
+  const missing = columns
+    .filter((c) => c.missing > 0)
+    .map((c) => ({ name: c.name, rate: rowCount ? c.missing / rowCount : 0 }))
+    .sort((a, b) => b.rate - a.rate);
+
+  const constant = columns.filter((c) => c.distinct === 1 && rowCount > 0);
+
+  const highCardinality = columns.filter(
+    (c) => !c.idLike && rowCount > 20 && c.distinct / rowCount > 0.9 && c.type !== "numeric"
+  );
+
+  const sig = (c) => [c.type, c.distinct, c.missing, c.min, c.max, c.mean].join("|");
+  const bySig = {};
+  columns.forEach((c) => {
+    if (c.distinct === 0) return; // empty columns aren't meaningfully "duplicates"
+    const key = sig(c);
+    (bySig[key] = bySig[key] || []).push(c.name);
+  });
+  const possibleDuplicates = Object.values(bySig).filter((g) => g.length > 1);
+
+  return { missing, constant, highCardinality, possibleDuplicates };
+}
+
+// ---------------------------------------------------------------------
+// per-column detail: histogram (numeric) / top-values (category) charts
+// ---------------------------------------------------------------------
+let chartInstances = [];
+function destroyCharts() {
+  chartInstances.forEach((c) => { try { c.destroy(); } catch (e) {} });
+  chartInstances = [];
+}
+function mountChartInto(canvasId, config) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !config) return;
+  try {
+    config.options = config.options || {};
+    config.options.maintainAspectRatio = false;
+    config.options.plugins = config.options.plugins || {};
+    config.options.plugins.legend = { display: false };
+    chartInstances.push(new Chart(canvas.getContext("2d"), config));
+  } catch (e) { /* leave the empty canvas rather than crash the page */ }
+}
+
+/** Bar/horizontal_bar's sort order isn't documented (unlike pie/doughnut,
+ * which QL's docs explicitly say sort descending + trim to a limit) — see
+ * QL-INTEGRATION.md. So for "top values" we request a plain count-by-value
+ * bar, then sort+trim QL's own returned labels/data client-side rather
+ * than assume an order QL never promised. This reorders QL's real numbers
+ * for presentation; it doesn't recompute them. */
+function sortAndTrimBarConfig(config, limit) {
+  try {
+    const labels = config.data.labels || [];
+    const ds = config.data.datasets[0];
+    const paired = labels.map((l, i) => ({ label: l, value: ds.data[i] }));
+    paired.sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0));
+    const top = paired.slice(0, limit);
+    config.data.labels = top.map((p) => p.label);
+    ds.data = top.map((p) => p.value);
+    return { config, top };
+  } catch (e) {
+    return { config, top: null };
+  }
+}
+
+// ---------------------------------------------------------------------
+// data dictionary: build once from dataset_detail + stats(), used for
+// the on-page table AND both exports — the shareable artifact.
+// ---------------------------------------------------------------------
+function buildDictionary(columns, statsByColumn) {
+  return columns.map((c) => {
+    const row = {
+      name: c.name, type: c.idLike ? `${c.type} (id-like)` : c.type,
+      missing: c.missing, distinct: c.distinct, summary: "",
+    };
+    if (c.type === "numeric") {
+      const s = statsByColumn[c.name];
+      if (s) {
+        row.min = s.min; row.q1 = s.q1; row.median = s.median; row.q3 = s.q3; row.max = s.max;
+        row.mean = s.mean; row.stddev = s.std;
+        row.summary = `min ${fmtNum(s.min)} · q1 ${fmtNum(s.q1)} · median ${fmtNum(s.median)} · q3 ${fmtNum(s.q3)} · max ${fmtNum(s.max)}`;
+      } else {
+        row.min = c.min; row.max = c.max; row.mean = c.mean; row.stddev = c.stddev;
+        row.summary = `min ${fmtNum(c.min)} · mean ${fmtNum(c.mean)} · max ${fmtNum(c.max)} (quartiles unavailable)`;
+      }
+    } else if (c.type === "date") {
+      row.summary = c.min && c.max ? `${c.min} → ${c.max}` : "range unavailable";
+    } else {
+      row.summary = c.distinct ? `${c.distinct.toLocaleString()} distinct value${c.distinct === 1 ? "" : "s"}` : "";
+    }
+    return row;
+  });
+}
+
+function dictionaryTableHTML(dict, rowCount) {
+  const rows = dict
+    .map(
+      (r) => `
+    <tr>
+      <td class="cn">${esc(r.name)}</td>
+      <td>${typeTag(r.type)}</td>
+      <td>${rowCount ? fmtPct(r.missing / rowCount) : "—"}</td>
+      <td>${r.distinct.toLocaleString()}</td>
+      <td class="summary">${esc(r.summary)}</td>
+    </tr>`
+    )
+    .join("");
+  return `
+    <div class="table-scroll">
+      <table class="dict">
+        <thead><tr><th>Column</th><th>Type</th><th>Missing</th><th>Distinct</th><th>Summary</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function csvEscape(v) {
+  const s = v === null || v === undefined ? "" : String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function dictionaryToCSV(dict, datasetName, rowCount) {
+  const headers = ["column", "type", "missing_count", "missing_pct", "distinct_count", "min", "q1", "median", "q3", "max", "mean", "stddev", "summary"];
+  const lines = [headers.join(",")];
+  dict.forEach((r) => {
+    lines.push(
+      [
+        r.name, r.type, r.missing, rowCount ? (r.missing / rowCount).toFixed(4) : "", r.distinct,
+        r.min ?? "", r.q1 ?? "", r.median ?? "", r.q3 ?? "", r.max ?? "", r.mean ?? "", r.stddev ?? "", r.summary,
+      ]
+        .map(csvEscape)
+        .join(",")
+    );
+  });
+  return lines.join("\n");
+}
+function dictionaryToMarkdown(dict, datasetName, rowCount) {
+  const lines = [
+    `# Data dictionary — ${datasetName}`,
+    "",
+    `${rowCount.toLocaleString()} rows · ${dict.length} columns · generated ${new Date().toISOString().slice(0, 10)} via [Dataset Profiler](https://quantumlayers.github.io/quantumlayers-public/free-tools/csv-data-profiler/), powered by QuantumLayers.`,
+    "",
+    "| Column | Type | Missing | Distinct | Summary |",
+    "|---|---|---|---|---|",
+  ];
+  dict.forEach((r) => {
+    const missing = rowCount ? ((r.missing / rowCount) * 100).toFixed(1) + "%" : "—";
+    lines.push(`| \`${r.name}\` | ${r.type} | ${missing} | ${r.distinct.toLocaleString()} | ${r.summary.replace(/\|/g, "\\|")} |`);
+  });
+  return lines.join("\n") + "\n";
+}
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+// ---------------------------------------------------------------------
+// quality panel
+// ---------------------------------------------------------------------
+function qualityListHTML(items, renderItem, emptyLabel) {
+  if (!items.length) return `<ul class="qlist ok"><li>&#10003; ${esc(emptyLabel)}</li></ul>`;
+  return `<ul class="qlist">${items.map(renderItem).join("")}</ul>`;
+}
+function qualityPanelHTML(q, rowCount) {
+  return `
+    <div class="card">
+      <h2>Data quality</h2>
+      <p class="sub">Derived from QuantumLayers' own per-column ingestion stats.</p>
+
+      <p class="sec-label">Missing data</p>
+      ${qualityListHTML(
+        q.missing,
+        (c) => `<li><span class="cn">${esc(c.name)}</span><span class="miss-bar"><i style="width:${Math.min(100, c.rate * 100).toFixed(0)}%"></i></span><span class="detail">${fmtPct(c.rate)}</span></li>`,
+        "No missing values in any column."
+      )}
+
+      <p class="sec-label">Constant columns</p>
+      ${qualityListHTML(
+        q.constant,
+        (c) => `<li><span class="cn">${esc(c.name)}</span><span class="detail">1 distinct value — carries no information</span></li>`,
+        "No constant columns."
+      )}
+
+      <p class="sec-label">High-cardinality text/category columns</p>
+      ${qualityListHTML(
+        q.highCardinality,
+        (c) => `<li><span class="cn">${esc(c.name)}</span><span class="detail">${fmtPct(c.distinct / rowCount)} unique — check it isn’t free text or a mis-typed identifier</span></li>`,
+        "None flagged."
+      )}
+
+      <p class="sec-label">Possible duplicate columns</p>
+      ${qualityListHTML(
+        q.possibleDuplicates,
+        (g) => `<li><span class="cn">${g.map(esc).join(" ↔ ")}</span><span class="detail">identical type/distinct/min/max/mean — worth checking</span></li>`,
+        "No two columns share identical statistics."
+      )}
+      <p class="cap-note">This tool never sees raw rows — only QL's per-column aggregates — so it can flag columns that <em>look</em> like duplicates of each other by their statistics, but can't detect duplicate <em>rows</em> the way a tool with raw row access could.</p>
+    </div>`;
+}
+
+// ---------------------------------------------------------------------
+// detailed per-column cards
+// ---------------------------------------------------------------------
+function numericCardHTML(c, s, idx) {
+  const canvasId = "hist-" + idx;
+  const summary = s
+    ? `min <b>${fmtNum(s.min)}</b> · q1 <b>${fmtNum(s.q1)}</b> · median <b>${fmtNum(s.median)}</b> · q3 <b>${fmtNum(s.q3)}</b> · max <b>${fmtNum(s.max)}</b>`
+    : `min <b>${fmtNum(c.min)}</b> · mean <b>${fmtNum(c.mean)}</b> · max <b>${fmtNum(c.max)}</b>`;
+  return `
+    <div class="col-card">
+      <h3>${esc(c.name)} ${typeTag(c.idLike ? "numeric · id-like" : "numeric")}</h3>
+      <p class="stat-line">${summary}</p>
+      ${s ? `<p class="stat-line">mean <b>${fmtNum(s.mean)}</b> · std <b>${fmtNum(s.std)}</b> · skew <b>${fmtNum(s.skewness)}</b></p>` : ""}
+      <p class="stat-line">missing <b>${c.missing.toLocaleString()}</b> · distinct <b>${c.distinct.toLocaleString()}</b></p>
+      <div class="chart-box"><canvas id="${canvasId}"></canvas></div>
+    </div>`;
+}
+function categoryCardHTML(c, idx, topLabel, topShare) {
+  const canvasId = "top-" + idx;
+  return `
+    <div class="col-card">
+      <h3>${esc(c.name)} ${typeTag(c.type)}</h3>
+      <p class="stat-line">missing <b>${c.missing.toLocaleString()}</b> · distinct <b>${c.distinct.toLocaleString()}</b></p>
+      ${topLabel ? `<p class="stat-line">top value: <b>${esc(topLabel)}</b>${topShare != null ? ` (${fmtPct(topShare)})` : ""}</p>` : ""}
+      <div class="chart-box"><canvas id="${canvasId}"></canvas></div>
+    </div>`;
+}
+function dateCardHTML(c) {
+  let granularity = "unknown";
+  if (c.min && c.max && c.distinct > 1) {
+    const span = (Date.parse(c.max) - Date.parse(c.min)) / 86400000;
+    if (Number.isFinite(span) && span > 0) {
+      const avgGapDays = span / c.distinct;
+      granularity =
+        avgGapDays < 1.5 ? "~daily" :
+        avgGapDays < 9 ? "~weekly" :
+        avgGapDays < 40 ? "~monthly" :
+        avgGapDays < 200 ? "~quarterly" : "~yearly or sparser";
+    }
+  }
+  return `
+    <div class="col-card">
+      <h3>${esc(c.name)} ${typeTag("date")}</h3>
+      <p class="stat-line">range: <b>${esc(c.min || "—")}</b> &rarr; <b>${esc(c.max || "—")}</b></p>
+      <p class="stat-line">granularity (estimated): <b>${granularity}</b></p>
+      <p class="stat-line">missing <b>${c.missing.toLocaleString()}</b> · distinct <b>${c.distinct.toLocaleString()}</b></p>
+      <p class="cap-note">Granularity is estimated from date range ÷ distinct values — QL doesn’t expose a granularity detector, so treat this as a rough guide.</p>
+    </div>`;
+}
+
+// ---------------------------------------------------------------------
+// the profile view
+// ---------------------------------------------------------------------
+async function renderProfile(datasetId, datasetName) {
+  mount(`<p class="skeleton">Reading ${esc(datasetName)}’s columns from QuantumLayers&hellip;</p>`);
+  let detail;
+  try {
+    detail = await QL.datasetDetail(datasetId);
+  } catch (e) {
+    mount(errBox(e) + backToPickerLink());
+    return;
+  }
+
+  const columns = classifyColumns(detail);
+  const rowCount = (detail.dataset && detail.dataset.row_count) || 0;
+  const numeric = columns.filter((c) => c.type === "numeric");
+  const category = columns.filter((c) => c.type === "category");
+  const dates = columns.filter((c) => c.type === "date");
+  const text = columns.filter((c) => c.type === "text");
+  const quality = analyzeQuality(columns, rowCount);
+
+  // ql_get_statistical_summary is best-effort enrichment (quartiles,
+  // skew/kurtosis) — dataset_detail's own min/max/mean/stddev already
+  // cover the fallback five-number-summary-lite if this fails.
+  let statsByColumn = {};
+  try {
+    const statsArr = await QL.stats(datasetId);
+    (Array.isArray(statsArr) ? statsArr : []).forEach((s) => { statsByColumn[s.column] = s; });
+  } catch (e) { /* fall back to dataset_detail's own numbers below */ }
+
+  const dict = buildDictionary(columns, statsByColumn);
+
+  mount(`
+    <div class="invite-bar">
+      <span>${kindTag("YOUR DATA")} &nbsp;${esc(datasetName)}</span>
+      ${backToPickerLink()}
+    </div>
+
+    <div class="tiles">
+      <div class="tile"><span class="n">${rowCount.toLocaleString()}</span><span class="l">rows</span></div>
+      <div class="tile"><span class="n">${columns.length}</span><span class="l">columns</span></div>
+      <div class="tile"><span class="n">${numeric.length}</span><span class="l">numeric</span></div>
+      <div class="tile"><span class="n">${category.length}</span><span class="l">category</span></div>
+      <div class="tile"><span class="n">${dates.length}</span><span class="l">date</span></div>
+      <div class="tile"><span class="n">${text.length}</span><span class="l">text</span></div>
+    </div>
+
+    ${qualityPanelHTML(quality, rowCount)}
+
+    <div class="card">
+      <h2>Data dictionary</h2>
+      <p class="sub">Every column, one row each — the shareable artifact.</p>
+      <div class="dict-actions">
+        <button type="button" data-action="export-csv">Export CSV</button>
+        <button type="button" data-action="export-md">Export Markdown</button>
+        <span class="status" id="exportStatus"></span>
+      </div>
+      ${dictionaryTableHTML(dict, rowCount)}
+    </div>
+
+    <div class="card">
+      <h2>Column detail</h2>
+      <p class="sub">${
+        numeric.length + category.length > MAX_DETAILED_NUMERIC + MAX_DETAILED_CATEGORY
+          ? `Charted for the first ${MAX_DETAILED_NUMERIC} numeric and ${MAX_DETAILED_CATEGORY} category columns — the data dictionary above covers every column regardless.`
+          : "Every numeric, category, and date column."
+      }</p>
+      <div id="colGrid" class="col-grid"><p class="skeleton">Loading column charts&hellip;</p></div>
+    </div>
+  `);
+
+  window.__dict = { dict, datasetName, rowCount };
+
+  // detail cards + charts (numeric histograms, category top-values)
+  const numericToShow = numeric.slice(0, MAX_DETAILED_NUMERIC);
+  const categoryToShow = category.slice(0, MAX_DETAILED_CATEGORY);
+
+  let gridHTML = "";
+  numericToShow.forEach((c, i) => { gridHTML += numericCardHTML(c, statsByColumn[c.name], i); });
+  categoryToShow.forEach((c, i) => { gridHTML += categoryCardHTML(c, i, null, null); });
+  dates.forEach((c) => { gridHTML += dateCardHTML(c); });
+  $("#colGrid").innerHTML = gridHTML || `<p class="empty-note">No numeric, category, or date columns to chart.</p>`;
+
+  destroyCharts();
+  await Promise.all([
+    ...numericToShow.map(async (c, i) => {
+      try {
+        const config = await QL.chart(datasetId, "histogram", { column_name: c.name });
+        mountChartInto("hist-" + i, config);
+      } catch (e) { /* leave the card's chart area empty rather than crash the page */ }
+    }),
+    ...categoryToShow.map(async (c, i) => {
+      try {
+        const raw = await QL.chart(datasetId, "bar", {
+          category_column: c.name, value_columns: [c.name], aggregation: "count",
+        });
+        const { config, top } = sortAndTrimBarConfig(raw, TOP_VALUES_LIMIT);
+        mountChartInto("top-" + i, config);
+        if (top && top.length) {
+          const total = top.reduce((s, p) => s + (Number(p.value) || 0), 0) || c.distinct;
+          const card = document.getElementById("top-" + i).closest(".col-card");
+          const shareLine = document.createElement("p");
+          shareLine.className = "stat-line";
+          shareLine.innerHTML = `top value: <b>${esc(String(top[0].label))}</b> (${fmtPct((Number(top[0].value) || 0) / total)})`;
+          card.insertBefore(shareLine, card.querySelector(".chart-box"));
+        }
+      } catch (e) { /* leave the card's chart area empty rather than crash the page */ }
+    }),
+  ]);
+}
+function backToPickerLink() {
+  return `<a class="btn-link" href="#" data-action="back-to-picker">&larr; pick a different dataset</a>`;
+}
+
+// ---------------------------------------------------------------------
+// dataset picker / auth panel / routing
+// ---------------------------------------------------------------------
+async function renderDatasetPicker() {
+  mount(`<p class="skeleton">Loading your datasets&hellip;</p>`);
+  try {
+    const data = await QL.myDatasets();
+    const datasets = (data && data.datasets) || [];
+    if (!datasets.length) {
+      mount(`
+        <div class="panel">
+          <h2>No datasets yet</h2>
+          <p class="sub">You’re signed in, but your QuantumLayers account doesn’t have a dataset to profile yet.</p>
+          <a class="btn" href="https://quantumlayers.com/ql-dashboard" target="_blank" rel="noopener">Add a dataset on QuantumLayers &rarr;</a>
+        </div>`);
+      return;
+    }
+    mount(`
+      <div class="panel">
+        <h2>Pick a dataset</h2>
+        <p class="sub">We’ll profile every column and build its data dictionary.</p>
+        <div class="dataset-list">
+          ${datasets
+            .map(
+              (d) => `
+            <div class="dataset-row">
+              <div><div class="name">${esc(d.name)}</div><div class="meta">${(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
+              <button data-action="pick-dataset" data-id="${d.id}" data-name="${esc(d.name)}">Profile it</button>
+            </div>`
+            )
+            .join("")}
+        </div>
+      </div>`);
+  } catch (e) {
+    mount(errBox(e));
+  }
+}
+
+function renderAuthPanel(opts) {
+  opts = opts || {};
+  const tab = opts.tab || "register";
+  mount(`
+    <div class="panel">
+      <h2>Run this on your own data</h2>
+      <p class="sub">This tool profiles real QuantumLayers datasets — it doesn’t run against a shared public demo. Create a free account (about 30 seconds) and we’ll build a full per-column profile and data dictionary for one of your own datasets, or sign in if you already have one.</p>
+      <div class="tabs">
+        <button data-action="auth-tab" data-tab="register" class="${tab === "register" ? "active" : ""}">Create free account</button>
+        <button data-action="auth-tab" data-tab="login" class="${tab === "login" ? "active" : ""}">Sign in</button>
+      </div>
+      ${tab === "register" ? registerFormHTML() : loginFormHTML()}
+    </div>
+  `);
+}
+function loginFormHTML() {
+  return `
+    <form class="auth-form" data-form="login">
+      <div class="field"><label for="li-email">Email</label><input id="li-email" name="email" type="email" required /></div>
+      <div class="field"><label for="li-pass">Password</label><input id="li-pass" name="password" type="password" required /></div>
+      <p class="form-err" id="loginErr"></p>
+      <button class="btn-primary" type="submit">Sign in &rarr;</button>
+    </form>`;
+}
+function registerFormHTML() {
+  return `
+    <form class="auth-form" data-form="register">
+      <div class="row2">
+        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" /></div>
+        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" /></div>
+      </div>
+      <div class="field"><label for="re-email">Email</label><input id="re-email" name="email" type="email" required /></div>
+      <div class="field"><label for="re-pass">Password</label><input id="re-pass" name="password" type="password" required minlength="8" /></div>
+      <label class="terms"><input type="checkbox" name="termsAgreed" required /> I agree to QuantumLayers’ terms of service.</label>
+      <p class="form-err" id="registerErr"></p>
+      <button class="btn-primary" type="submit">Create free account &rarr;</button>
+    </form>`;
+}
+
+// route(): pure re-render from whatever QL.isSignedIn() already says
+// right now — no network call, safe to call from 'authchange'. Since
+// this tool has no PUBLIC_DEMO mode, the only two states are "signed in"
+// and "not" — no anonymous-dataset branch to consider.
+function route() {
+  if (QL.isSignedIn()) renderDatasetPicker();
+  else renderAuthPanel();
+}
+// boot(): the one place that calls QL.checkAuth(). Call once on load;
+// everything after that goes through route() — see the comment above
+// the 'authchange' listener for why.
+async function boot() {
+  renderAuthStatus();
+  await QL.checkAuth();
+  renderAuthStatus();
+  route();
+}
+
+// ---------------------------------------------------------------------
+// delegated event wiring
+// ---------------------------------------------------------------------
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-action]");
+  if (!el) return;
+  const action = el.dataset.action;
+
+  if (action === "show-auth") { e.preventDefault(); renderAuthPanel(); }
+  else if (action === "auth-tab") { e.preventDefault(); renderAuthPanel({ tab: el.dataset.tab }); }
+  else if (action === "sign-out") { e.preventDefault(); QL.logout().then(route); }
+  else if (action === "back-to-picker") { e.preventDefault(); renderDatasetPicker(); }
+  else if (action === "pick-dataset") { e.preventDefault(); renderProfile(Number(el.dataset.id), el.dataset.name); }
+  else if (action === "export-csv") {
+    const { dict, datasetName, rowCount } = window.__dict || {};
+    if (!dict) return;
+    downloadFile(`${datasetName || "dataset"}-data-dictionary.csv`, dictionaryToCSV(dict, datasetName, rowCount), "text/csv");
+    flashExportStatus("CSV downloaded.");
+  } else if (action === "export-md") {
+    const { dict, datasetName, rowCount } = window.__dict || {};
+    if (!dict) return;
+    downloadFile(`${datasetName || "dataset"}-data-dictionary.md`, dictionaryToMarkdown(dict, datasetName, rowCount), "text/markdown");
+    flashExportStatus("Markdown downloaded.");
+  }
+});
+function flashExportStatus(msg) {
+  const el = $("#exportStatus");
+  if (!el) return;
+  el.textContent = msg;
+  setTimeout(() => { if (el) el.textContent = ""; }, 2500);
+}
+
+document.addEventListener("submit", (e) => {
+  const form = e.target.closest("form[data-form]");
+  if (!form) return;
+  e.preventDefault();
+  const kind = form.dataset.form;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const errEl = form.querySelector(".form-err");
+  errEl.textContent = "";
+  submitBtn.disabled = true;
+  const done = () => { submitBtn.disabled = false; };
+
+  if (kind === "login") {
+    QL.login(data.email, data.password)
+      .then(() => route())
+      .catch((err) => { errEl.textContent = friendlyError(err); done(); });
+  } else if (kind === "register") {
+    QL.register({
+      email: data.email,
+      password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      termsAgreed: !!data.termsAgreed,
+    })
+      .then(() => route())
+      .catch((err) => { errEl.textContent = friendlyError(err); done(); });
+  }
+});
+
+boot();
+</script>
+</body>
+</html>
