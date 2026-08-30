@@ -22,28 +22,15 @@ don't belong.
   classification) — labeled "QL verified" and kept visibly separate from
   the client-recomputed sensitivity slider above it.
 
-## How the modes work
+## How it works
 
-- **Public demo dataset (anonymous):** loads instantly, zero clicks, from
-  a curated public QL dataset — *once one is configured*. See the
-  `PUBLIC_DEMO` config block at the top of `index.html`'s script and this
-  tool's row in [`../DEPLOYMENT.md`](../DEPLOYMENT.md). Until a dataset,
-  its numeric columns, and a category column are recorded there, anonymous
-  visitors see a "create a free account" panel instead of a broken
-  zero-click promise — that's deliberate, not a bug (see
-  `QL-INTEGRATION.md`'s anonymous ceiling: `ql_get_dataset_detail`, which
-  would otherwise tell this tool which columns exist, always requires a
-  session — there is no way to discover a public dataset's schema
-  anonymously, so the columns have to be hardcoded once the dataset
-  exists).
-- **Your data (signed in):** register or sign in right on the page (native
-  QL email/password, no separate tab), pick one of your own datasets, and
-  the same per-column cards run against it — plus the QL-verified
-  cross-check above, which isn't available anonymously at all.
-- **Public-dataset-only ceiling:** even once a public dataset is
-  configured, anonymous visitors only ever see the box-plot chart and a
-  client-recomputed summary — the authenticated `ql_get_distribution_analysis`
-  cross-check is sign-in-only, full stop, per QL's own auth rules.
+This tool doesn't run a public demo dataset — **sign in to use it.** Per
+this collection's sign-in-first pattern (see `CONVENTIONS.md`), anonymous
+visitors see a "create a free account" panel, not a preloaded demo; there
+is no anonymous mode for any tool here. Once signed in (native QL
+email/password, right on the page), pick one of your own datasets and the
+per-column outlier cards run against it, including the QL-verified
+`ql_get_distribution_analysis` cross-check.
 
 ## Why the sensitivity control works the way it does
 

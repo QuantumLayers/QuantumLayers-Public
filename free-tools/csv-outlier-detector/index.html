@@ -212,35 +212,14 @@
 
 <script>
 /* =========================================================================
-   find outliers in your data — QL-backed dual-source tool
+   find outliers in your data — QL-backed, sign-in-first tool
    All data comes from QuantumLayers via ql-client.js. Nothing is computed
    from a locally-uploaded file — see QL-INTEGRATION.md / CONVENTIONS.md.
    ========================================================================= */
 
-// ---------------------------------------------------------------------
-// Public demo dataset config — see DEPLOYMENT.md
-// ---------------------------------------------------------------------
-// A curated public QL dataset has not been created yet (see the
-// csv-outlier-detector row in DEPLOYMENT.md). Anonymous zero-click mode
-// (ql_get_chart_data works unauthenticated on a PUBLIC dataset — see
-// QL-INTEGRATION.md) is gated entirely on this config being filled in;
-// ql_get_dataset_detail (which would otherwise tell us which columns are
-// numeric/categorical) requires a session even on a public dataset, so
-// there is no way to discover this at runtime for an anonymous visitor —
-// it has to be recorded here once a dataset exists.
-//
-// Fill in once DEPLOYMENT.md has a real row for this tool, then anonymous
-// visitors get the full zero-click experience automatically — no other
-// code changes needed.
-const PUBLIC_DEMO = {
-  datasetId: null,        // e.g. 42
-  datasetLabel: null,     // e.g. "Retail transactions (demo)"
-  numericColumns: [],     // e.g. ["revenue", "refunds", "unit_price"]
-  categoryColumn: null,   // a low-cardinality column to group the box plot by, e.g. "region"
-};
-const PUBLIC_DEMO_READY = !!(
-  PUBLIC_DEMO.datasetId && PUBLIC_DEMO.numericColumns.length && PUBLIC_DEMO.categoryColumn
-);
+// No anonymous mode: per direction from QL's operator, this tool always
+// requires sign-in before showing any QL output — see CONVENTIONS.md's
+// "sign-in-first pattern". There is no public demo dataset to configure.
 
 const MAX_NUMERIC_COLUMNS = 6;
 // Only two levels: QL's box_plot response gives each group's own
@@ -575,31 +554,6 @@ function renderColumnResults(results, signedIn) {
 // ---------------------------------------------------------------------
 // states
 // ---------------------------------------------------------------------
-async function renderAnonPublicDemo() {
-  mount(`
-    <div class="invite-bar">
-      <span>${kindTag("PUBLIC DEMO DATASET")} &nbsp;${esc(PUBLIC_DEMO.datasetLabel || "")}</span>
-      <a class="btn-link" href="#" data-action="show-auth">Run this on your own data &rarr;</a>
-    </div>
-    <p class="skeleton">Scanning ${PUBLIC_DEMO.numericColumns.length} numeric column${PUBLIC_DEMO.numericColumns.length === 1 ? "" : "s"} for outliers&hellip;</p>
-  `);
-  try {
-    const results = await loadColumnResults(
-      PUBLIC_DEMO.datasetId, PUBLIC_DEMO.numericColumns, PUBLIC_DEMO.categoryColumn, false
-    );
-    mount(`
-      <div class="invite-bar">
-        <span>${kindTag("PUBLIC DEMO DATASET")} &nbsp;${esc(PUBLIC_DEMO.datasetLabel || "")}</span>
-        <a class="btn-link" href="#" data-action="show-auth">Run this on your own data &rarr;</a>
-      </div>
-      ${renderColumnResults(results, false)}
-    `);
-    mountCharts(results.filter((r) => r.chartConfig).map((r) => ({ colName: r.colName, chartConfig: r.chartConfig })));
-  } catch (e) {
-    mount(errBox(e));
-  }
-}
-
 function renderAuthPanel(opts) {
   opts = opts || {};
   const tab = opts.tab || "register";
@@ -722,13 +676,8 @@ function mount(html) { $("#app").innerHTML = html; }
 // route(): pure re-render from whatever QL.isSignedIn() already says right
 // now. No network call — safe to call from the 'authchange' listener.
 function route() {
-  if (QL.isSignedIn()) {
-    renderDatasetPicker();
-  } else if (PUBLIC_DEMO_READY) {
-    renderAnonPublicDemo();
-  } else {
-    renderAuthPanel();
-  }
+  if (QL.isSignedIn()) renderDatasetPicker();
+  else renderAuthPanel();
 }
 
 // boot(): the one place that calls QL.checkAuth() (re-validates any

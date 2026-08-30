@@ -8,23 +8,25 @@
  *
  * Background reading: ../free-tools/QL-INTEGRATION.md (what each endpoint
  * needs and why this client is shaped the way it is) and
- * ../free-tools/DEPLOYMENT.md (prerequisites on the QL side — CORS, a
- * registered auth provider, a public dataset — that must be in place before
- * any of this works from a GitHub Pages origin).
+ * ../free-tools/DEPLOYMENT.md (what's confirmed vs. still unverified on
+ * the QL side).
  *
  * Design notes, short version:
  *  - Talks to admin-ajax.php directly via fetch() — it does NOT load
  *    jdk/auth.js. See QL-INTEGRATION.md's "Why ql-client.js does not load
  *    jdk/auth.js" section for why (auth.js couples to QL's own page
- *    templates and DOM IDs, and its init() may redirect an anonymous
- *    visitor off the page).
- *  - Only ql_get_chart_data is callable unauthenticated on a public
- *    dataset (ql_try_auth). Every other analytics/stats/insights call
- *    requires a signed-in session (ql_verify_auth), even on a public
- *    dataset. QL.chart() therefore works with or without a session;
- *    everything else throws a QLError with code AUTH_REQUIRED when no
- *    session token is present, rather than making a request QL will
- *    reject anyway.
+ *    templates and DOM IDs, and its init() may redirect a visitor off the
+ *    page in a way we don't control).
+ *  - No anonymous mode: per direction from QL's operator, this repo's
+ *    tools always require a signed-in session before showing any QL
+ *    output — see CONVENTIONS.md's "sign-in-first pattern". Every method
+ *    below except login/register/thirdPartySignin/checkAuth throws a
+ *    QLError with code AUTH_REQUIRED when no session token is present,
+ *    rather than making a request QL will reject anyway.
+ *  - CORS is not a blocker, per the same direction: sign-in works
+ *    cross-origin without it, and every other authenticated call only
+ *    needs a valid Authorization: Bearer <token> header. See
+ *    QL-INTEGRATION.md's "Design implications" section.
  *  - Session token is stored under its own localStorage key, scoped to
  *    whatever origin the tool is served from (a GitHub Pages origin, not
  *    quantumlayers.com) — Option A ("QL session token") never applies
@@ -46,16 +48,17 @@
   // ---------------------------------------------------------------------
 
   /**
-   * Every failure QL.* can produce — network, CORS, auth, or a QL-reported
+   * Every failure QL.* can produce — network, auth, or a QL-reported
    * API error — comes out as one of these, so tools can write a single
    * catch block instead of guessing at fetch()/JSON/WordPress-envelope
    * shapes.
    *
    * `code` is one of:
    *   'AUTH_REQUIRED'  — this call needs a session and none is stored.
-   *   'NETWORK'        — fetch() itself rejected (offline, DNS, or — most
-   *                       likely from a GitHub Pages origin — CORS not yet
-   *                       configured on QL's side; see DEPLOYMENT.md).
+   *   'NETWORK'        — fetch() itself rejected. CORS is not expected to
+   *                       be the cause (see QL-INTEGRATION.md) — look for
+   *                       an actual connectivity problem (offline, DNS,
+   *                       QL's server down) first.
    *   'INVALID_RESPONSE' — the response wasn't the JSON envelope we expect.
    *   'API_ERROR'      — QL responded with { success: false, ... }.
    */
@@ -193,10 +196,9 @@
       .fetch(AJAX_URL, { method: 'POST', headers: headers, body: body })
       .catch(function (networkErr) {
         throw QLError(
-          'Could not reach QuantumLayers. From a GitHub Pages origin this ' +
-          'is almost always CORS not yet being configured on admin-ajax.php ' +
-          'for this origin — see the prerequisites in DEPLOYMENT.md before ' +
-          'assuming this tool is broken.',
+          'Could not reach QuantumLayers. This is a connectivity problem ' +
+          '(offline, DNS, or QL\'s server unavailable) rather than CORS — ' +
+          'CORS is not a blocker for this API. Try again shortly.',
           { code: 'NETWORK', cause: networkErr }
         );
       })

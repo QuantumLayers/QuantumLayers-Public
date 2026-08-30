@@ -220,31 +220,16 @@
 
 <script>
 /* =========================================================================
-   data chart maker — QL-backed dual-source tool
+   data chart maker — QL-backed, sign-in-first tool
    Every chart rendered here is QL's own Chart.js config from
    ql_get_chart_data (via ql-client.js), themed but never re-derived —
    see CONVENTIONS.md's charting rule. Column/chart-type pickers just
    choose which QL params to request next.
    ========================================================================= */
 
-// ---------------------------------------------------------------------
-// Public demo dataset config — see DEPLOYMENT.md
-// ---------------------------------------------------------------------
-// No curated public dataset exists yet for this tool. ql_get_dataset_detail
-// and ql_get_recommended_charts both always require a session (see
-// QL-INTEGRATION.md's anonymous ceiling) even on a public dataset, so an
-// anonymous visitor's column list AND default "recommended" chart can't be
-// discovered live — both have to be recorded here once a dataset exists.
-// Until then, anonymous visitors land on the sign-up panel instead of a
-// broken zero-click promise (same resolution as csv-outlier-detector).
-const PUBLIC_DEMO = {
-  datasetId: null,       // e.g. 42
-  datasetLabel: null,    // e.g. "Retail transactions (demo)"
-  columns: [],            // [{ name: 'revenue', type: 'numeric' }, { name: 'region', type: 'category' }, ...]
-  // type is one of: 'numeric' | 'category' | 'date' | 'text'
-  suggestedChart: null,   // { chartType: 'bar', params: { category_column: 'region', value_columns: ['revenue'], aggregation: 'sum' }, reason: 'Revenue is heavily concentrated in a few regions.' }
-};
-const PUBLIC_DEMO_READY = !!(PUBLIC_DEMO.datasetId && PUBLIC_DEMO.columns.length && PUBLIC_DEMO.suggestedChart);
+// No anonymous mode: per direction from QL's operator, this tool always
+// requires sign-in before showing any QL output — see CONVENTIONS.md's
+// "sign-in-first pattern". There is no public demo dataset to configure.
 
 // ---------------------------------------------------------------------
 // Chart type field specs
@@ -521,9 +506,9 @@ function pickerHTML(chartType, columns, currentParams) {
 }
 
 // ---------------------------------------------------------------------
-// the chart-maker view (shared by anonymous public-demo + signed-in own data)
+// the chart-maker view (signed-in user's own data only)
 // ---------------------------------------------------------------------
-let activeSession = null; // { datasetId, datasetLabel, columns, signedIn, recommendations }
+let activeSession = null; // { datasetId, datasetLabel, columns, recommendations }
 
 function recommendationChipsHTML(recs, activeIndex) {
   if (!recs || !recs.length) return "";
@@ -542,11 +527,10 @@ function recommendationChipsHTML(recs, activeIndex) {
 }
 
 function renderMakerShell(session) {
-  const kindLabel = session.signedIn ? "YOUR DATA" : "PUBLIC DEMO DATASET";
   mount(`
     <div class="invite-bar">
-      <span>${kindTag(kindLabel)} &nbsp;${esc(session.datasetLabel || "")}</span>
-      ${session.signedIn ? backToPickerLink() : `<a class="btn-link" href="#" data-action="show-auth">Run this on your own data &rarr;</a>`}
+      <span>${kindTag("YOUR DATA")} &nbsp;${esc(session.datasetLabel || "")}</span>
+      ${backToPickerLink()}
     </div>
     <div class="maker">
       <div class="picker">
@@ -594,24 +578,8 @@ function matchingRecommendationIndex(chartType, params) {
 }
 
 // ---------------------------------------------------------------------
-// entry points: anonymous public demo, signed-in dataset picker + maker
+// entry points: signed-in dataset picker + maker
 // ---------------------------------------------------------------------
-async function renderAnonPublicDemo() {
-  activeSession = {
-    datasetId: PUBLIC_DEMO.datasetId,
-    datasetLabel: PUBLIC_DEMO.datasetLabel,
-    columns: PUBLIC_DEMO.columns,
-    signedIn: false,
-    recommendations: PUBLIC_DEMO.suggestedChart
-      ? [{ chart_type: PUBLIC_DEMO.suggestedChart.chartType, params: PUBLIC_DEMO.suggestedChart.params, reason: PUBLIC_DEMO.suggestedChart.reason, insight_score: 100 }]
-      : null,
-    activeRecommendationIndex: 0,
-    chartType: PUBLIC_DEMO.suggestedChart.chartType,
-    params: PUBLIC_DEMO.suggestedChart.params,
-  };
-  await loadAndRenderChart(activeSession.chartType, activeSession.params);
-}
-
 async function renderDatasetPicker() {
   mount(`<p class="skeleton">Loading your datasets&hellip;</p>`);
   try {
@@ -692,7 +660,7 @@ async function renderOwnChartMaker(datasetId, datasetName) {
         // types) rather than a dead end, but explain why nothing loaded
         // automatically — and skip fetching a chart with incomplete params,
         // which would just come back as an API error with no useful context.
-        activeSession = { datasetId, datasetLabel: datasetName, columns, signedIn: true, recommendations: null, activeRecommendationIndex: -1, chartType: "bar", params: {} };
+        activeSession = { datasetId, datasetLabel: datasetName, columns, recommendations: null, activeRecommendationIndex: -1, chartType: "bar", params: {} };
         renderMakerShell(activeSession);
         $("#chartHost").innerHTML = `<div class="empty-note">Couldn’t find a sensible default chart for <b>${esc(datasetName)}</b> — no numeric column to chart. Pick a chart type and columns on the left, if any fit.</div>`;
         return;
@@ -700,7 +668,7 @@ async function renderOwnChartMaker(datasetId, datasetName) {
     }
 
     activeSession = {
-      datasetId, datasetLabel: datasetName, columns, signedIn: true,
+      datasetId, datasetLabel: datasetName, columns,
       recommendations, activeRecommendationIndex: recommendations && recommendations.length ? 0 : -1,
       chartType, params,
     };
@@ -724,13 +692,8 @@ async function renderOwnChartMaker(datasetId, datasetName) {
 // boot() would recheck auth -> emit -> recheck auth forever the moment
 // anyone is signed in.
 function route() {
-  if (QL.isSignedIn()) {
-    renderDatasetPicker();
-  } else if (PUBLIC_DEMO_READY) {
-    renderAnonPublicDemo();
-  } else {
-    renderAuthPanel();
-  }
+  if (QL.isSignedIn()) renderDatasetPicker();
+  else renderAuthPanel();
 }
 async function boot() {
   renderAuthStatus();

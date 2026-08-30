@@ -24,24 +24,16 @@ columns, get a clean chart in seconds.
 - Export the current chart as PNG, copy it to the clipboard, or export it
   as SVG (see the note on what that third one actually is, below).
 
-## How the modes work
+## How it works
 
-- **Public demo dataset (anonymous):** loads instantly, zero clicks, with
-  a suggested chart already showing — *once one is configured*. See the
-  `PUBLIC_DEMO` config block at the top of `index.html`'s script and this
-  tool's row in [`../DEPLOYMENT.md`](../DEPLOYMENT.md). Until then,
-  anonymous visitors see a "create a free account" panel instead: both
-  `ql_get_dataset_detail` (column list) and `ql_get_recommended_charts`
-  (the actual recommendation engine) always require a session, even on a
-  public dataset — see `QL-INTEGRATION.md`'s anonymous ceiling — so there
-  is no live call this page could make to discover either one for an
-  anonymous visitor. The dataset's columns and a hand-picked "suggested"
-  chart have to be recorded ahead of time; nothing here is faked.
-- **Your data (signed in):** register or sign in on the page, pick one of
-  your own datasets, and this tool calls the real
-  `ql_get_recommended_charts` endpoint and shows its top pick immediately,
-  plus the next few as chips. Changing the chart type or columns calls
-  `ql_get_chart_data` directly with whatever you picked.
+This tool doesn't run a public demo dataset — **sign in to use it.** Per
+this collection's sign-in-first pattern (see `CONVENTIONS.md`), anonymous
+visitors see a "create a free account" panel, not a preloaded demo; there
+is no anonymous mode for any tool here. Once signed in, pick one of your
+own datasets and this tool calls the real `ql_get_recommended_charts`
+endpoint and shows its top pick immediately, plus the next few as chips.
+Changing the chart type or columns calls `ql_get_chart_data` directly with
+whatever you picked.
 
 ## Why "Export SVG" isn't a vector file
 

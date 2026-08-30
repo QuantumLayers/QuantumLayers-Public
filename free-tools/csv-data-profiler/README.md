@@ -30,18 +30,15 @@ Different from [`whats-in-this-csv`](../whats-in-this-csv/): that tool
 gives a short, ranked narrative of what stands out. This one is
 inventory-style — every column, fully profiled, none skipped.
 
-## How the modes work
+## How it works
 
-This tool doesn't run a public demo dataset — **sign in to use it.**
-Unlike this collection's other tools, anonymous visitors here go straight
-to a "create a free account" panel rather than a preloaded public-dataset
-demo: a real per-column profile needs `ql_get_dataset_detail` (the column
-schema and stats this tool is built around), and that endpoint always
-requires a session, even on a public dataset, per `QL-INTEGRATION.md`'s
-anonymous ceiling — so there's no meaningful zero-click version of this
-specific tool to build. Once signed in, pick any of your own datasets and
-the full profile — quality panel, histograms, top-values charts, and the
-exportable dictionary — runs against it.
+This tool doesn't run a public demo dataset — **sign in to use it.** Per
+this collection's sign-in-first pattern (see `CONVENTIONS.md`), anonymous
+visitors go straight to a "create a free account" panel rather than a
+preloaded demo; there is no anonymous mode for any tool here. Once signed
+in, pick any of your own datasets and the full profile — quality panel,
+histograms, top-values charts, and the exportable dictionary — runs
+against it.
 
 ## Why "top values" is a doughnut, not a bar
 
