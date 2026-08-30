@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>What's in this CSV? — instant plain-language findings from any spreadsheet</title>
+<meta name="description" content="Drop a CSV and get ranked, plain-language findings — trends, outliers, correlations and data-quality flags — in seconds. Runs entirely in your browser. Free and open source." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --ink:#16181D; --slate:#5B6472; --slate-2:#8A93A1;
+    --paper:#F4F6F8; --card:#FFFFFF; --line:#E2E6EC; --line-2:#EDF0F4;
+    --amber:#E0A11B; --amber-ink:#7A560A; --amber-soft:#FBEFD2;
+    --panel:#14171F; --panel-line:#2B303C; --panel-slate:#9AA3B2;
+    --ok:#3C7D5B; --font-display:'Space Grotesk',system-ui,sans-serif;
+    --font-body:'IBM Plex Sans',system-ui,sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--font-body);
+    font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 1px 1px, #E6EAF0 1px, transparent 0);
+    background-size:26px 26px;
+  }
+  .wrap{max-width:880px; margin:0 auto; padding:0 20px}
+
+  /* top bar */
+  .top{display:flex; align-items:center; justify-content:space-between; padding:22px 0 6px}
+  .mark{font-family:var(--font-mono); font-weight:600; font-size:13px; letter-spacing:.02em; color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:9px}
+  .mark .dot{width:10px; height:10px; border-radius:3px; background:var(--amber); box-shadow:0 0 0 4px var(--amber-soft)}
+  .top a.ghlink{font-family:var(--font-mono); font-size:12.5px; color:var(--slate); text-decoration:none; border-bottom:1px solid var(--line)}
+  .top a.ghlink:hover{color:var(--ink); border-color:var(--slate-2)}
+
+  /* hero */
+  .hero{padding:30px 0 8px}
+  h1{font-family:var(--font-display); font-weight:600; font-size:clamp(30px,6vw,46px); line-height:1.04; letter-spacing:-.02em; margin:0 0 14px}
+  h1 .hl{background:linear-gradient(transparent 62%, var(--amber-soft) 62%); padding:0 2px}
+  .lede{font-size:clamp(16px,2.6vw,18px); color:var(--slate); max-width:52ch; margin:0}
+
+  /* dropzone */
+  .zone-wrap{margin:26px 0 0}
+  .zone{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    text-align:center; padding:44px 24px; background:var(--card); cursor:pointer;
+    border:1.5px dashed var(--line); border-radius:var(--r); position:relative;
+    transition:border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .zone:hover,.zone:focus-within{border-color:var(--amber); background:#FFFEFB}
+  .zone.drag{border-color:var(--amber); border-style:solid; background:var(--amber-soft); transform:translateY(-1px)}
+  .zone input[type=file]{position:absolute; inset:0; opacity:0; cursor:pointer}
+  .zone .glyph{width:46px; height:46px; border-radius:12px; background:var(--paper); border:1px solid var(--line); display:grid; place-items:center; color:var(--slate)}
+  .zone .big{font-family:var(--font-display); font-weight:600; font-size:19px}
+  .zone .sub{color:var(--slate); font-size:14.5px}
+  .zone .sample{font-family:var(--font-mono); font-size:13px; color:var(--amber-ink); background:var(--amber-soft); border:1px solid #EBD9A8; padding:7px 12px; border-radius:8px; cursor:pointer; z-index:2; position:relative}
+  .zone .sample:hover{background:#F7E7BE}
+  .privacy{font-family:var(--font-mono); font-size:12.5px; color:var(--slate-2); text-align:center; margin:14px 0 0; display:flex; gap:8px; align-items:center; justify-content:center}
+  .privacy b{color:var(--slate); font-weight:500}
+
+  /* file bar (after load) */
+  .filebar{display:none; align-items:center; gap:12px; flex-wrap:wrap; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin-top:6px}
+  .filebar .name{font-family:var(--font-mono); font-weight:600; font-size:14px}
+  .filebar .meta{font-family:var(--font-mono); font-size:12.5px; color:var(--slate)}
+  .filebar .again{margin-left:auto; font-family:var(--font-mono); font-size:12.5px; color:var(--ink); background:none; border:1px solid var(--line); padding:7px 12px; border-radius:8px; cursor:pointer}
+  .filebar .again:hover{border-color:var(--slate-2)}
+
+  /* results */
+  #out{margin:24px 0 0}
+  .summary{font-size:17px; color:var(--ink); margin:2px 0 22px; padding-left:14px; border-left:3px solid var(--amber)}
+  .summary .muted{color:var(--slate)}
+
+  .sec-label{font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--slate-2); margin:0 0 12px; display:flex; align-items:center; gap:10px}
+  .sec-label::after{content:""; height:1px; flex:1; background:var(--line)}
+
+  .findings{display:flex; flex-direction:column; gap:10px}
+  .f{
+    background:var(--card); border:1px solid var(--line); border-radius:12px; padding:15px 17px;
+    display:grid; grid-template-columns:auto 1fr; gap:14px; align-items:start;
+    animation:rise .4s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .f .rail{display:flex; flex-direction:column; gap:9px; align-items:flex-start; min-width:96px}
+  .kind{font-family:var(--font-mono); font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--ink); background:var(--paper); border:1px solid var(--line); padding:3px 8px; border-radius:6px}
+  .meter{display:flex; gap:3px}
+  .meter i{width:11px; height:6px; border-radius:2px; background:var(--line); display:block}
+  .meter i.on{background:var(--amber)}
+  .f .body{min-width:0}
+  .f .text{font-size:15.5px; line-height:1.5}
+  .f .text b{font-weight:600}
+  .f .text .n{font-family:var(--font-mono); font-weight:600; font-variant-numeric:tabular-nums}
+  .f .viz{margin-top:10px}
+  .f .viz svg{display:block; max-width:100%; height:auto}
+
+  /* profile table */
+  details.profile{margin-top:22px; border-top:1px solid var(--line); padding-top:16px}
+  details.profile summary{font-family:var(--font-mono); font-size:12.5px; color:var(--slate); cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px}
+  details.profile summary::-webkit-details-marker{display:none}
+  details.profile summary .caret{transition:transform .15s ease}
+  details.profile[open] summary .caret{transform:rotate(90deg)}
+  .tbl{width:100%; border-collapse:collapse; margin-top:14px; font-size:13.5px}
+  .tbl th{font-family:var(--font-mono); font-weight:500; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-2); text-align:left; padding:6px 10px; border-bottom:1px solid var(--line)}
+  .tbl td{padding:8px 10px; border-bottom:1px solid var(--line-2); vertical-align:middle}
+  .tbl td .cn{font-family:var(--font-mono); font-weight:600; font-size:13px}
+  .tag{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--slate); background:var(--paper); border:1px solid var(--line); padding:2px 6px; border-radius:5px}
+  .miss{display:inline-block; width:56px; height:6px; border-radius:3px; background:var(--line-2); overflow:hidden; vertical-align:middle; margin-right:7px}
+  .miss i{display:block; height:100%; background:var(--amber)}
+  .err{background:#FCEDEC; border:1px solid #F3C9C4; color:#8A2A22; border-radius:12px; padding:14px 16px; font-size:14.5px}
+
+  /* cta band */
+  .cta{margin:40px 0 0; background:var(--panel); border-radius:18px; padding:32px 28px; color:#fff; position:relative; overflow:hidden}
+  .cta .eyebrow{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--amber); margin:0 0 12px}
+  .cta h2{font-family:var(--font-display); font-weight:600; font-size:clamp(21px,3.4vw,27px); line-height:1.18; letter-spacing:-.01em; margin:0 0 10px; max-width:26ch}
+  .cta p{color:var(--panel-slate); font-size:15px; max-width:56ch; margin:0 0 20px}
+  .cta .ladder{display:flex; flex-direction:column; gap:9px; margin:0 0 22px}
+  .cta .ladder div{font-size:14px; color:#D7DCE5; display:flex; gap:11px; align-items:baseline}
+  .cta .ladder .from{font-family:var(--font-mono); font-size:12px; color:var(--panel-slate); min-width:74px}
+  .cta .ladder .arrow{color:var(--amber)}
+  .btn{display:inline-block; background:var(--amber); color:#20170A; font-family:var(--font-display); font-weight:600; font-size:15px; text-decoration:none; padding:12px 22px; border-radius:10px; transition:transform .12s ease, background .12s ease}
+  .btn:hover{background:#EDB335; transform:translateY(-1px)}
+
+  footer{margin:30px 0 48px; display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; font-family:var(--font-mono); font-size:12px; color:var(--slate-2)}
+  footer a{color:var(--slate); text-decoration:none; border-bottom:1px solid var(--line)}
+  footer a:hover{color:var(--ink)}
+  footer .sep{color:var(--line)}
+
+  @keyframes rise{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+  @media (max-width:560px){
+    .f{grid-template-columns:1fr; gap:11px}
+    .f .rail{flex-direction:row; align-items:center; min-width:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <a class="mark" href="./"><span class="dot"></span>what&rsquo;s in this csv?</a>
+    <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">open source &nearr;</a>
+  </div>
+
+  <header class="hero">
+    <h1>A spreadsheet won&rsquo;t tell you<br /><span class="hl">what matters</span>. This will.</h1>
+    <p class="lede">Drop a CSV and get a short, ranked list of what&rsquo;s actually going on inside it &mdash; trends, outliers, relationships and data-quality flags &mdash; written in plain English.</p>
+  </header>
+
+  <div class="zone-wrap">
+    <label class="zone" id="zone" tabindex="0" aria-label="Choose or drop a CSV file">
+      <input type="file" id="file" accept=".csv,text/csv" />
+      <span class="glyph" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+      </span>
+      <span class="big">Drop a CSV here</span>
+      <span class="sub">or click to choose a file</span>
+      <span class="sample" id="sample" role="button" tabindex="0">or try it with sample data</span>
+    </label>
+    <p class="privacy"><span aria-hidden="true">&#9741;</span> <span>Runs entirely in your browser. <b>Nothing is uploaded &mdash; no server, no account.</b></span></p>
+  </div>
+
+  <div class="filebar" id="filebar">
+    <span class="name" id="fname"></span>
+    <span class="meta" id="fmeta"></span>
+    <button class="again" id="again">try another file</button>
+  </div>
+
+  <section id="out" aria-live="polite"></section>
+
+  <section class="cta">
+    <p class="eyebrow">when you outgrow one file</p>
+    <h2>This read one CSV in your browser. QuantumLayers does it on your live data &mdash; and keeps watching.</h2>
+    <p>The same statistics you just saw, run continuously across your databases, APIs, Google Sheets and spreadsheets at once &mdash; then written up by AI and delivered on a schedule.</p>
+    <div class="ladder">
+      <div><span class="from">this tool</span><span class="arrow">&rarr;</span><span>one file, one look, the highlights</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>joins your sources automatically &mdash; correlate Stripe, GA4 and your CRM together</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>monitors for change and emails you when a new pattern appears</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>a full AI-written report, scheduled daily, weekly or monthly</span></div>
+    </div>
+    <a class="btn" href="https://quantumlayers.com/ql-register" target="_blank" rel="noopener">Analyze your live data free &rarr;</a>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span><span class="sep">&middot;</span>
+    <span>built by <a href="https://quantumlayers.com" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+  </footer>
+
+</div>
+
+<script>
+/* =========================================================================
+   what's in this csv?  —  client-side analysis engine
+   No data leaves the browser. Findings are rule-based statistics, phrased
+   in plain language. Thresholds are deliberately conservative: the tool
+   should never assert a pattern it can't defend.
+   ========================================================================= */
+
+// ---------- number / format helpers ----------
+const fmtNum = (v) => {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  const a = Math.abs(v);
+  let d = 0;
+  if (a !== 0 && a < 1) d = a < 0.01 ? 4 : 3;
+  else if (a < 10) d = 2;
+  else if (a < 100) d = 1;
+  return v.toLocaleString(undefined, { maximumFractionDigits: d });
+};
+const fmtPct = (x, d = 0) => (x * 100).toLocaleString(undefined, { maximumFractionDigits: d }) + "%";
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---------- typing ----------
+function parseNumber(raw) {
+  if (raw === null || raw === undefined) return null;
+  let s = String(raw).trim();
+  if (s === "") return null;
+  s = s.replace(/[$£€\s]/g, "").replace(/,/g, "").replace(/%$/, "");
+  if (!/^-?\d*\.?\d+(e-?\d+)?$/i.test(s)) return null;
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : null;
+}
+function isDateString(raw) {
+  if (raw === null || raw === undefined) return false;
+  const s = String(raw).trim();
+  if (/^-?\d+(\.\d+)?$/.test(s)) return false; // a bare number is not a date
+  if (/^\d{4}-\d{1,2}(-\d{1,2})?([ T]\d{1,2}:\d{2})?/.test(s)) return true;
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(s)) return true;
+  if (/^\d{1,2}-[A-Za-z]{3}-\d{2,4}/.test(s)) return true;
+  return false;
+}
+const toDate = (s) => { const t = Date.parse(String(s)); return Number.isNaN(t) ? null : t; };
+const BOOLSET = new Set(["true", "false", "yes", "no", "y", "n", "t", "f"]);
+
+function profileColumn(name, values) {
+  const nonEmpty = values.filter((v) => v !== null && v !== undefined && String(v).trim() !== "");
+  const n = values.length, present = nonEmpty.length, missing = n - present;
+  const distinct = new Set(nonEmpty.map((v) => String(v))).size;
+
+  let numHits = 0, dateHits = 0, boolHits = 0;
+  const nums = [];
+  for (const v of nonEmpty) {
+    const num = parseNumber(v);
+    if (num !== null) { numHits++; nums.push(num); }
+    if (isDateString(v)) dateHits++;
+    if (BOOLSET.has(String(v).trim().toLowerCase())) boolHits++;
+  }
+  const r = (h) => (present ? h / present : 0);
+
+  let type = "text";
+  if (present > 0 && r(boolHits) > 0.95 && distinct <= 3) type = "boolean";
+  else if (present > 0 && r(numHits) >= 0.85) type = "numeric";
+  else if (present > 0 && r(dateHits) >= 0.7) type = "date";
+  else if (distinct <= Math.max(20, present * 0.5) && distinct < present) type = "category";
+
+  // ID detection: only flag true identifiers, never ordinary measures that
+  // happen to be all-unique (revenue, prices, timestamps are often unique).
+  const nameId = /(^|[_\s-])(id|uuid|guid)$/i.test(name);
+  const uniqueAll = distinct === present && present > 5;
+  let idLike = false;
+  if (type === "numeric") {
+    const allInt = nums.every((v) => Number.isInteger(v));
+    if (uniqueAll && allInt) {
+      const s = nums.slice().sort((a, b) => a - b);
+      const step = s[1] - s[0];
+      const seq = step !== 0 && s.every((v, i) => i === 0 || v - s[i - 1] === step);
+      idLike = seq || nameId; // sequential auto-increment, or a column literally named *_id
+    }
+  } else if (type === "text" || type === "category") {
+    idLike = uniqueAll; // all-unique text = UUID / email / name key (dates are often unique but not IDs)
+  }
+
+  const col = { name, n, present, missing, missingRate: n ? missing / n : 0, distinct, type, idLike };
+
+  if (type === "numeric") {
+    const s = nums.slice().sort((a, b) => a - b);
+    const q = (p) => { const i = (s.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i); return s[lo] + (s[hi] - s[lo]) * (i - lo); };
+    const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+    const variance = nums.reduce((a, b) => a + (b - mean) ** 2, 0) / nums.length;
+    Object.assign(col, {
+      nums, min: s[0], max: s[s.length - 1], mean, median: q(0.5),
+      q1: q(0.25), q3: q(0.75), std: Math.sqrt(variance),
+    });
+  } else {
+    // top category share
+    const counts = {};
+    for (const v of nonEmpty) counts[String(v)] = (counts[String(v)] || 0) + 1;
+    let top = null, topCount = 0;
+    for (const k in counts) if (counts[k] > topCount) { topCount = counts[k]; top = k; }
+    col.top = top; col.topShare = present ? topCount / present : 0;
+  }
+  return col;
+}
+
+// ---------- stats ----------
+function pearson(a, b) {
+  const xs = [], ys = [];
+  for (let i = 0; i < a.length; i++) if (a[i] !== null && b[i] !== null && !Number.isNaN(a[i]) && !Number.isNaN(b[i])) { xs.push(a[i]); ys.push(b[i]); }
+  const n = xs.length; if (n < 5) return { r: null, n };
+  const mx = xs.reduce((s, v) => s + v, 0) / n, my = ys.reduce((s, v) => s + v, 0) / n;
+  let num = 0, dx = 0, dy = 0;
+  for (let i = 0; i < n; i++) { const a1 = xs[i] - mx, b1 = ys[i] - my; num += a1 * b1; dx += a1 * a1; dy += b1 * b1; }
+  if (dx === 0 || dy === 0) return { r: null, n };
+  return { r: num / Math.sqrt(dx * dy), n };
+}
+
+// ---------- findings ----------
+function buildFindings(cols, rows) {
+  const F = [];
+  const numeric = cols.filter((c) => c.type === "numeric" && c.std > 0 && !c.idLike);
+  const dates = cols.filter((c) => c.type === "date").sort((a, b) => a.missing - b.missing);
+
+  // TREND — needs a date column
+  if (dates.length) {
+    const dcol = dates[0];
+    const order = rows.map((row) => toDate(row[dcol.name])).map((t, i) => [t, i]).filter(([t]) => t !== null).sort((a, b) => a[0] - b[0]);
+    const idx = order.map(([, i]) => i);
+    for (const c of numeric) {
+      const series = idx.map((i) => parseNumber(rows[i][c.name]));
+      const xs = idx.map((_, k) => k);
+      const { r, n } = pearson(xs, series);
+      if (r === null || n < 6) continue;
+      const clean = series.filter((v) => v !== null);
+      if (clean.length < 6) continue;
+      const head = clean.slice(0, Math.max(2, Math.floor(clean.length / 4)));
+      const tail = clean.slice(-Math.max(2, Math.floor(clean.length / 4)));
+      const avg = (a) => a.reduce((s, v) => s + v, 0) / a.length;
+      const first = avg(head), last = avg(tail);
+      if (Math.abs(r) < 0.55) continue;
+      const up = r > 0;
+      const change = first !== 0 ? (last - first) / Math.abs(first) : null;
+      const pctTxt = change !== null && Math.abs(change) < 8 ? ` &mdash; about <span class="n">${fmtPct(Math.abs(change))}</span> ${up ? "higher" : "lower"} by the end` : "";
+      F.push({
+        kind: "Trend", strength: Math.min(1, (Math.abs(r) - 0.4) / 0.55),
+        text: `<b>${esc(c.name)}</b> moves steadily ${up ? "upward" : "downward"} over ${esc(dcol.name)}${pctTxt}.`,
+        viz: sparkline(clean),
+      });
+    }
+  }
+
+  // CORRELATION — numeric pairs
+  const seen = new Set();
+  for (let i = 0; i < numeric.length; i++) for (let j = i + 1; j < numeric.length; j++) {
+    const a = numeric[i], b = numeric[j];
+    const av = rows.map((row) => parseNumber(row[a.name]));
+    const bv = rows.map((row) => parseNumber(row[b.name]));
+    const { r, n } = pearson(av, bv);
+    if (r === null || n < 8 || Math.abs(r) < 0.6) continue;
+    const key = a.name + "|" + b.name; if (seen.has(key)) continue; seen.add(key);
+    const pos = r > 0;
+    F.push({
+      kind: "Link", strength: Math.min(1, (Math.abs(r) - 0.5) / 0.5),
+      text: `<b>${esc(a.name)}</b> and <b>${esc(b.name)}</b> ${pos ? "rise and fall together" : "move in opposite directions"} (correlation <span class="n">${(r).toFixed(2)}</span>). ${pos ? "When one is high, so is the other." : "When one is high, the other tends to be low."}`,
+      viz: scatter(av, bv),
+      _r: Math.abs(r),
+    });
+  }
+
+  // OUTLIERS — IQR
+  for (const c of numeric) {
+    const iqr = c.q3 - c.q1; if (iqr <= 0) continue;
+    const lo = c.q1 - 1.5 * iqr, hi = c.q3 + 1.5 * iqr;
+    const outs = c.nums.filter((v) => v < lo || v > hi);
+    if (!outs.length) continue;
+    const extreme = outs.reduce((m, v) => (Math.abs(v - c.median) > Math.abs(m - c.median) ? v : m), outs[0]);
+    const mult = c.median !== 0 ? Math.abs(extreme / c.median) : null;
+    const multTxt = mult && mult >= 1.5 ? ` &mdash; the most extreme is <span class="n">${fmtNum(extreme)}</span>, roughly <span class="n">${mult.toFixed(1)}&times;</span> the typical value` : ` &mdash; the most extreme is <span class="n">${fmtNum(extreme)}</span>`;
+    const share = outs.length / c.nums.length;
+    F.push({
+      kind: "Outlier", strength: Math.min(1, 0.4 + (mult ? Math.min(0.6, (mult - 1) / 8) : 0.2) + Math.min(0.2, share)),
+      text: `<b>${esc(c.name)}</b> has <span class="n">${outs.length}</span> unusual value${outs.length > 1 ? "s" : ""} that ${outs.length > 1 ? "sit" : "sits"} far from the rest${multTxt}.`,
+      viz: dotstrip(c.nums, lo, hi),
+    });
+  }
+
+  // SKEW
+  for (const c of numeric) {
+    if (c.std === 0) continue;
+    const skew = (c.mean - c.median) / c.std;
+    if (Math.abs(skew) < 0.9) continue;
+    const high = skew > 0;
+    F.push({
+      kind: "Shape", strength: Math.min(0.75, Math.abs(skew) / 3),
+      text: `<b>${esc(c.name)}</b> is lopsided: most values are ${high ? "small" : "large"}, but a few ${high ? "large" : "small"} ones pull the average ${high ? "up" : "down"}, so the average overstates the ${high ? "" : "un"}typical case.`,
+    });
+  }
+
+  // DOMINANT CATEGORY
+  for (const c of cols.filter((c) => (c.type === "category" || c.type === "boolean") && !c.idLike)) {
+    if (c.topShare >= 0.65 && c.distinct > 1) {
+      F.push({
+        kind: "Balance", strength: Math.min(0.8, (c.topShare - 0.5) / 0.5),
+        text: `<b>${esc(c.name)}</b> is dominated by one value: <span class="n">${fmtPct(c.topShare)}</span> of rows are &ldquo;${esc(c.top)}&rdquo;. The other categories are rare by comparison.`,
+      });
+    }
+  }
+
+  // MISSING DATA (aggregate into one finding)
+  const missy = cols.filter((c) => c.missingRate >= 0.1).sort((a, b) => b.missingRate - a.missingRate);
+  if (missy.length) {
+    const list = missy.slice(0, 3).map((c) => `<b>${esc(c.name)}</b> (<span class="n">${fmtPct(c.missingRate)}</span>)`).join(", ");
+    F.push({
+      kind: "Quality", strength: Math.min(0.7, missy[0].missingRate),
+      text: `Some columns are patchy: ${list}${missy.length > 3 ? ", and others" : ""}. Findings that rely on them are less certain.`,
+    });
+  }
+
+  // NEAR-CONSTANT
+  for (const c of cols) {
+    if (c.idLike) continue;
+    const nearConst = (c.type !== "numeric" && c.topShare >= 0.98 && c.distinct > 0) || (c.distinct === 1 && c.present > 1);
+    if (nearConst) {
+      F.push({ kind: "Quality", strength: 0.3, text: `<b>${esc(c.name)}</b> barely varies &mdash; nearly every row is the same value, so it carries little information.` });
+    }
+  }
+
+  // DUPLICATE ROWS
+  const sigs = new Set(); let dup = 0;
+  for (const row of rows) { const sig = cols.map((c) => row[c.name]).join(""); if (sigs.has(sig)) dup++; else sigs.add(sig); }
+  if (dup > 0) F.push({ kind: "Quality", strength: Math.min(0.6, 0.25 + dup / rows.length), text: `<span class="n">${dup}</span> row${dup > 1 ? "s are" : " is"} an exact duplicate of another &mdash; worth removing before you count anything.` });
+
+  // ---- rank with per-kind caps + variety ----
+  const CAPS = { Trend: 2, Link: 2, Outlier: 2, Shape: 1, Balance: 2, Quality: 2 };
+  const byKind = {};
+  F.sort((a, b) => b.strength - a.strength);
+  const picked = [];
+  for (const f of F) {
+    byKind[f.kind] = (byKind[f.kind] || 0);
+    if (byKind[f.kind] >= (CAPS[f.kind] || 1)) continue;
+    byKind[f.kind]++; picked.push(f);
+  }
+  picked.sort((a, b) => b.strength - a.strength);
+  return picked.slice(0, 6);
+}
+
+// ---------- tiny inline SVGs ----------
+function sparkline(vals) {
+  const w = 220, h = 30, p = 2;
+  const mn = Math.min(...vals), mx = Math.max(...vals), rng = mx - mn || 1;
+  const pts = vals.map((v, i) => [p + (i / (vals.length - 1)) * (w - 2 * p), h - p - ((v - mn) / rng) * (h - 2 * p)]);
+  const d = pts.map((pt, i) => (i ? "L" : "M") + pt[0].toFixed(1) + " " + pt[1].toFixed(1)).join(" ");
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="trend sparkline"><path d="${d}" fill="none" stroke="#E0A11B" stroke-width="1.6"/><circle cx="${pts[pts.length - 1][0].toFixed(1)}" cy="${pts[pts.length - 1][1].toFixed(1)}" r="2.4" fill="#E0A11B"/></svg>`;
+}
+function dotstrip(vals, lo, hi) {
+  const w = 220, h = 24, mn = Math.min(...vals), mx = Math.max(...vals), rng = mx - mn || 1;
+  const x = (v) => 3 + ((v - mn) / rng) * (w - 6);
+  const dots = vals.map((v) => { const out = v < lo || v > hi; return `<circle cx="${x(v).toFixed(1)}" cy="12" r="${out ? 3.4 : 2}" fill="${out ? "#E0A11B" : "#C4CBD6"}" ${out ? '' : 'opacity="0.7"'}/>`; }).join("");
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="value distribution with outliers highlighted"><line x1="3" y1="12" x2="${w - 3}" y2="12" stroke="#EDF0F4" stroke-width="1"/>${dots}</svg>`;
+}
+function scatter(av, bv) {
+  const pts = []; for (let i = 0; i < av.length; i++) if (av[i] !== null && bv[i] !== null) pts.push([av[i], bv[i]]);
+  const w = 150, h = 46;
+  const axs = pts.map((p) => p[0]), ays = pts.map((p) => p[1]);
+  const nx = Math.min(...axs), xx = Math.max(...axs), ny = Math.min(...ays), xy = Math.max(...ays);
+  const rx = xx - nx || 1, ry = xy - ny || 1;
+  const c = pts.map((p) => `<circle cx="${(3 + ((p[0] - nx) / rx) * (w - 6)).toFixed(1)}" cy="${(h - 3 - ((p[1] - ny) / ry) * (h - 6)).toFixed(1)}" r="2" fill="#E0A11B" opacity="0.65"/>`).join("");
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="scatter of the two columns">${c}</svg>`;
+}
+
+// ---------- render ----------
+const KIND_HINT = { Trend: "Trend", Link: "Link", Outlier: "Outlier", Shape: "Shape", Balance: "Balance", Quality: "Data quality" };
+function meterHTML(strength) {
+  const on = Math.max(1, Math.round(strength * 6));
+  let s = '<span class="meter" aria-label="strength">';
+  for (let i = 0; i < 6; i++) s += `<i class="${i < on ? "on" : ""}"></i>`;
+  return s + "</span>";
+}
+function summarize(cols, rows) {
+  const types = { numeric: 0, category: 0, date: 0, boolean: 0, text: 0 };
+  cols.forEach((c) => types[c.type]++);
+  const bits = [];
+  if (types.numeric) bits.push(`${types.numeric} numeric`);
+  if (types.category) bits.push(`${types.category} category`);
+  if (types.date) bits.push(`${types.date} date`);
+  if (types.text) bits.push(`${types.text} text`);
+  return `<b>${rows.length.toLocaleString()}</b> rows &times; <b>${cols.length}</b> columns <span class="muted">&mdash; ${bits.join(", ")}.</span>`;
+}
+function typeLabel(c) { return c.idLike ? "id" : c.type; }
+
+function render(cols, rows) {
+  const out = document.getElementById("out");
+  if (!rows.length) { out.innerHTML = `<div class="err">That file has a header but no data rows. Try a CSV with at least a few rows.</div>`; return; }
+  const findings = buildFindings(cols, rows);
+
+  let html = `<p class="summary">${summarize(cols, rows)}</p>`;
+
+  if (findings.length) {
+    html += `<p class="sec-label">Findings &middot; ranked by strength</p><div class="findings">`;
+    findings.forEach((f, i) => {
+      html += `<div class="f" style="animation-delay:${i * 55}ms">
+        <div class="rail"><span class="kind">${KIND_HINT[f.kind] || f.kind}</span>${meterHTML(f.strength)}</div>
+        <div class="body"><div class="text">${f.text}</div>${f.viz ? `<div class="viz">${f.viz}</div>` : ""}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<div class="err">Nothing jumped out on a first pass &mdash; this file may be small, mostly text, or genuinely uniform. The column profile below still shows what&rsquo;s inside.</div>`;
+  }
+
+  // profile
+  html += `<details class="profile"><summary><span class="caret">&rsaquo;</span> Column profile (${cols.length})</summary>
+    <table class="tbl"><thead><tr><th>Column</th><th>Type</th><th>Missing</th><th>Distinct</th><th>Detail</th></tr></thead><tbody>`;
+  for (const c of cols) {
+    let detail = "";
+    if (c.type === "numeric") detail = `min ${fmtNum(c.min)} &middot; median ${fmtNum(c.median)} &middot; max ${fmtNum(c.max)}`;
+    else if (c.top !== undefined && c.top !== null) detail = `top: &ldquo;${esc(String(c.top).slice(0, 24))}&rdquo; (${fmtPct(c.topShare)})`;
+    html += `<tr>
+      <td><span class="cn">${esc(c.name)}</span></td>
+      <td><span class="tag">${typeLabel(c)}</span></td>
+      <td>${c.missingRate > 0 ? `<span class="miss"><i style="width:${Math.min(100, c.missingRate * 100).toFixed(0)}%"></i></span>${fmtPct(c.missingRate)}` : "&mdash;"}</td>
+      <td>${c.distinct.toLocaleString()}</td>
+      <td style="color:var(--slate)">${detail}</td>
+    </tr>`;
+  }
+  html += `</tbody></table></details>`;
+  out.innerHTML = html;
+  document.getElementById("out").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// ---------- pipeline ----------
+function analyze(text, filename) {
+  const parsed = Papa.parse(text.trim(), { header: true, skipEmptyLines: "greedy", dynamicTyping: false });
+  const rows = parsed.data.filter((r) => Object.values(r).some((v) => String(v).trim() !== ""));
+  const headers = (parsed.meta && parsed.meta.fields) ? parsed.meta.fields.filter((h) => h && h.trim() !== "") : [];
+  const out = document.getElementById("out");
+  if (!headers.length) { out.innerHTML = `<div class="err">Couldn&rsquo;t find a header row. Make sure the first row names the columns and values are comma-separated.</div>`; return; }
+  const cols = headers.map((h) => profileColumn(h, rows.map((r) => r[h])));
+
+  document.getElementById("fname").textContent = filename;
+  document.getElementById("fmeta").textContent = `${rows.length.toLocaleString()} rows × ${cols.length} cols`;
+  document.getElementById("filebar").style.display = "flex";
+  document.getElementById("zone").parentElement.style.display = "none";
+  document.querySelector(".privacy").style.display = "none";
+  render(cols, rows);
+}
+
+function readFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => analyze(e.target.result, file.name);
+  reader.onerror = () => { document.getElementById("out").innerHTML = `<div class="err">Couldn&rsquo;t read that file. Try re-exporting it as a plain .csv.</div>`; };
+  reader.readAsText(file);
+}
+
+// ---------- wiring ----------
+const zone = document.getElementById("zone");
+document.getElementById("file").addEventListener("change", (e) => readFile(e.target.files[0]));
+["dragenter", "dragover"].forEach((ev) => zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.add("drag"); }));
+["dragleave", "drop"].forEach((ev) => zone.addEventListener(ev, (e) => { e.preventDefault(); if (ev === "dragleave" && zone.contains(e.relatedTarget)) return; zone.classList.remove("drag"); }));
+zone.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) readFile(f); });
+
+document.getElementById("again").addEventListener("click", () => {
+  document.getElementById("out").innerHTML = "";
+  document.getElementById("filebar").style.display = "none";
+  document.getElementById("zone").parentElement.style.display = "";
+  document.querySelector(".privacy").style.display = "";
+  document.getElementById("file").value = "";
+});
+
+// ---------- sample data (built in the browser, run through the same parser) ----------
+function sampleCSV() {
+  const rows = [["month", "region", "ad_spend", "signups", "revenue", "refunds", "csat"]];
+  const regions = ["North", "North", "North", "South", "North", "North", "East", "North"];
+  let spend = 3800;
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(2024, i, 1);
+    const month = d.toISOString().slice(0, 7);
+    spend = Math.round(spend * 1.045 + (i % 3 === 0 ? 180 : -90));
+    const signups = Math.round(spend * 0.42 + 60 + Math.sin(i) * 40);           // strongly tied to ad_spend
+    const revenue = Math.round(signups * 128 + 5200 + i * 300);                 // trends up
+    let refunds = Math.round(200 + Math.sin(i * 1.3) * 60);
+    if (i === 9) refunds = 1850;                                                // outliers
+    if (i === 17) refunds = 2100;
+    const region = regions[i % regions.length];
+    const csat = i % 7 === 3 ? "" : (4.1 + Math.sin(i) * 0.3).toFixed(1);       // ~15% missing
+    rows.push([month, region, spend, signups, revenue, refunds, csat]);
+  }
+  return rows.map((r) => r.join(",")).join("\n");
+}
+function loadSample(e) { if (e) { e.preventDefault(); e.stopPropagation(); } analyze(sampleCSV(), "sample-sales.csv"); }
+document.getElementById("sample").addEventListener("click", loadSample);
+document.getElementById("sample").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") loadSample(e); });
+</script>
+</body>
+</html>
