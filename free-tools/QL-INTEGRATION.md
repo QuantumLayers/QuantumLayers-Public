@@ -125,6 +125,16 @@ is the only source and what's used. If you hit a `success: false` from
 one of these four chart types, the param names are the first thing to
 double-check against the live API before assuming something else is wrong.
 
+**`bar`/`horizontal_bar`'s result order isn't documented either.** Only
+`pie`/`doughnut`'s docs explicitly promise "sorts descending, trims to
+`limit` categories" — `bar`/`horizontal_bar`'s description says nothing
+about ordering. `free-tools/csv-data-profiler/` needs a genuine "top
+values" bar (not a pie) for its per-column category cards, so rather than
+assume an order QL never promised, it requests a plain count-by-value bar
+and sorts + trims the returned `labels`/`data` arrays client-side before
+rendering — reordering QL's own numbers for presentation, not recomputing
+them. If a "top N" bar chart ever looks unsorted, this is why.
+
 ## Rendering: Chart.js 4.4.0 + 3 plugins
 
 `ql_get_chart_data`'s response is a complete Chart.js config — pass it
