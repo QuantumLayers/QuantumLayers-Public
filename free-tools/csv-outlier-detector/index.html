@@ -243,10 +243,17 @@ const PUBLIC_DEMO_READY = !!(
 );
 
 const MAX_NUMERIC_COLUMNS = 6;
+// Only two levels: QL's box_plot response gives each group's own
+// five-number summary plus the outlier points QL itself already flagged
+// — not the underlying raw values (see extractGroupStats() below). That
+// means we can filter QL's own outlier list down to a stricter subset
+// (fewer, more extreme flagged values) but can never surface MORE
+// outliers than QL already found, since we don't have the raw
+// distribution to check a looser fence against. No "Strict"/more-
+// sensitive option is offered for that reason — it would be fake.
 const SENSITIVITIES = [
-  { key: "loose", label: "Loose", mult: 3 },
-  { key: "standard", label: "Standard", mult: 1.5 },
-  { key: "strict", label: "Strict", mult: 1 },
+  { key: "standard", label: "Standard (QL default)", mult: null },
+  { key: "conservative", label: "Conservative", mult: 3 },
 ];
 
 // ---------------------------------------------------------------------
@@ -255,13 +262,19 @@ const SENSITIVITIES = [
 const $ = (sel, root) => (root || document).querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmtNum = (v) => {
-  if (v === null || v === undefined || Number.isNaN(v)) return "—";
-  const a = Math.abs(v);
+  // QL's JSON fields that "look" numeric (min_val, distinct_count, etc.)
+  // come back as strings, not numbers — confirmed against the live API.
+  // Coerce defensively so formatting/rounding actually applies instead of
+  // printing an untruncated raw string.
+  if (v === null || v === undefined || v === "") return "—";
+  const n = Number(v);
+  if (Number.isNaN(n)) return "—";
+  const a = Math.abs(n);
   let d = 0;
   if (a !== 0 && a < 1) d = a < 0.01 ? 4 : 3;
   else if (a < 10) d = 2;
   else if (a < 100) d = 1;
-  return v.toLocaleString(undefined, { maximumFractionDigits: d });
+  return n.toLocaleString(undefined, { maximumFractionDigits: d });
 };
 const fmtPct = (x, d = 0) => (x * 100).toLocaleString(undefined, { maximumFractionDigits: d }) + "%";
 
@@ -318,10 +331,19 @@ QL.on("authchange", () => {
 // ---------------------------------------------------------------------
 function pickColumns(detail) {
   const columns = (detail && detail.columns) || [];
-  const rowCount = (detail && detail.dataset && detail.dataset.row_count) || 0;
-  const idLike = (c) =>
-    /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
-    (rowCount > 5 && c.distinct_count === rowCount && c.null_count === 0);
+  // QL's dataset_detail returns row_count/distinct_count/null_count as
+  // JSON strings, not numbers (confirmed against the live API) — coerce
+  // once here so every comparison below is a real numeric comparison,
+  // not a silently-always-false string/number strict-equality check.
+  const rowCount = Number((detail && detail.dataset && detail.dataset.row_count) || 0);
+  const idLike = (c) => {
+    const distinct = Number(c.distinct_count);
+    const missing = Number(c.null_count);
+    return (
+      /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
+      (rowCount > 5 && distinct === rowCount && missing === 0)
+    );
+  };
 
   const numeric = columns
     .filter((c) => (c.inferred_type === "integer" || c.inferred_type === "float") && !idLike(c))
@@ -329,7 +351,7 @@ function pickColumns(detail) {
     .map((c) => c.col_name);
 
   const categoryCandidates = columns.filter(
-    (c) => c.inferred_type === "string" && c.distinct_count >= 2 && c.distinct_count <= 15 && !idLike(c)
+    (c) => c.inferred_type === "string" && Number(c.distinct_count) >= 2 && Number(c.distinct_count) <= 15 && !idLike(c)
   );
   const category = categoryCandidates.length ? categoryCandidates[0].col_name : null;
 
@@ -337,55 +359,67 @@ function pickColumns(detail) {
 }
 
 // ---------------------------------------------------------------------
-// box_plot response parsing — best effort. QL-INTEGRATION.md documents
-// box_plot as returning, per @sgratzl/chartjs-chart-boxplot's expected
-// shape, "arrays of raw values per group" keyed by data.labels. If that
-// shape doesn't match at runtime, we still render the chart (Chart.js
-// only needs the config as-is) but skip our own sensitivity/table math
-// for that column rather than guessing.
+// box_plot response parsing.
+//
+// CORRECTED against a live API response (the original version of this
+// function assumed the docs' prose — "arrays of raw values per group" —
+// literally, and was wrong): ql_get_chart_data's box_plot response gives
+// each group a PRE-AGGREGATED five-number summary plus the outlier
+// points QL's own server already flagged:
+//   data.datasets[0].data[i] = { min, q1, median, q3, max, mean, outliers: [...] }
+// aligned with data.labels[i] as the group name. There is no raw
+// per-row value array — QL computed the box-and-whisker stats
+// server-side before returning them. This is a real, different shape
+// from ql_get_distribution_analysis's flat column-level summary, but it
+// has the same practical limitation: we only ever see what QL already
+// aggregated, never the full underlying distribution.
 // ---------------------------------------------------------------------
-function extractRawPairs(chartConfig) {
+function extractGroupStats(chartConfig) {
   try {
     const labels = chartConfig.data.labels || [];
     const ds = chartConfig.data.datasets && chartConfig.data.datasets[0];
     if (!ds || !Array.isArray(ds.data)) return null;
-    const pairs = [];
-    ds.data.forEach((group, i) => {
-      const label = labels[i] !== undefined ? String(labels[i]) : `group ${i + 1}`;
-      if (Array.isArray(group)) {
-        group.forEach((v) => { if (typeof v === "number" && Number.isFinite(v)) pairs.push({ group: label, value: v }); });
-      } else if (typeof group === "number") {
-        pairs.push({ group: label, value: group });
-      } else {
+    const groups = ds.data.map((g, i) => {
+      if (!g || typeof g !== "object" || typeof g.q1 !== "number" || typeof g.q3 !== "number") {
         throw new Error("unrecognized boxplot data shape");
       }
+      return {
+        group: labels[i] !== undefined ? String(labels[i]) : `group ${i + 1}`,
+        min: g.min, q1: g.q1, median: g.median, q3: g.q3, max: g.max, mean: g.mean,
+        outliers: Array.isArray(g.outliers) ? g.outliers.filter((v) => typeof v === "number" && Number.isFinite(v)) : [],
+      };
     });
-    return pairs.length ? pairs : null;
+    return groups.length ? groups : null;
   } catch (e) {
     return null;
   }
 }
 
-function computeOutliers(pairs, mult) {
-  const values = pairs.map((p) => p.value).sort((a, b) => a - b);
-  const q = (p) => {
-    const i = (values.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i);
-    return values[lo] + (values[hi] - values[lo]) * (i - lo);
-  };
-  const q1 = q(0.25), q3 = q(0.75), median = q(0.5), iqr = q3 - q1;
-  const lo = q1 - mult * iqr, hi = q3 + mult * iqr;
-  const flagged = pairs
-    .filter((p) => p.value < lo || p.value > hi)
-    .map((p) => ({ ...p, magnitude: iqr > 0 ? Math.max((lo - p.value) / iqr, (p.value - hi) / iqr) : 0 }))
-    .sort((a, b) => b.magnitude - a.magnitude);
-  return { q1, q3, median, iqr, lo, hi, total: values.length, flagged };
+/** mult === null means "QL's own outliers, unmodified" (the only list we
+ * have — there's no raw distribution to recompute from). A numeric mult
+ * re-filters that same list against a *stricter* per-group fence built
+ * from each group's own q1/q3 — this can only narrow the list, never
+ * find outliers QL didn't already flag. See extractGroupStats() above. */
+function computeOutliersFromGroups(groups, mult) {
+  let flagged = [];
+  groups.forEach((g) => {
+    const iqr = g.q3 - g.q1;
+    g.outliers.forEach((value) => {
+      const magnitude = iqr > 0 ? Math.max((g.q1 - value) / iqr, (value - g.q3) / iqr) : 0;
+      if (mult === null || magnitude > mult) {
+        flagged.push({ group: g.group, value, magnitude });
+      }
+    });
+  });
+  flagged.sort((a, b) => b.magnitude - a.magnitude);
+  return { flagged, groupCount: groups.length };
 }
 
 // ---------------------------------------------------------------------
 // per-column card
 // ---------------------------------------------------------------------
 let chartInstances = [];
-const pairsByColumn = {};       // colName -> raw {group,value}[] (from box_plot) or null
+const groupsByColumn = {};       // colName -> per-group {min,q1,median,q3,max,outliers}[] (from box_plot) or null
 const sensitivityByColumn = {}; // colName -> sensitivity key
 const distributionByColumn = {}; // colName -> ql_get_distribution_analysis response (signed-in only) or null
 
@@ -413,27 +447,37 @@ function sensitivityRowHTML(colName, activeKey) {
 }
 
 function summaryHTML(colName, result, signedIn, distribution) {
-  const pctOfTotal = result.total ? result.flagged.length / result.total : 0;
-  const meter = meterHTML(Math.min(1, 0.15 + pctOfTotal * 4 + (result.flagged.length ? 0.25 : 0)));
-  let html = `<p class="summary-line"><span class="n">${result.flagged.length}</span> of <span class="n">${result.total.toLocaleString()}</span> values (${fmtPct(pctOfTotal)}) fall outside the typical range for <b>${esc(colName)}</b>. ${meter}</p>`;
+  // No reliable "% of all values" figure is available here — box_plot's
+  // response gives per-group five-number summaries, not a row count for
+  // this column — so this reports counts only, never a fabricated
+  // percentage. QL's own distribution_analysis (below, signed-in only)
+  // does have a real percentage, from a different endpoint.
+  const meter = meterHTML(Math.min(1, 0.2 + result.flagged.length * 0.15));
+  let html = `<p class="summary-line"><span class="n">${result.flagged.length}</span> outlier value${result.flagged.length === 1 ? "" : "s"} flagged across <span class="n">${result.groupCount}</span> categor${result.groupCount === 1 ? "y" : "ies"} for <b>${esc(colName)}</b>. ${meter}</p>`;
   if (signedIn && distribution) {
     const o = distribution.outliers || {};
-    html += `<p class="summary-line ql-verified"><span class="kind-tag">QL verified</span> &nbsp;QL’s own analysis found <span class="n">${o.count ?? "—"}</span> outliers (<span class="n">${o.percentage != null ? o.percentage.toFixed(1) + "%" : "—"}</span>) at its standard 1.5&times;IQR fence, and classifies this column’s distribution as <b>${esc(distribution.normality || "unknown")}</b>.</p>`;
+    // Coerce with Number() before .toFixed() — QL's numeric-looking JSON
+    // fields have consistently come back as strings elsewhere in this
+    // API (confirmed on dataset_detail/statistical_summary/dashboard_data),
+    // and .toFixed() throws on a string rather than silently working.
+    const pct = o.percentage != null ? Number(o.percentage) : null;
+    html += `<p class="summary-line ql-verified"><span class="kind-tag">QL verified</span> &nbsp;QL’s own column-level analysis found <span class="n">${o.count ?? "—"}</span> outliers (<span class="n">${pct != null && !Number.isNaN(pct) ? pct.toFixed(1) + "%" : "—"}</span> of all rows) at its standard 1.5&times;IQR fence, and classifies this column’s distribution as <b>${esc(distribution.normality || "unknown")}</b>.</p>`;
   }
   return html;
 }
 
 function renderColumnBody(colName, signedIn, distribution) {
-  const pairs = pairsByColumn[colName];
+  const groups = groupsByColumn[colName];
   const sensKey = sensitivityByColumn[colName] || "standard";
-  const mult = (SENSITIVITIES.find((s) => s.key === sensKey) || SENSITIVITIES[1]).mult;
+  const mult = (SENSITIVITIES.find((s) => s.key === sensKey) || SENSITIVITIES[0]).mult;
 
-  if (!pairs) {
-    // Chart rendered fine (QL's own config), but we couldn't parse raw
-    // values for our own sensitivity/table layer — degrade honestly.
+  if (!groups) {
+    // Chart rendered fine (QL's own config), but we couldn't parse its
+    // per-group stats for our own sensitivity/table layer — degrade
+    // honestly rather than guess.
     return `<p class="empty-note">QL rendered this chart. A detailed outlier breakdown isn’t available for this column right now.</p>`;
   }
-  const result = computeOutliers(pairs, mult);
+  const result = computeOutliersFromGroups(groups, mult);
   return (
     summaryHTML(colName, result, signedIn, distribution) +
     sensitivityRowHTML(colName, sensKey) +
@@ -503,7 +547,7 @@ async function loadColumnResults(datasetId, numericColumns, categoryColumn, sign
       }
       if (chartConfig) {
         chartConfig.__distribution = distribution;
-        pairsByColumn[colName] = extractRawPairs(chartConfig);
+        groupsByColumn[colName] = extractGroupStats(chartConfig);
         distributionByColumn[colName] = distribution;
         if (!sensitivityByColumn[colName]) sensitivityByColumn[colName] = "standard";
       }
@@ -621,7 +665,7 @@ async function renderDatasetPicker() {
             .map(
               (d) => `
             <div class="dataset-row">
-              <div><div class="name">${esc(d.name)}</div><div class="meta">${(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
+              <div><div class="name">${esc(d.name)}</div><div class="meta">${Number(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
               <button data-action="pick-dataset" data-id="${d.id}" data-name="${esc(d.name)}">Scan for outliers</button>
             </div>`
             )

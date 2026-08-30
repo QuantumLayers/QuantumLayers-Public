@@ -308,22 +308,45 @@ QL.on("authchange", () => { renderAuthStatus(); route(); });
 // ---------------------------------------------------------------------
 function classifyColumns(detail) {
   const columns = (detail && detail.columns) || [];
-  const rowCount = (detail && detail.dataset && detail.dataset.row_count) || 0;
-  const idLike = (c) =>
-    /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
-    (rowCount > 5 && c.distinct_count === rowCount && c.null_count === 0);
+  // QL's dataset_detail returns row_count/distinct_count/null_count/
+  // min_val/max_val/mean_val/stddev_val as JSON strings, not numbers
+  // (confirmed against the live API). Coerce once, here, so every
+  // downstream comparison (idLike's ===, analyzeQuality's "distinct===1"
+  // constant-column check, .toLocaleString() calls) works on real
+  // numbers instead of silently no-op'ing on a string.
+  const num = (v) => (v === null || v === undefined || v === "" ? null : Number(v));
+  const rowCount = num(detail && detail.dataset && detail.dataset.row_count) || 0;
+  const idLike = (c) => {
+    const distinct = num(c.distinct_count);
+    const missing = num(c.null_count);
+    return (
+      /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
+      (rowCount > 5 && distinct === rowCount && missing === 0)
+    );
+  };
 
   return columns.map((c) => {
+    const distinctCount = num(c.distinct_count) || 0;
     let type = "text";
     if (c.inferred_type === "integer" || c.inferred_type === "float") type = "numeric";
     else if (c.inferred_type === "date" || c.inferred_type === "datetime") type = "date";
     else if (c.inferred_type === "string") {
-      type = c.distinct_count <= Math.max(20, rowCount * 0.5) ? "category" : "text";
+      type = distinctCount <= Math.max(20, rowCount * 0.5) ? "category" : "text";
     }
+    // min_val/max_val are only numeric-*looking* strings for numeric
+    // columns — for date columns they're real date strings (e.g.
+    // "2025-12-06 22:46:41") and for text/category columns they're the
+    // alphabetic min/max value (e.g. "Apple AirPods"). Only coerce for
+    // numeric columns; keep the raw string everywhere else so date
+    // ranges and category bounds don't turn into NaN.
+    const isNumericType = type === "numeric";
     return {
       name: c.col_name, type, idLike: idLike(c),
-      distinct: c.distinct_count || 0, missing: c.null_count || 0,
-      min: c.min_val, max: c.max_val, mean: c.mean_val, stddev: c.stddev_val,
+      distinct: distinctCount, missing: num(c.null_count) || 0,
+      min: isNumericType ? num(c.min_val) : c.min_val,
+      max: isNumericType ? num(c.max_val) : c.max_val,
+      mean: isNumericType ? num(c.mean_val) : null,
+      stddev: isNumericType ? num(c.stddev_val) : null,
     };
   });
 }
@@ -378,24 +401,32 @@ function mountChartInto(canvasId, config) {
   } catch (e) { /* leave the empty canvas rather than crash the page */ }
 }
 
-/** Bar/horizontal_bar's sort order isn't documented (unlike pie/doughnut,
- * which QL's docs explicitly say sort descending + trim to a limit) — see
- * QL-INTEGRATION.md. So for "top values" we request a plain count-by-value
- * bar, then sort+trim QL's own returned labels/data client-side rather
- * than assume an order QL never promised. This reorders QL's real numbers
- * for presentation; it doesn't recompute them. */
-function sortAndTrimBarConfig(config, limit) {
+/** "Top values" per category column — via doughnut, not bar.
+ *
+ * Two real findings from the live API (both confirmed, neither matches
+ * what the docs' prose implies) drove this:
+ *  1. bar/horizontal_bar's value_columns must be a NUMERIC column, even
+ *     with aggregation:"count" — passing the category column itself (the
+ *     natural way to ask "count rows per category") fails outright with
+ *     "Column must be numeric".
+ *  2. aggregation:"count" on a bar chart is silently ignored server-side
+ *     (confirmed: the response was actually SUMMING a substituted numeric
+ *     column, titled "Sum of X by Y", not counting rows).
+ * The confirmed, correct mechanism: pie/doughnut with `value_column`
+ * OMITTED entirely triggers real per-category row counts, already sorted
+ * descending and trimmed to `limit` (QL's docs do promise this for pie/
+ * doughnut, and live behavior matches) — including an "Other" bucket for
+ * whatever didn't make the cut, which is included below so percentages
+ * are computed against the column's true total, not just the shown slice. */
+function extractPieCounts(config) {
   try {
     const labels = config.data.labels || [];
     const ds = config.data.datasets[0];
-    const paired = labels.map((l, i) => ({ label: l, value: ds.data[i] }));
-    paired.sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0));
-    const top = paired.slice(0, limit);
-    config.data.labels = top.map((p) => p.label);
-    ds.data = top.map((p) => p.value);
-    return { config, top };
+    const pairs = labels.map((label, i) => ({ label: String(label), value: Number(ds.data[i]) || 0 }));
+    const total = pairs.reduce((s, p) => s + p.value, 0);
+    return { pairs, total };
   } catch (e) {
-    return { config, top: null };
+    return null;
   }
 }
 
@@ -601,7 +632,9 @@ async function renderProfile(datasetId, datasetName) {
   }
 
   const columns = classifyColumns(detail);
-  const rowCount = (detail.dataset && detail.dataset.row_count) || 0;
+  // row_count is a JSON string on the real API, not a number — see the
+  // coercion note in classifyColumns().
+  const rowCount = Number((detail.dataset && detail.dataset.row_count) || 0);
   const numeric = columns.filter((c) => c.type === "numeric");
   const category = columns.filter((c) => c.type === "category");
   const dates = columns.filter((c) => c.type === "date");
@@ -680,17 +713,20 @@ async function renderProfile(datasetId, datasetName) {
     }),
     ...categoryToShow.map(async (c, i) => {
       try {
-        const raw = await QL.chart(datasetId, "bar", {
-          category_column: c.name, value_columns: [c.name], aggregation: "count",
+        // See extractPieCounts()'s comment: doughnut with value_column
+        // omitted is the confirmed, correct way to get real per-category
+        // row counts — bar/horizontal_bar with aggregation:"count" does
+        // not work for this (confirmed against the live API).
+        const config = await QL.chart(datasetId, "doughnut", {
+          category_column: c.name, limit: TOP_VALUES_LIMIT,
         });
-        const { config, top } = sortAndTrimBarConfig(raw, TOP_VALUES_LIMIT);
         mountChartInto("top-" + i, config);
-        if (top && top.length) {
-          const total = top.reduce((s, p) => s + (Number(p.value) || 0), 0) || c.distinct;
+        const counts = extractPieCounts(config);
+        if (counts && counts.pairs.length) {
           const card = document.getElementById("top-" + i).closest(".col-card");
           const shareLine = document.createElement("p");
           shareLine.className = "stat-line";
-          shareLine.innerHTML = `top value: <b>${esc(String(top[0].label))}</b> (${fmtPct((Number(top[0].value) || 0) / total)})`;
+          shareLine.innerHTML = `top value: <b>${esc(counts.pairs[0].label)}</b> (${fmtPct(counts.total ? counts.pairs[0].value / counts.total : 0)})`;
           card.insertBefore(shareLine, card.querySelector(".chart-box"));
         }
       } catch (e) { /* leave the card's chart area empty rather than crash the page */ }
@@ -727,7 +763,7 @@ async function renderDatasetPicker() {
             .map(
               (d) => `
             <div class="dataset-row">
-              <div><div class="name">${esc(d.name)}</div><div class="meta">${(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
+              <div><div class="name">${esc(d.name)}</div><div class="meta">${Number(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
               <button data-action="pick-dataset" data-id="${d.id}" data-name="${esc(d.name)}">Profile it</button>
             </div>`
             )
