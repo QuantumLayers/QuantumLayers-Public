@@ -271,7 +271,11 @@ const FIELD_DEFS = {
   time:        { param: "time_column",     label: "Time column",        kinds: ["date"] },
   column:      { param: "column_name",     label: "Column",             kinds: ["numeric"] },
   xMulti:      { param: "x_columns",       label: "Predictors (X)",     kinds: ["numeric"], multi: true },
-  aggregation: { param: "aggregation",     label: "Aggregation",        select: ["sum", "avg", "count", "min", "max"] },
+  // "average", not "avg" — confirmed against the live API (both the
+  // get_chart_data tool's own param schema and a real recommended-charts
+  // response used "average"); the docs' prose says "sum/avg/count/min/max"
+  // but that abbreviation doesn't match what the server actually accepts.
+  aggregation: { param: "aggregation",     label: "Aggregation",        select: ["sum", "average", "count", "min", "max"] },
   interval:    { param: "interval",        label: "Interval",           select: ["day", "week", "month", "year"] },
   limit:       { param: "limit",           label: "Limit",              number: true, default: 10 },
 };
@@ -346,10 +350,19 @@ QL.on("authchange", () => { renderAuthStatus(); route(); });
 // ---------------------------------------------------------------------
 function classifyColumns(detail) {
   const columns = (detail && detail.columns) || [];
-  const rowCount = (detail && detail.dataset && detail.dataset.row_count) || 0;
-  const idLike = (c) =>
-    /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
-    (rowCount > 5 && c.distinct_count === rowCount && c.null_count === 0);
+  // QL's dataset_detail returns row_count/distinct_count/null_count as
+  // JSON strings, not numbers (confirmed against the live API) — coerce
+  // once here so idLike()'s equality checks are real numeric comparisons,
+  // not a silently-always-false string/number strict-equality check.
+  const rowCount = Number((detail && detail.dataset && detail.dataset.row_count) || 0);
+  const idLike = (c) => {
+    const distinct = Number(c.distinct_count);
+    const missing = Number(c.null_count);
+    return (
+      /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
+      (rowCount > 5 && distinct === rowCount && missing === 0)
+    );
+  };
 
   return columns.map((c) => {
     let type = "text";
@@ -616,7 +629,7 @@ async function renderDatasetPicker() {
             .map(
               (d) => `
             <div class="dataset-row">
-              <div><div class="name">${esc(d.name)}</div><div class="meta">${(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
+              <div><div class="name">${esc(d.name)}</div><div class="meta">${Number(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
               <button data-action="pick-dataset" data-id="${d.id}" data-name="${esc(d.name)}">Chart it</button>
             </div>`
             )
@@ -637,7 +650,11 @@ async function renderOwnChartMaker(datasetId, datasetName) {
     let recommendations = null;
     try {
       const recData = await QL.recommendedCharts(datasetId, { maxCharts: MAX_RECOMMENDATIONS });
-      recommendations = (recData && recData.charts) || null;
+      // The response envelope key is "candidates", not "charts" — confirmed
+      // against a live response (this was wrong in an earlier version and
+      // meant this whole recommendation feature silently never fired,
+      // always falling through to the manual default below instead).
+      recommendations = (recData && recData.candidates) || null;
     } catch (e) {
       recommendations = null; // optional enrichment — fall back to a manual default below
     }
@@ -646,7 +663,11 @@ async function renderOwnChartMaker(datasetId, datasetName) {
     if (recommendations && recommendations.length) {
       chartType = recommendations[0].chart_type;
       params = recommendations[0].params;
-      initialConfig = recommendations[0].chart_data; // already rendered — no extra call needed
+      // Candidates don't actually include a ready-made chart_data (also
+      // confirmed against a live response, despite QL-INTEGRATION.md
+      // documenting one) — this stays undefined and the code below
+      // correctly falls back to fetching it via QL.chart().
+      initialConfig = recommendations[0].chart_data;
     } else {
       // No recommendation available (e.g. too few columns/rows) — fall back
       // to the simplest chart QL can always render: a bar of the first

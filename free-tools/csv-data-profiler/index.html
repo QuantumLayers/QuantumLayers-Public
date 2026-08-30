@@ -308,22 +308,45 @@ QL.on("authchange", () => { renderAuthStatus(); route(); });
 // ---------------------------------------------------------------------
 function classifyColumns(detail) {
   const columns = (detail && detail.columns) || [];
-  const rowCount = (detail && detail.dataset && detail.dataset.row_count) || 0;
-  const idLike = (c) =>
-    /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
-    (rowCount > 5 && c.distinct_count === rowCount && c.null_count === 0);
+  // QL's dataset_detail returns row_count/distinct_count/null_count/
+  // min_val/max_val/mean_val/stddev_val as JSON strings, not numbers
+  // (confirmed against the live API). Coerce once, here, so every
+  // downstream comparison (idLike's ===, analyzeQuality's "distinct===1"
+  // constant-column check, .toLocaleString() calls) works on real
+  // numbers instead of silently no-op'ing on a string.
+  const num = (v) => (v === null || v === undefined || v === "" ? null : Number(v));
+  const rowCount = num(detail && detail.dataset && detail.dataset.row_count) || 0;
+  const idLike = (c) => {
+    const distinct = num(c.distinct_count);
+    const missing = num(c.null_count);
+    return (
+      /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
+      (rowCount > 5 && distinct === rowCount && missing === 0)
+    );
+  };
 
   return columns.map((c) => {
+    const distinctCount = num(c.distinct_count) || 0;
     let type = "text";
     if (c.inferred_type === "integer" || c.inferred_type === "float") type = "numeric";
     else if (c.inferred_type === "date" || c.inferred_type === "datetime") type = "date";
     else if (c.inferred_type === "string") {
-      type = c.distinct_count <= Math.max(20, rowCount * 0.5) ? "category" : "text";
+      type = distinctCount <= Math.max(20, rowCount * 0.5) ? "category" : "text";
     }
+    // min_val/max_val are only numeric-*looking* strings for numeric
+    // columns — for date columns they're real date strings (e.g.
+    // "2025-12-06 22:46:41") and for text/category columns they're the
+    // alphabetic min/max value (e.g. "Apple AirPods"). Only coerce for
+    // numeric columns; keep the raw string everywhere else so date
+    // ranges and category bounds don't turn into NaN.
+    const isNumericType = type === "numeric";
     return {
       name: c.col_name, type, idLike: idLike(c),
-      distinct: c.distinct_count || 0, missing: c.null_count || 0,
-      min: c.min_val, max: c.max_val, mean: c.mean_val, stddev: c.stddev_val,
+      distinct: distinctCount, missing: num(c.null_count) || 0,
+      min: isNumericType ? num(c.min_val) : c.min_val,
+      max: isNumericType ? num(c.max_val) : c.max_val,
+      mean: isNumericType ? num(c.mean_val) : null,
+      stddev: isNumericType ? num(c.stddev_val) : null,
     };
   });
 }
@@ -601,7 +624,9 @@ async function renderProfile(datasetId, datasetName) {
   }
 
   const columns = classifyColumns(detail);
-  const rowCount = (detail.dataset && detail.dataset.row_count) || 0;
+  // row_count is a JSON string on the real API, not a number — see the
+  // coercion note in classifyColumns().
+  const rowCount = Number((detail.dataset && detail.dataset.row_count) || 0);
   const numeric = columns.filter((c) => c.type === "numeric");
   const category = columns.filter((c) => c.type === "category");
   const dates = columns.filter((c) => c.type === "date");
@@ -727,7 +752,7 @@ async function renderDatasetPicker() {
             .map(
               (d) => `
             <div class="dataset-row">
-              <div><div class="name">${esc(d.name)}</div><div class="meta">${(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
+              <div><div class="name">${esc(d.name)}</div><div class="meta">${Number(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
               <button data-action="pick-dataset" data-id="${d.id}" data-name="${esc(d.name)}">Profile it</button>
             </div>`
             )
