@@ -77,7 +77,7 @@ guess or hardcode a number that isn't recorded.
 
 | Tool | Dataset name | Dataset ID | Visibility confirmed | Notes |
 |---|---|---|---|---|
-| _(none yet — this repo currently ships only the shared foundation)_ | | | | |
+| `csv-outlier-detector` | _(not created)_ | _(not created)_ | ❌ | Needs: ≥1 numeric column with genuine outliers, ≥1 low-cardinality (2–15 distinct values) category column to group the box plot by. Once created, fill in `PUBLIC_DEMO` (`datasetId`, `datasetLabel`, `numericColumns`, `categoryColumn`) at the top of `free-tools/csv-outlier-detector/index.html`'s script — anonymous zero-click mode turns on automatically, no other code changes needed. Until then that tool leads anonymous visitors straight to its sign-up panel instead of a broken demo. |
 
 **Status: no public datasets created yet.**
 

@@ -41,9 +41,10 @@ Read, in this order:
 | Tool | Live demo | What it does |
 |---|---|---|
 | [`whats-in-this-csv`](./whats-in-this-csv/) | [quantumlayers.github.io/quantumlayers-public/free-tools/whats-in-this-csv/](https://quantumlayers.github.io/quantumlayers-public/free-tools/whats-in-this-csv/) | Drops a CSV, profiles its columns, and ranks plain-language findings (trends, correlations, outliers, data-quality flags) — entirely client-side, no upload. |
+| [`csv-outlier-detector`](./csv-outlier-detector/) | [quantumlayers.github.io/quantumlayers-public/free-tools/csv-outlier-detector/](https://quantumlayers.github.io/quantumlayers-public/free-tools/csv-outlier-detector/) | QL-backed: scans a dataset's numeric columns for outliers, one box-plot chart per column with an adjustable sensitivity control. No public demo dataset configured yet (see `DEPLOYMENT.md`) — anonymous visitors currently land on the sign-up panel; sign in to run it on your own data. |
 
-_(The live demo link assumes GitHub Pages is enabled for this repo and
-serving from its default branch — unconfirmed as of this writing. If the
+_(Live demo links assume GitHub Pages is enabled for this repo and
+serving from its default branch — unconfirmed as of this writing. If a
 link 404s, that's the prerequisite to check, not a bug in the tool.)_
 
 ## Contributing a tool
