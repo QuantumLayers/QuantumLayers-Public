@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Data Chart Maker — instant charts from any dataset | QuantumLayers</title>
+<meta name="description" content="Data chart maker: pick a dataset and columns, get a clean chart in seconds — powered by QuantumLayers' real chart engine and auto-recommendation. Free live demo, sign in to chart your own data." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4.2.5/build/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
+<script src="../ql-client.js"></script>
+<style>
+  :root{
+    --font-display:'Space Grotesk',system-ui,sans-serif;
+    --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+
+    --bg:#0b0d10; --bg-raised:#14171c; --bg-inset:#0e1013; --border:#262b32;
+    --text:#e8eaed; --text-dim:#9aa1ab; --text-faint:#5b6270;
+    --accent:#9b87f5; --accent-dim:#7dd3fc;
+
+    --meter-empty:#262b32;
+    --meter-1:#7a5a1e; --meter-2:#96701f; --meter-3:#b28620;
+    --meter-4:#cf9c21; --meter-5:#eab308; --meter-6:#ffcc33;
+
+    --ok:#4ade80; --warn:#eab308; --danger:#f87171;
+  }
+  @media (prefers-color-scheme:light){
+    :root{
+      --bg:#fafafa; --bg-raised:#ffffff; --bg-inset:#f2f2f4; --border:#e2e4e8;
+      --text:#14171c; --text-dim:#565c66; --text-faint:#9aa1ab;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--font-body);
+    font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent-dim)}
+  .wrap{max-width:980px; margin:0 auto; padding:0 20px}
+
+  /* top bar */
+  .top{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px 0 6px; flex-wrap:wrap}
+  .mark{font-family:var(--font-mono); font-weight:600; font-size:13px; letter-spacing:.02em; color:var(--text); text-decoration:none; display:flex; align-items:center; gap:9px}
+  .mark .dot{width:10px; height:10px; border-radius:3px; background:var(--meter-6); box-shadow:0 0 0 4px color-mix(in srgb, var(--meter-6) 22%, transparent)}
+  .top-right{display:flex; align-items:center; gap:16px; font-family:var(--font-mono); font-size:12.5px}
+  .top a.ghlink{color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--border)}
+  .top a.ghlink:hover{color:var(--text); border-color:var(--text-faint)}
+  .auth-status{color:var(--text-dim)}
+  .auth-status b{color:var(--text); font-weight:600}
+  .auth-status button{font-family:var(--font-mono); font-size:12.5px; color:var(--text); background:none; border:1px solid var(--border); padding:5px 10px; border-radius:7px; cursor:pointer}
+  .auth-status button:hover{border-color:var(--text-faint)}
+
+  /* hero */
+  .hero{padding:28px 0 6px}
+  h1{font-family:var(--font-display); font-weight:600; font-size:clamp(28px,5.4vw,42px); line-height:1.08; letter-spacing:-.02em; margin:0 0 12px}
+  .lede{font-size:clamp(16px,2.4vw,18px); color:var(--text-dim); max-width:58ch; margin:0 0 16px}
+  .privacy-line{font-family:var(--font-mono); font-size:12.5px; color:var(--text-faint); margin:0 0 22px}
+
+  /* kind tag + strength meter (house signature) */
+  .kind-tag{
+    font-family:var(--font-mono); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text-dim); border:1px solid var(--border); border-radius:4px; padding:2px 8px; display:inline-block;
+  }
+  .strength-meter{display:inline-flex; gap:3px; vertical-align:middle}
+  .strength-meter span{width:14px; height:6px; border-radius:1px; background:var(--meter-empty); display:block}
+  .strength-meter span.filled:nth-child(1){background:var(--meter-1)}
+  .strength-meter span.filled:nth-child(2){background:var(--meter-2)}
+  .strength-meter span.filled:nth-child(3){background:var(--meter-3)}
+  .strength-meter span.filled:nth-child(4){background:var(--meter-4)}
+  .strength-meter span.filled:nth-child(5){background:var(--meter-5)}
+  .strength-meter span.filled:nth-child(6){background:var(--meter-6)}
+
+  /* invite bar */
+  .invite-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background:var(--bg-raised); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin:0 0 22px;
+  }
+  .invite-bar span{color:var(--text-dim); font-size:14px}
+  .invite-bar a.btn-link{font-family:var(--font-mono); font-size:13px; color:var(--accent-dim); text-decoration:none; white-space:nowrap}
+  .invite-bar a.btn-link:hover{text-decoration:underline}
+
+  /* chart maker layout */
+  .maker{display:grid; grid-template-columns:260px 1fr; gap:22px; align-items:start}
+  @media (max-width:760px){ .maker{grid-template-columns:1fr} }
+
+  .picker{background:var(--bg-raised); border:1px solid var(--border); border-radius:14px; padding:18px}
+  .picker h3{font-family:var(--font-display); font-size:15px; margin:0 0 14px; font-weight:600}
+  .field{margin:0 0 14px}
+  .field label{display:block; font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-faint); margin:0 0 5px}
+  .field select, .field input{
+    width:100%; background:var(--bg-inset); border:1px solid var(--border); border-radius:8px;
+    padding:8px 10px; color:var(--text); font-family:var(--font-body); font-size:13.5px;
+  }
+  .field select:focus, .field input:focus{outline:none; border-color:var(--accent)}
+  .field select[multiple]{padding:4px}
+
+  .recs{margin:0 0 16px}
+  .recs .label{font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-faint); margin:0 0 8px; display:block}
+  .rec-chip{
+    display:block; width:100%; text-align:left; background:var(--bg-inset); border:1px solid var(--border);
+    border-radius:9px; padding:8px 10px; margin:0 0 7px; cursor:pointer; color:var(--text); font-family:var(--font-body); font-size:12.5px;
+  }
+  .rec-chip:hover{border-color:var(--accent)}
+  .rec-chip.active{border-color:var(--meter-6); background:color-mix(in srgb, var(--meter-6) 10%, var(--bg-inset))}
+  .rec-chip .title{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px}
+  .rec-chip .reason{color:var(--text-faint); font-size:11.5px; line-height:1.4}
+
+  .chart-panel{background:var(--bg-raised); border:1px solid var(--border); border-radius:14px; padding:20px}
+  .chart-head{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:0 0 14px}
+  .chart-head .title{font-family:var(--font-display); font-weight:600; font-size:17px}
+  .export-row{display:flex; gap:8px; flex-wrap:wrap}
+  .export-row button{
+    font-family:var(--font-mono); font-size:12px; color:var(--text); background:var(--bg-inset);
+    border:1px solid var(--border); padding:7px 11px; border-radius:7px; cursor:pointer;
+  }
+  .export-row button:hover{border-color:var(--text-faint)}
+  .export-row button:disabled{opacity:.5; cursor:default}
+  .export-caption{font-family:var(--font-mono); font-size:11px; color:var(--text-faint); margin:8px 0 0}
+  .export-status{font-family:var(--font-mono); font-size:11.5px; color:var(--ok); margin:6px 0 0; min-height:1em}
+
+  .chart-box{position:relative; height:380px; background:var(--bg-inset); border-radius:10px; padding:14px}
+  .chart-box canvas{max-height:100%}
+
+  .empty-note{color:var(--text-faint); font-size:14px}
+  .err-box{background:color-mix(in srgb, var(--danger) 12%, var(--bg-raised)); border:1px solid color-mix(in srgb, var(--danger) 40%, var(--border)); color:var(--text); border-radius:12px; padding:14px 16px; font-size:14.5px; margin:0 0 16px}
+  .err-box b{color:var(--danger)}
+  .skeleton{color:var(--text-faint); font-family:var(--font-mono); font-size:13px; padding:18px 0}
+
+  /* auth / dataset picker panel */
+  .panel{background:var(--bg-raised); border:1px solid var(--border); border-radius:16px; padding:26px 26px 24px; margin:0 0 22px}
+  .panel h2{font-family:var(--font-display); font-weight:600; font-size:22px; margin:0 0 8px; letter-spacing:-.01em}
+  .panel p.sub{color:var(--text-dim); font-size:14.5px; margin:0 0 20px; max-width:60ch}
+  .tabs{display:flex; gap:4px; margin:0 0 18px; border-bottom:1px solid var(--border)}
+  .tabs button{font-family:var(--font-mono); font-size:13px; color:var(--text-faint); background:none; border:none; padding:8px 4px; margin-right:18px; cursor:pointer; border-bottom:2px solid transparent}
+  .tabs button.active{color:var(--text); border-bottom-color:var(--accent)}
+  form.auth-form{display:grid; gap:12px; max-width:360px}
+  form.auth-form label{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-faint); display:block; margin:0 0 5px}
+  form.auth-form input{width:100%; background:var(--bg-inset); border:1px solid var(--border); border-radius:8px; padding:9px 11px; color:var(--text); font-family:var(--font-body); font-size:14.5px}
+  form.auth-form input:focus{outline:none; border-color:var(--accent)}
+  form.auth-form .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  form.auth-form .terms{display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--text-dim)}
+  form.auth-form .terms input{width:auto}
+  .btn-primary{font-family:var(--font-display); font-weight:600; font-size:15px; color:#0b0d10; background:var(--meter-6); border:none; padding:11px 20px; border-radius:9px; cursor:pointer; margin-top:4px; width:max-content}
+  .btn-primary:hover{background:var(--meter-5)}
+  .btn-primary:disabled{opacity:.6; cursor:default}
+  .form-err{color:var(--danger); font-size:13px; margin:0}
+
+  .dataset-list{display:flex; flex-direction:column; gap:8px}
+  .dataset-row{display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--bg-inset); border:1px solid var(--border); border-radius:10px; padding:11px 14px}
+  .dataset-row .name{font-weight:600; font-size:14.5px}
+  .dataset-row .meta{font-family:var(--font-mono); font-size:12px; color:var(--text-faint)}
+  .dataset-row button{font-family:var(--font-mono); font-size:12.5px; color:#0b0d10; background:var(--meter-6); border:none; padding:7px 13px; border-radius:7px; cursor:pointer; white-space:nowrap}
+  .dataset-row button:hover{background:var(--meter-5)}
+
+  /* cta band */
+  .cta{margin:36px 0 0; background:var(--bg-inset); border:1px solid var(--border); border-radius:18px; padding:32px 28px}
+  .cta .eyebrow{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--meter-6); margin:0 0 12px}
+  .cta h2{font-family:var(--font-display); font-weight:600; font-size:clamp(20px,3.2vw,26px); line-height:1.2; letter-spacing:-.01em; margin:0 0 10px; max-width:32ch}
+  .cta p{color:var(--text-dim); font-size:15px; max-width:58ch; margin:0 0 20px}
+  .cta .ladder{display:flex; flex-direction:column; gap:9px; margin:0 0 22px}
+  .cta .ladder div{font-size:14px; color:var(--text); display:flex; gap:11px; align-items:baseline}
+  .cta .ladder .from{font-family:var(--font-mono); font-size:12px; color:var(--text-faint); min-width:78px}
+  .cta .ladder .arrow{color:var(--meter-6)}
+  .btn{display:inline-block; background:var(--meter-6); color:#0b0d10; font-family:var(--font-display); font-weight:600; font-size:15px; text-decoration:none; padding:12px 22px; border-radius:10px}
+  .btn:hover{background:var(--meter-5)}
+
+  footer{margin:30px 0 48px; display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; font-family:var(--font-mono); font-size:12px; color:var(--text-faint)}
+  footer a{color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--border)}
+  footer a:hover{color:var(--text)}
+  footer .sep{color:var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <a class="mark" href="./"><span class="dot"></span>data chart maker</a>
+    <div class="top-right">
+      <span class="auth-status" id="authStatus"></span>
+      <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">open source &nearr;</a>
+    </div>
+  </div>
+
+  <header class="hero">
+    <h1>Data chart maker</h1>
+    <p class="lede">Pick a dataset and a couple of columns, get a clean chart in seconds — every chart here is QL's own real Chart.js output, including its auto-recommended default, not a local reimplementation.</p>
+    <p class="privacy-line">Live demo powered by QuantumLayers. Sign in to run it on your own data.</p>
+  </header>
+
+  <main id="app">
+    <p class="skeleton">Loading&hellip;</p>
+  </main>
+
+  <section class="cta">
+    <p class="eyebrow">one chart vs. every chart</p>
+    <h2>This made one chart from a demo dataset. QuantumLayers finds all of them, across everything you connect.</h2>
+    <p>Point QuantumLayers at your databases, APIs, spreadsheets and files, and it auto-recommends the most informative charts across all of them &mdash; joined together &mdash; and writes the narrative explaining what they mean, not just what they show.</p>
+    <div class="ladder">
+      <div><span class="from">this tool</span><span class="arrow">&rarr;</span><span>one chart, from one dataset you picked</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span><b>auto-recommends the most informative charts</b> across your joined live sources, ranked</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>writes the narrative &mdash; what changed, why it matters, in plain English</span></div>
+      <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>saves charts and schedules reports, so you&rsquo;re not rebuilding this every time</span></div>
+    </div>
+    <a class="btn" href="https://quantumlayers.com/ql-register" target="_blank" rel="noopener">Auto-chart your live data free &rarr;</a>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span><span class="sep">&middot;</span>
+    <span>built by <a href="https://quantumlayers.com" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+  </footer>
+
+</div>
+
+<script>
+/* =========================================================================
+   data chart maker — QL-backed dual-source tool
+   Every chart rendered here is QL's own Chart.js config from
+   ql_get_chart_data (via ql-client.js), themed but never re-derived —
+   see CONVENTIONS.md's charting rule. Column/chart-type pickers just
+   choose which QL params to request next.
+   ========================================================================= */
+
+// ---------------------------------------------------------------------
+// Public demo dataset config — see DEPLOYMENT.md
+// ---------------------------------------------------------------------
+// No curated public dataset exists yet for this tool. ql_get_dataset_detail
+// and ql_get_recommended_charts both always require a session (see
+// QL-INTEGRATION.md's anonymous ceiling) even on a public dataset, so an
+// anonymous visitor's column list AND default "recommended" chart can't be
+// discovered live — both have to be recorded here once a dataset exists.
+// Until then, anonymous visitors land on the sign-up panel instead of a
+// broken zero-click promise (same resolution as csv-outlier-detector).
+const PUBLIC_DEMO = {
+  datasetId: null,       // e.g. 42
+  datasetLabel: null,    // e.g. "Retail transactions (demo)"
+  columns: [],            // [{ name: 'revenue', type: 'numeric' }, { name: 'region', type: 'category' }, ...]
+  // type is one of: 'numeric' | 'category' | 'date' | 'text'
+  suggestedChart: null,   // { chartType: 'bar', params: { category_column: 'region', value_columns: ['revenue'], aggregation: 'sum' }, reason: 'Revenue is heavily concentrated in a few regions.' }
+};
+const PUBLIC_DEMO_READY = !!(PUBLIC_DEMO.datasetId && PUBLIC_DEMO.columns.length && PUBLIC_DEMO.suggestedChart);
+
+// ---------------------------------------------------------------------
+// Chart type field specs
+// ---------------------------------------------------------------------
+// Param names follow the descriptive prose in docs/embedded-analytics-api.html
+// ("bar/horizontal_bar — ... category_column ... value_columns ...",
+// "box_plot — groups raw y_column values by the categories in x_column",
+// "heatmap — aggregates z_column for every unique (x_column, y_column) ...",
+// "time_series — parses every value in time_column ..."), which we trust
+// over that same doc's separate "Chart Type Quick Reference" table where
+// the two disagree (e.g. that table names box_plot's params
+// category_column/value_column and heatmap's value_column) — see the
+// QL-INTEGRATION.md addendum on this discrepancy.
+const FIELD_DEFS = {
+  category:    { param: "category_column", label: "Category",           kinds: ["category", "text"] },
+  value:       { param: "value_column",    label: "Value",              kinds: ["numeric"] },
+  valueMulti:  { param: "value_columns",   label: "Value(s)",           kinds: ["numeric"], multi: true },
+  x:           { param: "x_column",        label: "X axis",             kinds: ["numeric", "category", "date", "text"] },
+  y:           { param: "y_column",        label: "Y axis",             kinds: ["numeric"] },
+  z:           { param: "z_column",        label: "Value (color)",      kinds: ["numeric"] },
+  size:        { param: "size_column",     label: "Size",               kinds: ["numeric"] },
+  sizeOpt:     { param: "size_column",     label: "Size (optional)",    kinds: ["numeric"], optional: true },
+  colorOpt:    { param: "color_column",    label: "Color by (optional)",kinds: ["category", "text"], optional: true },
+  time:        { param: "time_column",     label: "Time column",        kinds: ["date"] },
+  column:      { param: "column_name",     label: "Column",             kinds: ["numeric"] },
+  xMulti:      { param: "x_columns",       label: "Predictors (X)",     kinds: ["numeric"], multi: true },
+  aggregation: { param: "aggregation",     label: "Aggregation",        select: ["sum", "avg", "count", "min", "max"] },
+  interval:    { param: "interval",        label: "Interval",           select: ["day", "week", "month", "year"] },
+  limit:       { param: "limit",           label: "Limit",              number: true, default: 10 },
+};
+const CHART_TYPES = {
+  bar:            { label: "Bar",            fields: ["category", "valueMulti", "aggregation"] },
+  horizontal_bar: { label: "Horizontal bar", fields: ["category", "valueMulti", "aggregation"] },
+  line:           { label: "Line",           fields: ["x", "y", "aggregation"] },
+  area:           { label: "Area",           fields: ["x", "y", "aggregation"] },
+  pie:            { label: "Pie",            fields: ["category", "value", "aggregation", "limit"] },
+  doughnut:       { label: "Doughnut",       fields: ["category", "value", "aggregation", "limit"] },
+  scatter:        { label: "Scatter",        fields: ["x", "y", "colorOpt", "sizeOpt"] },
+  bubble:         { label: "Bubble",         fields: ["x", "y", "size", "colorOpt"] },
+  box_plot:       { label: "Box plot",       fields: ["x", "y"] },
+  violin:         { label: "Violin",         fields: ["x", "y"] },
+  heatmap:        { label: "Heatmap",        fields: ["x", "y", "z", "aggregation"] },
+  histogram:      { label: "Histogram",      fields: ["column"] },
+  time_series:    { label: "Time series",    fields: ["time", "valueMulti", "aggregation", "interval"] },
+  stacked_area:   { label: "Stacked area",   fields: ["time", "valueMulti", "aggregation", "interval"] },
+  regression:     { label: "Regression",     fields: ["y", "xMulti"] },
+};
+const MAX_RECOMMENDATIONS = 5;
+
+// ---------------------------------------------------------------------
+// small helpers
+// ---------------------------------------------------------------------
+const $ = (sel, root) => (root || document).querySelector(sel);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function meterHTML(frac /* 0..1 */) {
+  const on = Math.max(1, Math.min(6, Math.round(frac * 6)));
+  let s = '<span class="strength-meter" aria-label="strength">';
+  for (let i = 0; i < 6; i++) s += `<span class="${i < on ? "filled" : ""}"></span>`;
+  return s + "</span>";
+}
+function kindTag(text) { return `<span class="kind-tag">${esc(text)}</span>`; }
+
+function friendlyError(err) {
+  if (!err) return "Something went wrong.";
+  const codes = (window.QL && QL.ErrorCodes) || {};
+  switch (err.code) {
+    case codes.NETWORK:
+      return "Can’t reach the QuantumLayers demo backend right now — this is usually a temporary configuration issue (see DEPLOYMENT.md), not something wrong with your data. Try again shortly.";
+    case codes.AUTH_REQUIRED:
+      return "Sign in to see this — it needs an authenticated session even on a public dataset.";
+    case codes.INVALID_RESPONSE:
+      return "QuantumLayers sent back something this page didn’t expect. Try again in a moment.";
+    default:
+      return err.message || "QuantumLayers rejected that request.";
+  }
+}
+function errBox(err) {
+  return `<div class="err-box"><b>Couldn’t load this.</b> ${esc(friendlyError(err))}</div>`;
+}
+
+// ---------------------------------------------------------------------
+// auth status + reactivity (see the comment above route()/boot() below
+// for why 'authchange' must call route(), never boot())
+// ---------------------------------------------------------------------
+function renderAuthStatus() {
+  const el = $("#authStatus");
+  const user = QL.getCurrentUser();
+  if (QL.isSignedIn() && user) {
+    el.innerHTML = `<b>${esc(user.email || "signed in")}</b> &nbsp;<button data-action="sign-out">sign out</button>`;
+  } else {
+    el.innerHTML = `<button data-action="show-auth">sign in</button>`;
+  }
+}
+QL.on("authchange", () => { renderAuthStatus(); route(); });
+
+// ---------------------------------------------------------------------
+// column classification (signed-in path — dataset_detail is auth-only)
+// ---------------------------------------------------------------------
+function classifyColumns(detail) {
+  const columns = (detail && detail.columns) || [];
+  const rowCount = (detail && detail.dataset && detail.dataset.row_count) || 0;
+  const idLike = (c) =>
+    /(^|[_\s-])(id|uuid|guid)$/i.test(c.col_name) ||
+    (rowCount > 5 && c.distinct_count === rowCount && c.null_count === 0);
+
+  return columns.map((c) => {
+    let type = "text";
+    if (c.inferred_type === "integer" || c.inferred_type === "float") type = idLike(c) ? "text" : "numeric";
+    else if (c.inferred_type === "date" || c.inferred_type === "datetime") type = "date";
+    else if (c.inferred_type === "string") type = c.distinct_count <= Math.max(20, rowCount * 0.5) ? "category" : "text";
+    return { name: c.col_name, type };
+  });
+}
+
+// ---------------------------------------------------------------------
+// chart theming — theme QL's real config, never re-derive its data
+// ---------------------------------------------------------------------
+const PALETTE = ["#9b87f5", "#ffcc33", "#7dd3fc", "#4ade80", "#f87171", "#cf9c21", "#5b6270"];
+function themeConfig(config) {
+  try {
+    (config.data.datasets || []).forEach((ds, i) => {
+      const c = PALETTE[i % PALETTE.length];
+      if (!ds.backgroundColor || typeof ds.backgroundColor === "string") ds.backgroundColor = ds.backgroundColor || c + "cc";
+      if (!ds.borderColor) ds.borderColor = c;
+      if (config.type === "boxplot" || config.type === "violin") {
+        ds.outlierColor = "#ffcc33";
+        ds.outlierRadius = 4;
+      }
+    });
+    config.options = config.options || {};
+    config.options.maintainAspectRatio = false;
+    config.options.plugins = config.options.plugins || {};
+    config.options.plugins.legend = config.options.plugins.legend || { labels: { color: "#9aa1ab" } };
+  } catch (e) { /* theming is best-effort, never block rendering */ }
+  return config;
+}
+
+let currentChartInstance = null;
+function mountChart(config) {
+  const canvas = document.getElementById("chartCanvas");
+  if (!canvas) return;
+  if (currentChartInstance) { try { currentChartInstance.destroy(); } catch (e) {} currentChartInstance = null; }
+  try {
+    currentChartInstance = new Chart(canvas.getContext("2d"), themeConfig(config));
+  } catch (e) {
+    $("#chartHost").innerHTML = errBox({ message: "QuantumLayers returned a chart config this page couldn’t render." });
+  }
+}
+
+// ---------------------------------------------------------------------
+// export: PNG (real), copy-image (real), SVG (raster embed — Chart.js
+// renders to <canvas>, so there is no vector path data to export; see
+// the caption under the export buttons)
+// ---------------------------------------------------------------------
+function exportPNG() {
+  const canvas = document.getElementById("chartCanvas");
+  if (!canvas) return;
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "chart.png";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }, "image/png");
+}
+function exportSVG() {
+  const canvas = document.getElementById("chartCanvas");
+  if (!canvas) return;
+  const png = canvas.toDataURL("image/png");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}"><image width="${canvas.width}" height="${canvas.height}" href="${png}"/></svg>`;
+  const blob = new Blob([svg], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "chart.svg";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function copyImage() {
+  const canvas = document.getElementById("chartCanvas");
+  const status = $("#exportStatus");
+  if (!canvas) return;
+  if (!navigator.clipboard || !window.ClipboardItem) {
+    status.textContent = "Your browser doesn’t support copying images — try Export PNG instead.";
+    return;
+  }
+  canvas.toBlob((blob) => {
+    navigator.clipboard
+      .write([new ClipboardItem({ "image/png": blob })])
+      .then(() => { status.textContent = "Copied to clipboard."; setTimeout(() => (status.textContent = ""), 2500); })
+      .catch(() => { status.textContent = "Couldn’t copy — try Export PNG instead."; });
+  }, "image/png");
+}
+
+// ---------------------------------------------------------------------
+// picker form
+// ---------------------------------------------------------------------
+function columnsOfKind(columns, kinds) {
+  return columns.filter((c) => kinds.includes(c.type));
+}
+function fieldInputHTML(fieldKey, columns, currentParams) {
+  const def = FIELD_DEFS[fieldKey];
+  const current = currentParams ? currentParams[def.param] : undefined;
+
+  if (def.select) {
+    const opts = def.select.map((v) => `<option value="${v}" ${current === v ? "selected" : ""}>${v}</option>`).join("");
+    return `<div class="field"><label>${esc(def.label)}</label><select data-field="${fieldKey}">${opts}</select></div>`;
+  }
+  if (def.number) {
+    return `<div class="field"><label>${esc(def.label)}</label><input type="number" data-field="${fieldKey}" value="${current != null ? current : def.default}" min="1" /></div>`;
+  }
+  const opts = columnsOfKind(columns, def.kinds);
+  const emptyOpt = def.optional ? `<option value="">&mdash; none &mdash;</option>` : "";
+  if (def.multi) {
+    const selected = Array.isArray(current) ? current : current ? [current] : [];
+    const optionsHtml = opts.map((c) => `<option value="${esc(c.name)}" ${selected.includes(c.name) ? "selected" : ""}>${esc(c.name)}</option>`).join("");
+    return `<div class="field"><label>${esc(def.label)}</label><select data-field="${fieldKey}" multiple size="4">${optionsHtml}</select></div>`;
+  }
+  const optionsHtml = opts.map((c) => `<option value="${esc(c.name)}" ${current === c.name ? "selected" : ""}>${esc(c.name)}</option>`).join("");
+  return `<div class="field"><label>${esc(def.label)}</label><select data-field="${fieldKey}">${emptyOpt}${optionsHtml}</select></div>`;
+}
+
+function readFormParams(chartType) {
+  const spec = CHART_TYPES[chartType];
+  const params = {};
+  spec.fields.forEach((fieldKey) => {
+    const def = FIELD_DEFS[fieldKey];
+    const el = document.querySelector(`[data-field="${fieldKey}"]`);
+    if (!el) return;
+    if (def.multi) {
+      const vals = Array.from(el.selectedOptions).map((o) => o.value).filter(Boolean);
+      if (vals.length) params[def.param] = vals;
+    } else if (def.number) {
+      if (el.value !== "") params[def.param] = Number(el.value);
+    } else {
+      if (el.value !== "") params[def.param] = el.value;
+    }
+  });
+  return params;
+}
+
+function pickerHTML(chartType, columns, currentParams) {
+  const typeOptions = Object.entries(CHART_TYPES)
+    .map(([key, def]) => `<option value="${key}" ${key === chartType ? "selected" : ""}>${esc(def.label)}</option>`)
+    .join("");
+  const fields = CHART_TYPES[chartType].fields.map((f) => fieldInputHTML(f, columns, currentParams)).join("");
+  return `
+    <div class="field">
+      <label>Chart type</label>
+      <select data-field="__chartType">${typeOptions}</select>
+    </div>
+    ${fields}
+    <button class="btn-primary" type="submit" style="width:100%">Update chart &rarr;</button>
+  `;
+}
+
+// ---------------------------------------------------------------------
+// the chart-maker view (shared by anonymous public-demo + signed-in own data)
+// ---------------------------------------------------------------------
+let activeSession = null; // { datasetId, datasetLabel, columns, signedIn, recommendations }
+
+function recommendationChipsHTML(recs, activeIndex) {
+  if (!recs || !recs.length) return "";
+  const chips = recs
+    .slice(0, MAX_RECOMMENDATIONS)
+    .map((r, i) => {
+      const meter = meterHTML((r.insight_score || 0) / 100);
+      return `
+      <button type="button" class="rec-chip ${i === activeIndex ? "active" : ""}" data-action="use-recommendation" data-index="${i}">
+        <div class="title"><span>${esc(CHART_TYPES[r.chart_type] ? CHART_TYPES[r.chart_type].label : r.chart_type)}</span>${meter}</div>
+        <div class="reason">${esc(r.reason || "")}</div>
+      </button>`;
+    })
+    .join("");
+  return `<div class="recs"><span class="label">QL recommended</span>${chips}</div>`;
+}
+
+function renderMakerShell(session) {
+  const kindLabel = session.signedIn ? "YOUR DATA" : "PUBLIC DEMO DATASET";
+  mount(`
+    <div class="invite-bar">
+      <span>${kindTag(kindLabel)} &nbsp;${esc(session.datasetLabel || "")}</span>
+      ${session.signedIn ? backToPickerLink() : `<a class="btn-link" href="#" data-action="show-auth">Run this on your own data &rarr;</a>`}
+    </div>
+    <div class="maker">
+      <div class="picker">
+        <h3>Chart settings</h3>
+        ${recommendationChipsHTML(session.recommendations, session.activeRecommendationIndex)}
+        <form id="pickerForm">${pickerHTML(session.chartType, session.columns, session.params)}</form>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-head">
+          <span class="title">${esc(CHART_TYPES[session.chartType] ? CHART_TYPES[session.chartType].label : session.chartType)}</span>
+          <div class="export-row">
+            <button type="button" data-action="export-png">Export PNG</button>
+            <button type="button" data-action="export-svg">Export SVG</button>
+            <button type="button" data-action="copy-image">Copy image</button>
+          </div>
+        </div>
+        <div id="chartHost"><div class="chart-box"><canvas id="chartCanvas"></canvas></div></div>
+        <p class="export-status" id="exportStatus"></p>
+        <p class="export-caption">Chart.js renders to canvas, so PNG/SVG exports are both raster images, not vector paths.</p>
+      </div>
+    </div>
+  `);
+}
+function backToPickerLink() {
+  return `<a class="btn-link" href="#" data-action="back-to-picker">&larr; pick a different dataset</a>`;
+}
+function mount(html) { $("#app").innerHTML = html; }
+
+async function loadAndRenderChart(chartType, params) {
+  activeSession.chartType = chartType;
+  activeSession.params = params;
+  activeSession.activeRecommendationIndex = matchingRecommendationIndex(chartType, params);
+  renderMakerShell(activeSession);
+  try {
+    const config = await QL.chart(activeSession.datasetId, chartType, params);
+    mountChart(config);
+  } catch (e) {
+    $("#chartHost").innerHTML = errBox(e);
+  }
+}
+function matchingRecommendationIndex(chartType, params) {
+  const recs = activeSession.recommendations;
+  if (!recs) return -1;
+  return recs.findIndex((r) => r.chart_type === chartType && JSON.stringify(r.params) === JSON.stringify(params));
+}
+
+// ---------------------------------------------------------------------
+// entry points: anonymous public demo, signed-in dataset picker + maker
+// ---------------------------------------------------------------------
+async function renderAnonPublicDemo() {
+  activeSession = {
+    datasetId: PUBLIC_DEMO.datasetId,
+    datasetLabel: PUBLIC_DEMO.datasetLabel,
+    columns: PUBLIC_DEMO.columns,
+    signedIn: false,
+    recommendations: PUBLIC_DEMO.suggestedChart
+      ? [{ chart_type: PUBLIC_DEMO.suggestedChart.chartType, params: PUBLIC_DEMO.suggestedChart.params, reason: PUBLIC_DEMO.suggestedChart.reason, insight_score: 100 }]
+      : null,
+    activeRecommendationIndex: 0,
+    chartType: PUBLIC_DEMO.suggestedChart.chartType,
+    params: PUBLIC_DEMO.suggestedChart.params,
+  };
+  await loadAndRenderChart(activeSession.chartType, activeSession.params);
+}
+
+async function renderDatasetPicker() {
+  mount(`<p class="skeleton">Loading your datasets&hellip;</p>`);
+  try {
+    const data = await QL.myDatasets();
+    const datasets = (data && data.datasets) || [];
+    if (!datasets.length) {
+      mount(`
+        <div class="panel">
+          <h2>No datasets yet</h2>
+          <p class="sub">You’re signed in, but your QuantumLayers account doesn’t have a dataset to chart yet.</p>
+          <a class="btn" href="https://quantumlayers.com/ql-dashboard" target="_blank" rel="noopener">Add a dataset on QuantumLayers &rarr;</a>
+        </div>`);
+      return;
+    }
+    mount(`
+      <div class="panel">
+        <h2>Pick a dataset</h2>
+        <p class="sub">We’ll load QL’s top-recommended chart for it first — you can change the type or columns from there.</p>
+        <div class="dataset-list">
+          ${datasets
+            .map(
+              (d) => `
+            <div class="dataset-row">
+              <div><div class="name">${esc(d.name)}</div><div class="meta">${(d.row_count || 0).toLocaleString()} rows &middot; ${esc(d.source_type || "")}</div></div>
+              <button data-action="pick-dataset" data-id="${d.id}" data-name="${esc(d.name)}">Chart it</button>
+            </div>`
+            )
+            .join("")}
+        </div>
+      </div>`);
+  } catch (e) {
+    mount(errBox(e));
+  }
+}
+
+async function renderOwnChartMaker(datasetId, datasetName) {
+  mount(`<p class="skeleton">Reading ${esc(datasetName)}’s columns and finding the best chart&hellip;</p>`);
+  try {
+    const detail = await QL.datasetDetail(datasetId);
+    const columns = classifyColumns(detail);
+
+    let recommendations = null;
+    try {
+      const recData = await QL.recommendedCharts(datasetId, { maxCharts: MAX_RECOMMENDATIONS });
+      recommendations = (recData && recData.charts) || null;
+    } catch (e) {
+      recommendations = null; // optional enrichment — fall back to a manual default below
+    }
+
+    let chartType, params, initialConfig;
+    if (recommendations && recommendations.length) {
+      chartType = recommendations[0].chart_type;
+      params = recommendations[0].params;
+      initialConfig = recommendations[0].chart_data; // already rendered — no extra call needed
+    } else {
+      // No recommendation available (e.g. too few columns/rows) — fall back
+      // to the simplest chart QL can always render: a bar of the first
+      // category column against the first numeric one, if both exist.
+      const cat = columns.find((c) => c.type === "category");
+      const num = columns.find((c) => c.type === "numeric");
+      if (cat && num) {
+        chartType = "bar";
+        params = { category_column: cat.name, value_columns: [num.name], aggregation: "sum" };
+      } else if (num) {
+        chartType = "histogram";
+        params = { column_name: num.name };
+      } else {
+        // No columns to build even a minimal default from. Still show the
+        // picker (there may be date/text columns useful for other chart
+        // types) rather than a dead end, but explain why nothing loaded
+        // automatically — and skip fetching a chart with incomplete params,
+        // which would just come back as an API error with no useful context.
+        activeSession = { datasetId, datasetLabel: datasetName, columns, signedIn: true, recommendations: null, activeRecommendationIndex: -1, chartType: "bar", params: {} };
+        renderMakerShell(activeSession);
+        $("#chartHost").innerHTML = `<div class="empty-note">Couldn’t find a sensible default chart for <b>${esc(datasetName)}</b> — no numeric column to chart. Pick a chart type and columns on the left, if any fit.</div>`;
+        return;
+      }
+    }
+
+    activeSession = {
+      datasetId, datasetLabel: datasetName, columns, signedIn: true,
+      recommendations, activeRecommendationIndex: recommendations && recommendations.length ? 0 : -1,
+      chartType, params,
+    };
+    renderMakerShell(activeSession);
+    if (initialConfig) mountChart(initialConfig);
+    else {
+      try { mountChart(await QL.chart(datasetId, chartType, params)); }
+      catch (e) { $("#chartHost").innerHTML = errBox(e); }
+    }
+  } catch (e) {
+    mount(errBox(e) + backToPickerLink());
+  }
+}
+
+// ---------------------------------------------------------------------
+// route() / boot()
+// ---------------------------------------------------------------------
+// IMPORTANT: 'authchange' must call route() (pure re-render), never
+// boot() (which calls QL.checkAuth()) — checkAuth() itself emits
+// 'authchange' whenever a session token is stored, so wiring this to
+// boot() would recheck auth -> emit -> recheck auth forever the moment
+// anyone is signed in.
+function route() {
+  if (QL.isSignedIn()) {
+    renderDatasetPicker();
+  } else if (PUBLIC_DEMO_READY) {
+    renderAnonPublicDemo();
+  } else {
+    renderAuthPanel();
+  }
+}
+async function boot() {
+  renderAuthStatus();
+  await QL.checkAuth();
+  renderAuthStatus();
+  route();
+}
+
+function renderAuthPanel(opts) {
+  opts = opts || {};
+  const tab = opts.tab || "register";
+  mount(`
+    <div class="panel">
+      <h2>Run this on your own data</h2>
+      <p class="sub">This tool runs on real QuantumLayers datasets. Create a free account (about 30 seconds) and we’ll load QL’s auto-recommended chart for one of your own datasets &mdash; or sign in if you already have one.</p>
+      <div class="tabs">
+        <button data-action="auth-tab" data-tab="register" class="${tab === "register" ? "active" : ""}">Create free account</button>
+        <button data-action="auth-tab" data-tab="login" class="${tab === "login" ? "active" : ""}">Sign in</button>
+      </div>
+      ${tab === "register" ? registerFormHTML() : loginFormHTML()}
+    </div>
+  `);
+}
+function loginFormHTML() {
+  return `
+    <form class="auth-form" data-form="login">
+      <div class="field"><label for="li-email">Email</label><input id="li-email" name="email" type="email" required /></div>
+      <div class="field"><label for="li-pass">Password</label><input id="li-pass" name="password" type="password" required /></div>
+      <p class="form-err" id="loginErr"></p>
+      <button class="btn-primary" type="submit">Sign in &rarr;</button>
+    </form>`;
+}
+function registerFormHTML() {
+  return `
+    <form class="auth-form" data-form="register">
+      <div class="row2">
+        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" /></div>
+        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" /></div>
+      </div>
+      <div class="field"><label for="re-email">Email</label><input id="re-email" name="email" type="email" required /></div>
+      <div class="field"><label for="re-pass">Password</label><input id="re-pass" name="password" type="password" required minlength="8" /></div>
+      <label class="terms"><input type="checkbox" name="termsAgreed" required /> I agree to QuantumLayers’ terms of service.</label>
+      <p class="form-err" id="registerErr"></p>
+      <button class="btn-primary" type="submit">Create free account &rarr;</button>
+    </form>`;
+}
+
+// ---------------------------------------------------------------------
+// delegated event wiring
+// ---------------------------------------------------------------------
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-action]");
+  if (!el) return;
+  const action = el.dataset.action;
+
+  if (action === "show-auth") { e.preventDefault(); renderAuthPanel(); }
+  else if (action === "auth-tab") { e.preventDefault(); renderAuthPanel({ tab: el.dataset.tab }); }
+  else if (action === "sign-out") { e.preventDefault(); QL.logout().then(route); }
+  else if (action === "back-to-picker") { e.preventDefault(); renderDatasetPicker(); }
+  else if (action === "pick-dataset") { e.preventDefault(); renderOwnChartMaker(Number(el.dataset.id), el.dataset.name); }
+  else if (action === "export-png") { exportPNG(); }
+  else if (action === "export-svg") { exportSVG(); }
+  else if (action === "copy-image") { copyImage(); }
+  else if (action === "use-recommendation") {
+    e.preventDefault();
+    const rec = activeSession.recommendations[Number(el.dataset.index)];
+    if (!rec) return;
+    activeSession.chartType = rec.chart_type;
+    activeSession.params = rec.params;
+    activeSession.activeRecommendationIndex = Number(el.dataset.index);
+    renderMakerShell(activeSession);
+    if (rec.chart_data) mountChart(rec.chart_data);
+    else loadAndRenderChart(rec.chart_type, rec.params);
+  }
+});
+
+// chart-type <select> swaps the field list live, without submitting
+document.addEventListener("change", (e) => {
+  if (e.target.matches('[data-field="__chartType"]')) {
+    const newType = e.target.value;
+    const form = $("#pickerForm");
+    form.innerHTML = pickerHTML(newType, activeSession.columns, null);
+  }
+});
+
+document.addEventListener("submit", (e) => {
+  const form = e.target.closest("form");
+  if (!form) return;
+  e.preventDefault();
+
+  if (form.id === "pickerForm") {
+    const chartTypeEl = form.querySelector('[data-field="__chartType"]');
+    const chartType = chartTypeEl.value;
+    const params = readFormParams(chartType);
+    loadAndRenderChart(chartType, params);
+    return;
+  }
+
+  const kind = form.dataset.form;
+  if (!kind) return;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const errEl = form.querySelector(".form-err");
+  errEl.textContent = "";
+  submitBtn.disabled = true;
+  const done = () => { submitBtn.disabled = false; };
+
+  if (kind === "login") {
+    QL.login(data.email, data.password)
+      .then(() => route())
+      .catch((err) => { errEl.textContent = friendlyError(err); done(); });
+  } else if (kind === "register") {
+    QL.register({
+      email: data.email,
+      password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      termsAgreed: !!data.termsAgreed,
+    })
+      .then(() => route())
+      .catch((err) => { errEl.textContent = friendlyError(err); done(); });
+  }
+});
+
+boot();
+</script>
+</body>
+</html>

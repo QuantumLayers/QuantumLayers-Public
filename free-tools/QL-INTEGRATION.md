@@ -92,6 +92,23 @@ the "Type-specific params" and "Chart Type Quick Reference" tables in
 filter params `filter_category_column`/`filter_category_value` and
 `filter_date_column`/`filter_date_from`/`filter_date_to`.
 
+**⚠️ Those two tables disagree with each other for `bar`/`horizontal_bar`,
+`box_plot`/`violin`, `heatmap`, and `time_series`/`stacked_area`** — e.g.
+the "Type-specific params" table names `bar`'s params `category_column` +
+`value_columns[]`, while the separate "Chart Type Quick Reference" table
+names the same chart type's params `x_column`/`y_column`. `free-tools/instant-chart-maker/`
+resolved this by trusting the *prose* description of each chart type's
+server-side behavior over either table where they conflict — e.g. the
+prose explicitly says `box_plot` "groups raw `y_column` values by the
+categories in `x_column`" and `heatmap` "aggregates `z_column` for every
+unique `(x_column, y_column)` coordinate pair," which settles those two
+in favor of the first table's naming. `line` and `area` aren't described
+in prose at all (only in the quick-reference table), so for those two
+specifically the quick-reference table's `x_column`/`y_column`/`aggregation`
+is the only source and what's used. If you hit a `success: false` from
+one of these four chart types, the param names are the first thing to
+double-check against the live API before assuming something else is wrong.
+
 ## Rendering: Chart.js 4.4.0 + 3 plugins
 
 `ql_get_chart_data`'s response is a complete Chart.js config — pass it
