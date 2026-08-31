@@ -4,57 +4,52 @@ Rules every tool in this collection follows. If you're adding a new tool,
 read this end to end before writing HTML.
 
 > **Note on the reference tool:** [`free-tools/whats-in-this-csv/`](./whats-in-this-csv/)
-> now exists, and it's an intentional exception to the dual-source pattern
-> below, not an oversight — it's fully client-side, never calls QL, and its
-> own README's "your data never leaves your machine" promise is the point
-> of the tool. It predates this repo's QL-backed foundation and is kept
-> that way deliberately. The visual tokens below are still the design
-> system this repo commits to going forward; every tool built *after*
-> `whats-in-this-csv` follows the full dual-source pattern (QL-backed,
-> `ql-client.js`, the states in the next section) rather than
-> `whats-in-this-csv`'s client-only shape.
+> is an intentional exception to the pattern below, not an oversight —
+> it's fully client-side, never calls QL, and its own README's "your data
+> never leaves your machine" promise is the point of the tool. It predates
+> this repo's QL-backed foundation and is kept that way deliberately. The
+> visual tokens below are still the design system this repo commits to
+> going forward; every tool built *after* `whats-in-this-csv` follows the
+> QL-backed sign-in-first pattern (`ql-client.js`, the states in the next
+> section) rather than `whats-in-this-csv`'s client-only shape.
 
-## The dual-source pattern
+## The sign-in-first pattern
 
-Every tool has exactly one UI, fed by two possible data sources:
+⚠️ **Per direction from QL's operator, there is no anonymous public-dataset
+mode.** An earlier version of this doc specified a "dual-source" pattern
+— an anonymous visitor driving the tool against a curated public dataset,
+with a logged-in visitor as the upsell path. That's been retired for the
+whole collection: **every tool always requires signing in.** An anonymous
+visitor never sees computed QL output of any kind — they see the tool's
+explanation and a register/sign-in prompt, full stop. There is no public
+demo dataset to curate, and `DEPLOYMENT.md`'s prerequisite for one no
+longer applies to any tool in this collection.
 
-- **Anonymous visitor** (arrived from search, no account) — drives the
-  tool against a curated **public** QL dataset, via QL's unauthenticated
-  public-dataset chart endpoint (`ql_try_auth`, see `QL-INTEGRATION.md`).
-  No token anywhere in the page. This is the default state and it must
-  work with **zero clicks** — see "SEO" below.
-- **Logged-in QL user** — signs in cross-origin (`QL.login()` /
-  `QL.register()` / `QL.thirdPartySignin()` from `ql-client.js`) and runs
-  the identical tool against **their own** datasets.
-
-The conversion moment is inviting the anonymous visitor to create a free
-account and run the tool on their own data — never a wall in front of the
-tool itself. If a visitor can't see the tool working before they've signed
-up for anything, that's a bug.
+Every tool has exactly one UI, with exactly one data source: **the signed-
+in user's own QuantumLayers datasets.** The conversion moment is the
+register/sign-in step itself — not a wall in front of a working demo (there
+is no demo to wall off), but the honest, only way to see the tool run at
+all. Also per direction: **login is cross-origin without any CORS
+requirement**, and every other authenticated call only needs a valid
+`Authorization: Bearer <token>` header — see `QL-INTEGRATION.md`'s
+"Auth: which gate an endpoint sits behind" section and `DEPLOYMENT.md`'s
+CORS item, both updated accordingly. Don't reintroduce CORS as a caveat in
+new copy; it isn't one.
 
 ### Standard UI state model
 
-Every tool moves through the same four states, in this order, and a tool
-should make it obvious which one it's in:
+Every tool moves through the same three states, and should make it
+obvious which one it's in:
 
-1. **(a) Anonymous on public dataset** — the tool loads the curated public
-   dataset immediately and renders real output. Remember the anonymous
-   ceiling from `QL-INTEGRATION.md`: only chart data (`QL.chart()`) is
-   callable unauthenticated. Don't build a stats/insights panel here that
-   silently fails for anonymous visitors — either it's chart-only in this
-   state, or it shows numbers baked in at build/deploy time (recorded in
-   `DEPLOYMENT.md`), or it's visibly gated to "sign in to see this."
-2. **(b) The invite** — a visible, un-missable "Run this on your own
-   data →" call to action, present the whole time the tool is in state (a),
-   not just at the end. See "Exactly one CTA path" below.
-3. **(c) Logged-in dataset picker** — once `QL.login()`/`QL.register()`
-   resolves, call `QL.myDatasets()` and let the user pick which of their
-   own datasets to run the tool against.
-4. **(d) Results** — the same rendering code as state (a), just fed from
-   the user's own dataset instead of the public one. This is the whole
-   point of building the tool this way: states (a) and (d) should share
-   essentially all of their rendering code, differing only in
-   `dataset_id` and (once signed in) which stats/insights calls are legal.
+1. **(a) Signed out** — the tool's explanation, its primary keyword in a
+   real `<h1>`, and a register/sign-in form are all visible immediately,
+   with zero clicks. This is the entire anonymous experience; there is
+   nothing else to gate or reveal.
+2. **(b) Dataset picker** — once `QL.login()`/`QL.register()` resolves,
+   call `QL.myDatasets()` and let the user pick which of their own
+   datasets to run the tool against.
+3. **(c) Results** — the tool's actual output, fed from the chosen
+   dataset. This is the only state that ever computes or displays QL data.
 
 ### Privacy copy
 
@@ -182,8 +177,8 @@ computed.
 
 ## Exactly one CTA path
 
-One conversion path per tool: **register / sign in**, surfaced as the
-"Run this on your own data →" invite from state (b) above. One subtle
+One conversion path per tool: **register / sign in**, which is state (a)
+above, not a secondary upsell bolted onto a working demo. One subtle
 GitHub link in the header pointing at this repo. Nothing else — no
 newsletter modal, no second product plug, no exit-intent popup, no
 "share this tool" nag. If you think a tool needs a second call to action,
@@ -196,9 +191,12 @@ it doesn't; cut it instead.
 - All substantive text is real, indexable HTML in the main document —
   never inside an `<iframe>`. If a tool embeds anything cross-origin, the
   explanatory copy around it still lives in the parent document.
-- The live-demo state (state (a), anonymous on the public dataset) must
-  render with **zero clicks** — no "click to load the demo" gate, no
-  interaction required before a crawler (or a human) sees real output.
+- State (a) — the tool's explanation and its register/sign-in form —
+  renders with **zero clicks**: no interaction required before a crawler
+  (or a human) sees the real `<h1>`, the explanatory copy, and a working
+  form. There is no anonymous data demo to gate or reveal; "zero clicks"
+  here means the explanation and the sign-in path itself are never hidden
+  behind an interaction, not that computed QL output is shown pre-sign-in.
 
 ## No build step
 
@@ -226,10 +224,10 @@ Every tool's own `README.md` follows this shape:
    the tool is built; don't ship without at least the placeholder line so
    it's obvious one is expected.
 4. **What it does** — 2–4 sentences, no marketing fluff.
-5. **How the modes work** — explain the demo (public dataset) vs.
-   your-own-data (signed-in) modes concretely: what changes, what stays
-   the same, what's public-dataset-only per `QL-INTEGRATION.md`'s
-   anonymous-ceiling note.
+5. **How it works** — explain concretely what happens after signing in:
+   the dataset picker, then what the tool computes and shows. State
+   plainly that there's no anonymous demo mode — sign-in is required to
+   see the tool run at all — rather than leaving it implicit.
 6. **"When you outgrow it" table** — 2–4 rows mapping a limitation of the
    free tool to the QuantumLayers feature that removes it, e.g.:
 

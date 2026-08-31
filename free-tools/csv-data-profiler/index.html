@@ -222,7 +222,7 @@
 
 <script>
 /* =========================================================================
-   dataset profiler — QL-backed dual-source tool
+   dataset profiler — QL-backed, sign-in-first tool
    Every number here comes from QL's own ingestion-time per-column stats
    (ql_get_dataset_detail) plus ql_get_statistical_summary and per-column
    chart requests — never re-derived from raw rows, because this tool
@@ -230,11 +230,9 @@
    panel's "possible duplicate columns" note for what that constraint
    rules out.
 
-   NOTE ON ANONYMOUS MODE: unlike csv-outlier-detector and
-   instant-chart-maker, this tool does NOT gate on a PUBLIC_DEMO dataset
-   config at all — per direction, anonymous visitors go straight to the
-   sign-up panel rather than a zero-click public-dataset demo. There is
-   nothing to configure here later; that's deliberate, not a placeholder.
+   No anonymous mode: per direction from QL's operator, this tool always
+   requires sign-in before showing any QL output — see CONVENTIONS.md's
+   "sign-in-first pattern". There is no public demo dataset to configure.
    ========================================================================= */
 
 const MAX_DETAILED_NUMERIC = 8;

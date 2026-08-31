@@ -40,22 +40,19 @@ plainly which one each endpoint uses:
 - **`ql_verify_auth()`** — a valid Bearer token is required, full stop. No
   token → the request is rejected regardless of the dataset's visibility.
 
-**⚠️ Load-bearing detail for this whole `free-tools/` architecture:**
-`ql_get_chart_data` is the *only* analytics endpoint that uses
-`ql_try_auth()`. Every other endpoint we care about —
-`ql_get_dataset_detail`, `ql_get_statistical_summary`,
+**Historical note, not current design guidance:** `ql_get_chart_data` is
+the *only* analytics endpoint that uses `ql_try_auth()` — every other
+endpoint listed below (`ql_get_dataset_detail`, `ql_get_statistical_summary`,
 `ql_get_correlation_matrix`, `ql_get_distribution_analysis`,
 `ql_get_pca_analysis`, `ql_get_anova_analysis`, `ql_get_insights`,
-`ql_get_recommended_charts`, `ql_get_dashboard_data` (dataset listing) —
-uses `ql_verify_auth()` and requires a token *even when the dataset is
-public*. So an anonymous visitor on the curated public dataset can render
-charts (`ql_get_chart_data`), full stop — not stats, not AI insights, not
-even the dataset's own column schema (`ql_get_dataset_detail`). Any tool
-that wants to show summary stats or insights to an anonymous visitor either
-needs those numbers baked in ahead of time (e.g. committed alongside the
-public dataset's ID in `DEPLOYMENT.md`) or has to gate that section behind
-sign-in. Design tools around this rather than assuming it'll work and
-finding out from a `success: false` in production.
+`ql_get_recommended_charts`, `ql_get_dashboard_data`) uses
+`ql_verify_auth()` and requires a token even when the dataset is public.
+This is still factually accurate about the API, but it stopped being a
+design driver once this repo dropped anonymous-facing QL views entirely
+(see `CONVENTIONS.md`'s "sign-in-first pattern" and the "Design
+implications" section below) — every tool here always requires a Bearer
+token before showing any QL output, so the `ql_try_auth`/`ql_verify_auth`
+distinction no longer changes what a tool can build.
 
 ## Endpoints tools in this repo actually use
 
@@ -271,16 +268,16 @@ object to already exist, and its `init()` auto-binds to specific DOM IDs
 whether that `checkAuth()` redirects an anonymous visitor to
 `/ql-login` or leaves the page alone (compare the `checkAuth()`
 description under QLAuth to its own "Success" line). We are not willing to
-risk an anonymous visitor's zero-click demo silently bouncing to
-quantumlayers.com. So `ql-client.js` re-implements only the specific,
+risk a visitor being silently bounced to quantumlayers.com by a script we
+don't fully control. So `ql-client.js` re-implements only the specific,
 documented request/response shapes it needs (`getSessionToken`/
 `setSessionToken`, login, register, `thirdPartySignin`, chart/stats/insight
 calls) as plain `fetch()` calls — exactly the "Direct API / AJAX Calls"
 path the dev guide itself describes as the right choice for "a frontend
 built in a framework where you'd rather write your own thin API client
 than depend on jQuery-based modules." No jQuery dependency, no coupling to
-QL's own DOM conventions, and anonymous visitors never touch a script that
-might redirect them off the page.
+QL's own DOM conventions, and no script running on the page that might
+redirect a visitor off it unexpectedly.
 
 If a future tool genuinely needs a JDK module we haven't wrapped (agent
 chat, merge-datasets, report scheduling), it's fine to load that one module
@@ -336,21 +333,26 @@ tool built on top of it, or in any example someone copies from here.**
 
 ## Design implications for `ql-client.js` and every tool
 
-1. **Anonymous / public-dataset mode is chart-only.** Don't build a "stats"
-   or "insights" panel that anonymous visitors see live-populated from QL —
-   it can't be, per the auth table above. Either omit that panel for
-   anonymous visitors, show static/precomputed numbers, or label it as
-   something that unlocks after sign-in.
-2. **CORS is unconfirmed.** Nothing in any of the three source docs
-   mentions CORS headers on `admin-ajax.php`. Every fetch from a
-   `github.io` origin will fail outright (a generic, unreadable
-   "Failed to fetch" in the browser) until QL's operator allows the
-   GitHub Pages origin. See `DEPLOYMENT.md` — treat this as unverified
-   until someone confirms it against the real endpoint.
-3. **Public dataset IDs are operational data, not code.** Which dataset(s)
-   are curated + public, and their numeric IDs, must be recorded in
-   `DEPLOYMENT.md` before a tool can hardcode them.
-4. **One transport, one place.** All of the above — token storage, the
+1. **No anonymous mode, for any tool.** ⚠️ Per direction from QL's
+   operator, this repo doesn't build anonymous-facing QL views at all —
+   not even chart-only ones. Every tool requires sign-in before it shows
+   any QL-computed output; an anonymous visitor sees the tool's
+   explanation and a register/sign-in form, nothing else. The anonymous-
+   ceiling analysis above (what `ql_try_auth` vs. `ql_verify_auth` allow
+   unauthenticated) is still factually accurate about the API and worth
+   knowing, but it's not a constraint this repo designs around — there is
+   no public-dataset demo mode to fit it into. See `CONVENTIONS.md`'s
+   "sign-in-first pattern."
+2. **CORS is not a blocker.** ⚠️ Corrected per direction from QL's
+   operator (this repo previously treated it as unconfirmed and warned
+   every tool to expect a generic network failure because of it — that
+   was wrong): sign-in works cross-origin without needing CORS, and every
+   other authenticated call only requires a valid `Authorization: Bearer
+   <token>` header. Don't reintroduce "this is probably a CORS issue" as
+   the default explanation for a network error in new copy — if a fetch
+   genuinely fails, look for an actual connectivity problem or a missing/
+   invalid token first.
+3. **One transport, one place.** All of the above — token storage, the
    `fetch()` wrapper, the normalized error shape, chart/stat/insight calls,
    login/register/thirdPartySignin — live in `ql-client.js`. Tools import
    it and never hand-roll their own `fetch()` to `admin-ajax.php`.
