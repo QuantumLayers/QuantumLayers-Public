@@ -743,16 +743,8 @@ async function renderDatasetPicker() {
   try {
     const data = await QL.myDatasets();
     const datasets = (data && data.datasets) || [];
-    if (!datasets.length) {
-      mount(`
-        <div class="panel">
-          <h2>No datasets yet</h2>
-          <p class="sub">You’re signed in, but your QuantumLayers account doesn’t have a dataset to profile yet.</p>
-          <a class="btn" href="https://quantumlayers.com/ql-dashboard" target="_blank" rel="noopener">Add a dataset on QuantumLayers &rarr;</a>
-        </div>`);
-      return;
-    }
-    mount(`
+    const listPanel = datasets.length
+      ? `
       <div class="panel">
         <h2>Pick a dataset</h2>
         <p class="sub">We’ll profile every column and build its data dictionary.</p>
@@ -767,10 +759,30 @@ async function renderDatasetPicker() {
             )
             .join("")}
         </div>
-      </div>`);
+      </div>`
+      : `
+      <div class="panel">
+        <h2>No datasets yet</h2>
+        <p class="sub">You’re signed in, but your QuantumLayers account doesn’t have a dataset to profile yet — upload a CSV below to get one.</p>
+      </div>`;
+    mount(listPanel + uploadPanelHTML());
   } catch (e) {
     mount(errBox(e));
   }
+}
+
+function uploadPanelHTML() {
+  return `
+    <div class="panel">
+      <h2>Or upload a new CSV</h2>
+      <p class="sub">Uploads straight to your QuantumLayers account (private by default) — we’ll profile it as soon as it’s processed.</p>
+      <form class="auth-form" data-form="upload-dataset">
+        <div class="field"><label for="csvFile">CSV file</label><input id="csvFile" name="csvFile" type="file" accept=".csv,text/csv" required /></div>
+        <div class="field"><label for="csvName">Dataset name</label><input id="csvName" name="datasetName" type="text" placeholder="e.g. sales_2024" required /></div>
+        <p class="form-err" id="uploadErr"></p>
+        <button class="btn-primary" type="submit">Upload &amp; profile &rarr;</button>
+      </form>
+    </div>`;
 }
 
 function renderAuthPanel(opts) {
@@ -888,6 +900,21 @@ document.addEventListener("submit", (e) => {
     })
       .then(() => route())
       .catch((err) => { errEl.textContent = friendlyError(err); done(); });
+  } else if (kind === "upload-dataset") {
+    QL.uploadDataset(data.csvFile, data.datasetName, "private")
+      .then(({ datasetId, datasetName }) => renderProfile(datasetId, datasetName))
+      .catch((err) => { errEl.textContent = (err && err.message) || friendlyError(err); done(); });
+  }
+});
+
+// Auto-fill the dataset-name field from the chosen file's name, but only
+// if the user hasn't already typed something — never clobber a real edit.
+document.addEventListener("change", (e) => {
+  if (e.target.matches('input[type="file"][name="csvFile"]')) {
+    const nameField = e.target.form.querySelector('[name="datasetName"]');
+    if (nameField && !nameField.value && e.target.files[0]) {
+      nameField.value = e.target.files[0].name.replace(/\.csv$/i, "");
+    }
   }
 });
 
