@@ -3,7 +3,7 @@
 Free, QL-backed live demo. One job: pick a dataset and a couple of
 columns, get a clean chart in seconds.
 
-**[▶ Try the live demo](https://quantumlayers.github.io/quantumlayers-public/free-tools/instant-chart-maker/)** &nbsp;·&nbsp; [Report an issue](https://github.com/quantumlayers/quantumlayers-public/issues)
+**[▶ Try the live demo](https://quantumlayers.github.io/QuantumLayers-Public/free-tools/instant-chart-maker/)** &nbsp;·&nbsp; [Report an issue](https://github.com/quantumlayers/quantumlayers-public/issues)
 
 <!-- Replace with a short screencast: default chart loading, chart-type swap, export. -->
 ![demo](./demo.gif)

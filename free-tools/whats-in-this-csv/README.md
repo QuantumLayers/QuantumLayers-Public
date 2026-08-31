@@ -4,7 +4,7 @@
 
 Drop a CSV and get a short, ranked list of what's actually going on inside it — trends, outliers, relationships, and data-quality flags — written in plain English instead of formulas.
 
-**[▶ Try the live demo](https://quantumlayers.github.io/quantumlayers-public/free-tools/whats-in-this-csv/)** &nbsp;·&nbsp; [Report an issue](https://github.com/quantumlayers/quantumlayers-public/issues) &nbsp;·&nbsp; ⭐ it if it saved you a few minutes
+**[▶ Try the live demo](https://quantumlayers.github.io/QuantumLayers-Public/free-tools/whats-in-this-csv/)** &nbsp;·&nbsp; [Report an issue](https://github.com/quantumlayers/quantumlayers-public/issues) &nbsp;·&nbsp; ⭐ it if it saved you a few minutes
 
 <!-- Replace with a 5-second screencast of dropping a file and findings appearing — a gif converts far better than a screenshot. -->
 ![Dropping a CSV and getting ranked findings](docs/demo.gif)

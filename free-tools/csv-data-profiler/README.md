@@ -4,7 +4,7 @@ Free, QL-backed live demo. One job: an exhaustive, reference-style profile
 of a dataset — every column, fully profiled — with an exportable data
 dictionary as the star feature.
 
-**[▶ Try the live demo](https://quantumlayers.github.io/quantumlayers-public/free-tools/csv-data-profiler/)** &nbsp;·&nbsp; [Report an issue](https://github.com/quantumlayers/quantumlayers-public/issues)
+**[▶ Try the live demo](https://quantumlayers.github.io/QuantumLayers-Public/free-tools/csv-data-profiler/)** &nbsp;·&nbsp; [Report an issue](https://github.com/quantumlayers/quantumlayers-public/issues)
 
 <!-- Replace with a short screencast: sign in, pick a dataset, the profile and dictionary loading, exporting Markdown. -->
 ![demo](./demo.gif)
