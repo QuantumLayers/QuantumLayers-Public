@@ -36,9 +36,10 @@ This tool doesn't run a public demo dataset — **sign in to use it.** Per
 this collection's sign-in-first pattern (see `CONVENTIONS.md`), anonymous
 visitors go straight to a "create a free account" panel rather than a
 preloaded demo; there is no anonymous mode for any tool here. Once signed
-in, pick any of your own datasets and the full profile — quality panel,
-histograms, top-values charts, and the exportable dictionary — runs
-against it.
+in, pick any of your own datasets — or upload a fresh CSV right there in
+the picker, no trip to the QuantumLayers dashboard required — and the
+full profile — quality panel, histograms, top-values charts, and the
+exportable dictionary — runs against it.
 
 ## Why "top values" is a doughnut, not a bar
 

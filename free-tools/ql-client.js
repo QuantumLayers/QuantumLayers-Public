@@ -171,6 +171,10 @@
    *        assume either shape (the three sign-in-issuing calls) pass
    *        `raw: true` and sort it out themselves — see
    *        `applySessionResponse()`. Everything else keeps the default.
+   * @param {boolean} [opts.formData=false]
+   *        `params` is already a FormData instance (with `action`
+   *        appended) instead of a plain object — used for ql_upload_dataset,
+   *        the one multipart/form-data call in this client. See `uploadDataset()`.
    */
   function call(action, params, opts) {
     opts = opts || {};
@@ -185,22 +189,33 @@
       ));
     }
 
-    var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    var headers = {};
     if (authMode !== 'none' && token) {
       headers.Authorization = 'Bearer ' + token;
     }
 
-    var body = new URLSearchParams();
-    body.set('action', action);
-    Object.keys(params || {}).forEach(function (key) {
-      var value = params[key];
-      if (value === undefined || value === null) return;
-      if (Array.isArray(value)) {
-        value.forEach(function (item) { body.append(key + '[]', item); });
-      } else {
-        body.set(key, value);
-      }
-    });
+    var body;
+    if (opts.formData) {
+      // File uploads (ql_upload_dataset): params is already a FormData
+      // instance with 'action' appended by the caller. Deliberately NOT
+      // setting Content-Type here — fetch() sets it itself for a FormData
+      // body, including the multipart boundary; setting it manually would
+      // omit that boundary and the server couldn't parse the body at all.
+      body = params;
+    } else {
+      headers['Content-Type'] = 'application/x-www-form-urlencoded';
+      body = new URLSearchParams();
+      body.set('action', action);
+      Object.keys(params || {}).forEach(function (key) {
+        var value = params[key];
+        if (value === undefined || value === null) return;
+        if (Array.isArray(value)) {
+          value.forEach(function (item) { body.append(key + '[]', item); });
+        } else {
+          body.set(key, value);
+        }
+      });
+    }
 
     return global
       .fetch(AJAX_URL, { method: 'POST', headers: headers, body: body })
@@ -388,6 +403,48 @@
     );
   }
 
+  /**
+   * ql_upload_dataset — creates a new dataset from a CSV file. Lets a tool
+   * offer "upload a CSV" itself instead of sending the visitor to QL's own
+   * dashboard. Processing is synchronous server-side (per the API docs:
+   * status goes straight to 'ready' before the response comes back), so
+   * the returned dataset_id is immediately usable — no polling needed.
+   *
+   * multipart/form-data, not the usual urlencoded body — see opts.formData
+   * on call(). Response envelope isn't confirmed live: the docs' own
+   * example shows a flat `{ message, dataset_id, dataset_name }`, but
+   * that's exactly what ql_user_signin's docs showed too, and a live call
+   * proved a *different* sign-in endpoint's docs example was the
+   * inaccurate one — see QL-INTEGRATION.md's envelope-inconsistency notes.
+   * Called with `raw: true` and checked both ways rather than assumed.
+   *
+   * @param {File} file          The CSV file (from a file input's .files).
+   * @param {string} datasetName Becomes the dataset's name in QL.
+   * @param {string} [visibility='private']
+   */
+  function uploadDataset(file, datasetName, visibility) {
+    var form = new global.FormData();
+    form.append('action', 'ql_upload_dataset');
+    form.append('csv_file', file);
+    form.append('dataset_name', datasetName);
+    form.append('visibility', visibility || 'private');
+    return call('ql_upload_dataset', form, { auth: 'required', formData: true, raw: true }).then(
+      function (json) {
+        var payload =
+          json && typeof json.dataset_id !== 'undefined' ? json : (json && json.data) || null;
+        if (!payload || typeof payload.dataset_id === 'undefined') {
+          throw QLError(
+            'QuantumLayers accepted the upload but the response didn\'t ' +
+            'include a dataset_id in either shape this client checks — ' +
+            'check the Network tab\'s response body against QL-INTEGRATION.md.',
+            { code: 'INVALID_RESPONSE', cause: json }
+          );
+        }
+        return { datasetId: payload.dataset_id, datasetName: payload.dataset_name || datasetName };
+      }
+    );
+  }
+
   // ---------------------------------------------------------------------
   // Charts — the one endpoint anonymous visitors can actually call
   // ---------------------------------------------------------------------
@@ -535,6 +592,7 @@
     // datasets
     myDatasets: myDatasets,
     datasetDetail: datasetDetail,
+    uploadDataset: uploadDataset,
 
     // charts
     chart: chart,

@@ -28,9 +28,10 @@ This tool doesn't run a public demo dataset — **sign in to use it.** Per
 this collection's sign-in-first pattern (see `CONVENTIONS.md`), anonymous
 visitors see a "create a free account" panel, not a preloaded demo; there
 is no anonymous mode for any tool here. Once signed in (native QL
-email/password, right on the page), pick one of your own datasets and the
-per-column outlier cards run against it, including the QL-verified
-`ql_get_distribution_analysis` cross-check.
+email/password, right on the page), pick one of your own datasets — or
+upload a fresh CSV right there in the picker, no trip to the QuantumLayers
+dashboard required — and the per-column outlier cards run against it,
+including the QL-verified `ql_get_distribution_analysis` cross-check.
 
 ## Why the sensitivity control works the way it does
 

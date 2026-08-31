@@ -70,6 +70,7 @@ All via POST to `admin-ajax.php`:
 | `ql_get_anova_analysis` | `ql_verify_auth` | One-way ANOVA over every (categorical × numeric) column pair. |
 | `ql_get_insights` | `ql_verify_auth` | Two-stage: rule-based insights always run; an AI holistic summary is prepended if an LLM key + token budget allow it. |
 | `ql_get_dashboard_data` | `ql_verify_auth` | Lists the authenticated user's own datasets — the entry point for the "run this on your own data" flow once signed in. |
+| `ql_upload_dataset` | `ql_verify_auth` | `multipart/form-data`, not urlencoded: `csv_file` (file), `dataset_name`, `visibility` (optional). Creates a dataset from a CSV and processes it *synchronously* — the response's dataset is already `ready`, no polling needed. Lets a tool offer "upload a CSV" itself instead of sending the visitor to QL's dashboard. |
 | `ql_third_party_signin` | none (issues the token) | Exchanges a third-party-signed JWT for a QL `session_token`. See Option B below. |
 | `ql_user_signin` / `ql_user_signup` | none (issue the token) | Native QL email/password login and registration. Not gated behind a Bearer token for the same chicken-and-egg reason as signin; nonce is optional cross-origin (see above). |
 | `ql_check_auth` | token optional | Verifies whatever token is stored is still valid; returns the user object if so. |
@@ -224,6 +225,16 @@ sign-in (`message`/`error` probably also flat on `ql_user_signin`, not
 `data.message`) — `call()`'s generic error-path now checks both spots too.
 If you add a new sign-in-issuing endpoint, don't assume either shape —
 verify against a live call first.
+
+**Same caution applied to `ql_upload_dataset`, unverified:** the API
+guide's own example shows a flat `{ message, dataset_id, dataset_name }`
+— exactly the shape its `ql_user_signin` example turned out to be right
+about, right before that same abbreviated-example format proved wrong for
+a different endpoint's actual live response. Rather than trust it either
+way without a live call, `QL.uploadDataset()` is called with `raw: true`
+and checks the flat shape first, then falls back to `.data`, same pattern
+as `applySessionResponse()`. If you get a real upload response, replace
+this note with what was actually confirmed.
 
 ### Chart types (`ql_get_chart_data`'s `chart_type`)
 
