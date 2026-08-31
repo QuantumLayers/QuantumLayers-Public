@@ -234,6 +234,30 @@
   // ---------------------------------------------------------------------
 
   /**
+   * Every sign-in-issuing endpoint (ql_user_signin, ql_user_signup,
+   * ql_third_party_signin) is documented to resolve `data` — i.e.
+   * `json.data` from call()'s envelope unwrapping — to
+   * `{ session_token, user }`. If that's ever not what comes back (a
+   * shape QL changed, an endpoint-specific quirk the docs don't capture,
+   * a proxy/CDN mangling the body), fail with a clear, catchable QLError
+   * instead of letting `data.session_token` throw a raw, uncaught
+   * TypeError with no context — see DEPLOYMENT.md's "Failing gracefully".
+   */
+  function applySessionResponse(data) {
+    if (!data || typeof data.session_token !== 'string' || !data.session_token) {
+      throw QLError(
+        'QuantumLayers signed you in but the response didn\'t include the ' +
+        'session token in the expected shape. This is a client/API mismatch, ' +
+        'not a bad password — check the browser console\'s Network tab for ' +
+        'the raw response body and compare it against QL-INTEGRATION.md.',
+        { code: 'INVALID_RESPONSE', cause: data }
+      );
+    }
+    setSession(data.session_token, data.user);
+    return data.user;
+  }
+
+  /**
    * Native QL email/password sign-in (ql_user_signin). This is the default
    * "sign in" path for a static tool with no backend of its own — see
    * QL-INTEGRATION.md's "What a static tool actually uses" section.
@@ -243,10 +267,7 @@
       'ql_user_signin',
       { email: email, password: password, remember: !!remember },
       { auth: 'none' }
-    ).then(function (data) {
-      setSession(data.session_token, data.user);
-      return data.user;
-    });
+    ).then(applySessionResponse);
   }
 
   /**
@@ -270,10 +291,7 @@
         referred_by_code: fields.referredByCode,
       },
       { auth: 'none' }
-    ).then(function (data) {
-      setSession(data.session_token, data.user);
-      return data.user;
-    });
+    ).then(applySessionResponse);
   }
 
   /**
@@ -287,10 +305,7 @@
    */
   function thirdPartySignin(jwt) {
     return call('ql_third_party_signin', { jwt: jwt }, { auth: 'none' }).then(
-      function (data) {
-        setSession(data.session_token, data.user);
-        return data.user;
-      }
+      applySessionResponse
     );
   }
 
