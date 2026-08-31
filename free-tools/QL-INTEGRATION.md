@@ -183,6 +183,48 @@ alphabetic min/max value (`"Apple AirPods"`) — coercing those to `Number()`
 produces `NaN`, not a bug fix. Coerce based on the column's own
 `inferred_type`, once, at classification time.
 
+### The sign-in-issuing endpoints' response envelope is inconsistent — CORRECTED against a live call
+
+⚠️ This repo previously assumed every endpoint nests its payload under
+`data`, per "The shape of the API" above (`{ success, data: {...} }`).
+That's confirmed correct for the analytics/dataset endpoints and for
+`ql_check_auth`, but **`ql_user_signin` does not follow it** — confirmed
+2026-08-31 against a real login response:
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "session_token": "<redacted — a real, live 64-char hex session token>",
+  "user": { "id": "1323", "email": "<redacted>", "first_name": "…", "last_name": "…", "role": "viewer" }
+}
+```
+
+`session_token` and `user` are top-level keys, not `data.session_token`.
+`ql-client.js`'s original `login()` read `data.session_token` (where
+`data` was already `json.data`), so `data` was `undefined` and the call
+crashed with an uncaught `Cannot read properties of undefined (reading
+'session_token')` instead of failing cleanly.
+
+This is genuinely inconsistent across the endpoint *family*, not just
+"nesting is wrong everywhere" — `ql_third_party_signin`'s response **is**
+nested (`res.data.session_token`), per QL's own "Complete Code Example" in
+`embedded-analytics-api.html`, and `ql_check_auth`'s is nested too
+(`response.data.logged_in`, `response.data.user`) per the JDK guide.
+`ql_user_signup`'s shape isn't confirmed either way by the docs or by a
+live call yet.
+
+**Fix applied:** `login()`/`register()`/`thirdPartySignin()` now call
+`call()` with `{ raw: true }` (resolving to the whole envelope, not
+`json.data`) and share one `applySessionResponse()` helper that checks the
+flat top-level shape first, then falls back to `.data` — correct for both
+confirmed shapes, and for whichever one `ql_user_signup` turns out to use.
+The same inconsistency likely applies to the *error* message on a failed
+sign-in (`message`/`error` probably also flat on `ql_user_signin`, not
+`data.message`) — `call()`'s generic error-path now checks both spots too.
+If you add a new sign-in-issuing endpoint, don't assume either shape —
+verify against a live call first.
+
 ### Chart types (`ql_get_chart_data`'s `chart_type`)
 
 `histogram`, `bar` / `horizontal_bar`, `pie` / `doughnut`, `scatter`,

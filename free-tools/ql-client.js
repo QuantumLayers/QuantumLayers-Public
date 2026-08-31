@@ -161,6 +161,16 @@
    *        require it (this is ql_get_chart_data's ql_try_auth case).
    *        'none' — never attach a token (sign-in/register calls, which
    *        issue the token rather than consuming one).
+   * @param {boolean} [opts.raw=false]
+   *        Resolve with the full `json` envelope instead of `json.data`.
+   *        QL's endpoint family is inconsistent about enveloping: most
+   *        endpoints (confirmed live) nest their payload under `data`, but
+   *        `ql_user_signin` puts `session_token`/`user` at the top level —
+   *        confirmed live too, and different from `ql_third_party_signin`,
+   *        which QL's own docs show as properly nested. Callers that can't
+   *        assume either shape (the three sign-in-issuing calls) pass
+   *        `raw: true` and sort it out themselves — see
+   *        `applySessionResponse()`. Everything else keeps the default.
    */
   function call(action, params, opts) {
     opts = opts || {};
@@ -219,12 +229,17 @@
               });
             }
             if (!json.success) {
+              // Message placement is as inconsistent on failure as it is on
+              // success (see opts.raw above) — check both the standard
+              // nested spot and the flat top-level one QL's own signin
+              // response uses before falling back to a generic message.
               var msg =
                 (json.data && (json.data.message || json.data.error)) ||
+                json.message || json.error ||
                 'QuantumLayers rejected the request.';
               throw QLError(msg, { code: 'API_ERROR', cause: json });
             }
-            return json.data;
+            return opts.raw ? json : json.data;
           });
       });
   }
@@ -234,27 +249,38 @@
   // ---------------------------------------------------------------------
 
   /**
-   * Every sign-in-issuing endpoint (ql_user_signin, ql_user_signup,
-   * ql_third_party_signin) is documented to resolve `data` — i.e.
-   * `json.data` from call()'s envelope unwrapping — to
-   * `{ session_token, user }`. If that's ever not what comes back (a
-   * shape QL changed, an endpoint-specific quirk the docs don't capture,
-   * a proxy/CDN mangling the body), fail with a clear, catchable QLError
-   * instead of letting `data.session_token` throw a raw, uncaught
-   * TypeError with no context — see DEPLOYMENT.md's "Failing gracefully".
+   * QL's sign-in-issuing endpoints are NOT consistently enveloped —
+   * confirmed against live responses, not assumed:
+   *   - ql_user_signin: `{ success, message, session_token, user }` — flat,
+   *     session_token and user at the TOP level. Confirmed 2026-08-31
+   *     against a real account's login response.
+   *   - ql_third_party_signin: `{ success, data: { session_token, user } }`
+   *     — nested, per QL's own "Complete Code Example" in
+   *     embedded-analytics-api.html.
+   *   - ql_user_signup: unconfirmed either way; treated the same as the
+   *     others below rather than guessed at.
+   * All three are called with `{ raw: true }` so `call()` hands back the
+   * whole envelope, and this function checks the flat shape first, then
+   * falls back to `.data`, so it's correct regardless of which one a given
+   * endpoint (or a future QL change) actually uses.
    */
-  function applySessionResponse(data) {
-    if (!data || typeof data.session_token !== 'string' || !data.session_token) {
+  function applySessionResponse(json) {
+    var payload =
+      json && typeof json.session_token === 'string' && json.session_token
+        ? json
+        : (json && json.data) || null;
+    if (!payload || typeof payload.session_token !== 'string' || !payload.session_token) {
       throw QLError(
         'QuantumLayers signed you in but the response didn\'t include the ' +
-        'session token in the expected shape. This is a client/API mismatch, ' +
-        'not a bad password — check the browser console\'s Network tab for ' +
-        'the raw response body and compare it against QL-INTEGRATION.md.',
-        { code: 'INVALID_RESPONSE', cause: data }
+        'session token in either shape this client checks. This is a ' +
+        'client/API mismatch, not a bad password — check the browser ' +
+        'console\'s Network tab for the raw response body and compare it ' +
+        'against QL-INTEGRATION.md.',
+        { code: 'INVALID_RESPONSE', cause: json }
       );
     }
-    setSession(data.session_token, data.user);
-    return data.user;
+    setSession(payload.session_token, payload.user);
+    return payload.user;
   }
 
   /**
@@ -266,7 +292,7 @@
     return call(
       'ql_user_signin',
       { email: email, password: password, remember: !!remember },
-      { auth: 'none' }
+      { auth: 'none', raw: true }
     ).then(applySessionResponse);
   }
 
@@ -290,7 +316,7 @@
         country: fields.country,
         referred_by_code: fields.referredByCode,
       },
-      { auth: 'none' }
+      { auth: 'none', raw: true }
     ).then(applySessionResponse);
   }
 
@@ -304,7 +330,7 @@
    * for the (server-side) minting code.
    */
   function thirdPartySignin(jwt) {
-    return call('ql_third_party_signin', { jwt: jwt }, { auth: 'none' }).then(
+    return call('ql_third_party_signin', { jwt: jwt }, { auth: 'none', raw: true }).then(
       applySessionResponse
     );
   }
