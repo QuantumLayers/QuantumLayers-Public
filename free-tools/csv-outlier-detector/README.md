@@ -3,7 +3,7 @@
 Free, QL-backed live demo. One job: surface the values in a dataset that
 don't belong.
 
-**[▶ Try the live demo](https://quantumlayers.github.io/quantumlayers-public/free-tools/csv-outlier-detector/)** &nbsp;·&nbsp; [Report an issue](https://github.com/quantumlayers/quantumlayers-public/issues)
+**[▶ Try the live demo](https://quantumlayers.github.io/QuantumLayers-Public/free-tools/csv-outlier-detector/)** &nbsp;·&nbsp; [Report an issue](https://github.com/quantumlayers/quantumlayers-public/issues)
 
 <!-- Replace with a short screencast: the box plot loading, sensitivity toggled, sign-in → own dataset. -->
 ![demo](./demo.gif)
