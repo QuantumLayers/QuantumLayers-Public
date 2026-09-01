@@ -194,24 +194,35 @@ action=ql_get_chart_data&amp;dataset_id=42&amp;chart_type=bar&amp;...</code></pr
 <!-- /wp:paragraph -->
 
 <!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"auth-option-a"} -->
-<h3 id="auth-option-a" class="wp-block-heading has-text-color" style="color:#9b87f5">Option A — QL Session Token (Same-Origin)</h3>
+<h3 id="auth-option-a" class="wp-block-heading has-text-color" style="color:#9b87f5">Option A — Direct Sign-In (Email/Password or Google)</h3>
 <!-- /wp:heading -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
-<p class="has-text-color" style="color:#e0e0e0">After the user signs in through QL, their token is in <code>localStorage</code> under the key <strong style="color:#9b87f5">ql_session_token</strong>. Read it with <code>QLAuth.getSessionToken()</code>:</p>
+<p class="has-text-color" style="color:#e0e0e0">Call QL's own sign-in endpoints directly — <code>ql_user_signin</code> for email/password, or <code>ql_google_login</code> for a Google Identity Services credential — and each returns a <code>session_token</code> in the response, exactly like <code>ql_third_party_signin</code> does (see Option B below). Both are public endpoints (<code>wp_ajax_nopriv_*</code>, no nonce required) with CORS enabled for every origin by default, so despite the name there is nothing same-origin about them — they work from a page hosted anywhere, not just under <code>quantumlayers.com</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
+<p class="has-text-color" style="color:#e0e0e0">If you load QL's bundled <code>auth.js</code> (the JDK's authentication module), both flows are already wired up for you: bind a form with id <code>ql-login-form</code> for email/password (handled by <code>QLAuth.handleLogin</code>), or an element with class <code>ql-google-signin</code> to trigger Google Sign-In (<code>QLAuth.handleGoogleSignIn</code>). Either one calls <code>QLAuth.setSessionToken()</code> on success, which stores the token in <code>localStorage</code> under the key <strong style="color:#9b87f5">ql_session_token</strong> — after that, <code>QLAuth.getSessionToken()</code> picks it up automatically on every later call made through <code>QLAuth._ajax()</code>.</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:code {"style":{"elements":{"link":{"color":{"text":"var:preset|color|palette-color-3"}}}},"backgroundColor":"palette-color-5","textColor":"palette-color-3"} -->
-<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>$.ajax({
+<pre class="wp-block-code has-palette-color-3-color has-palette-color-5-background-color has-text-color has-background has-link-color"><code>// Calling ql_user_signin directly, without auth.js
+$.ajax({
     url: 'https://quantumlayers.com/wp-admin/admin-ajax.php',
     method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + QLAuth.getSessionToken() },
-    data: { action: 'ql_get_chart_data', dataset_id: 42, chart_type: 'bar' }
+    data: { action: 'ql_user_signin', email: 'jane@example.com', password: '...' },
+    success: function(response) {
+        if (response.success) {
+            const token = response.session_token;
+            // Store it yourself, then send it on every later request:
+            //   headers: { 'Authorization': 'Bearer ' + token }
+        }
+    }
 });</code></pre>
 <!-- /wp:code -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#e0e0e0"}}} -->
-<p class="has-text-color" style="color:#e0e0e0">This option only works for pages served from the same browser context where the user has already logged into QL — it relies on that browser's <code>localStorage</code> already holding a valid token. It's the simplest option when you're embedding QL on a page that lives under <code>quantumlayers.com</code> itself, or when you fully control a flow that lands the user on a QL login page first.</p>
+<p class="has-text-color" style="color:#e0e0e0">This is the simplest option when your users are willing to sign in with a QuantumLayers account (email/password or Google) directly on your page — no server-side JWT signing infrastructure required. If you'd rather issue tokens for users of your own identity system without asking them to hold a separate QL login, use Option B instead.</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:heading {"level":3,"style":{"color":{"text":"#9b87f5"}},"anchor":"auth-option-b"} -->
@@ -438,7 +449,7 @@ curl -s -X POST https://quantumlayers.com/wp-admin/admin-ajax.php \
 <!-- /wp:paragraph -->
 
 <!-- wp:table {"style":{"color":{"text":"#e0e0e0"}}} -->
-<figure class="wp-block-table"><table class="has-text-color has-fixed-layout" style="color:#e0e0e0"><thead><tr><th>Option</th><th>Best for</th><th>Token lifetime</th></tr></thead><tbody><tr><td>A — QL Session Token</td><td>Pages hosted on the same QL origin where the user is already signed in</td><td>30-day session (refreshed on activity)</td></tr><tr><td>B — Third-party JWT</td><td>Cross-origin embeds where your backend needs to provision shadow users automatically</td><td>Exchanged for a 30-day session token</td></tr><tr><td>C — API Token</td><td>Server-side scripts, CI/CD pipelines, backend integrations — no browser involved</td><td>Configurable: 30 days / 90 days / 1 year / never</td></tr></tbody></table></figure>
+<figure class="wp-block-table"><table class="has-text-color has-fixed-layout" style="color:#e0e0e0"><thead><tr><th>Option</th><th>Best for</th><th>Token lifetime</th></tr></thead><tbody><tr><td>A — Direct Sign-In</td><td>Users sign in with a QL email/password or Google account, from any origin</td><td>30-day session (refreshed on activity)</td></tr><tr><td>B — Third-party JWT</td><td>Cross-origin embeds where your backend needs to provision shadow users automatically</td><td>Exchanged for a 30-day session token</td></tr><tr><td>C — API Token</td><td>Server-side scripts, CI/CD pipelines, backend integrations — no browser involved</td><td>Configurable: 30 days / 90 days / 1 year / never</td></tr></tbody></table></figure>
 <!-- /wp:table -->
 
 <!-- wp:separator {"style":{"color":{"background":"#333333"}}} -->
