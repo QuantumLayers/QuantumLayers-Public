@@ -1,6 +1,6 @@
 # Correlation matrix calculator
 
-**Live demo:** [quantumlayers.github.io/QuantumLayers-Public/free-tools/correlation-matrix/](https://quantumlayers.github.io/QuantumLayers-Public/free-tools/correlation-matrix/)
+**Live demo:** [quantumlayers.com/tools/correlation-matrix/](https://quantumlayers.com/tools/correlation-matrix/)
 
 <!-- Replace with a short screencast: sample loaded, Pearson→Spearman toggle, cell clicked → scatter. -->
 ![demo](./demo.gif)

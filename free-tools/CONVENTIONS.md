@@ -46,6 +46,23 @@ only to QL-backed tools. For standalone tools:
 - Same visual tokens, KIND tag + amber meter, SEO rules and README shape;
   the README's "How it works" says it's client-side and needs no account.
 
+## Hosting, canonical URLs and tracking (all tools)
+
+- **Public URL:** every tool is served at `https://quantumlayers.com/tools/<name>/`
+  (see README's "Hosting"). Put `<link rel="canonical" href="https://quantumlayers.com/tools/<name>/" />`
+  right after the meta description.
+- **One page per search intent.** When one tool answers several distinct
+  searches (e.g. "A/B test calculator" vs "sample size calculator"), publish a
+  page per intent with its own `<title>`, H1, intro and explainer, sharing the
+  logic from one module (see `ab-test-calculator/calc.js`) — don't copy code.
+- **UTM-tag links to quantumlayers.com:**
+  `utm_source=quantumlayers-tools&utm_medium=free-tool&utm_campaign=<tool-name>&utm_content=cta|footer`
+  (dataset pages use `utm_medium=dataset-page`, `utm_campaign=dataset-<slug>`).
+  These are plain query strings on outbound links — no analytics script, so the
+  "nothing leaves your browser" promise of the standalone tools still holds.
+- **Cross-links:** footer links to the GitHub repo and to the hub
+  (`../`); README "Live demo" links to quantumlayers.com, never GitHub Pages.
+
 ## The sign-in-first pattern
 
 ⚠️ **Per direction from QL's operator, there is no anonymous public-dataset

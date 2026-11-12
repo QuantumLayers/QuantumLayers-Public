@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Dataset Profiler — exhaustive per-column data dictionary | QuantumLayers</title>
 <meta name="description" content="Dataset profiler: an exhaustive, reference-style profile of every column in your dataset — type, missing %, distinct values, five-number summaries, histograms — exportable as a data dictionary. Powered by QuantumLayers." />
+<link rel="canonical" href="https://quantumlayers.com/tools/csv-data-profiler/" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -209,13 +210,14 @@
       <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>flags new data-quality issues the moment they appear, not next time someone checks</span></div>
       <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>full stats, correlations, PCA and AI insights beyond a per-column dictionary</span></div>
     </div>
-    <a class="btn" href="https://quantumlayers.com/ql-register" target="_blank" rel="noopener">Keep your data dictionary current free &rarr;</a>
+    <a class="btn" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=csv-data-profiler&amp;utm_content=cta" target="_blank" rel="noopener">Keep your data dictionary current free &rarr;</a>
   </section>
 
   <footer>
     <span>MIT licensed</span><span class="sep">&middot;</span>
-    <span>built by <a href="https://quantumlayers.com" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
-    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+    <span>built by <a href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=csv-data-profiler&amp;utm_content=footer" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a><span class="sep">&middot;</span>
+    <a href="../">all free data tools</a>
   </footer>
 
 </div>
@@ -502,7 +504,7 @@ function dictionaryToMarkdown(dict, datasetName, rowCount) {
   const lines = [
     `# Data dictionary — ${datasetName}`,
     "",
-    `${rowCount.toLocaleString()} rows · ${dict.length} columns · generated ${new Date().toISOString().slice(0, 10)} via [Dataset Profiler](https://quantumlayers.github.io/QuantumLayers-Public/free-tools/csv-data-profiler/), powered by QuantumLayers.`,
+    `${rowCount.toLocaleString()} rows · ${dict.length} columns · generated ${new Date().toISOString().slice(0, 10)} via [Dataset Profiler](https://quantumlayers.com/tools/csv-data-profiler/), powered by QuantumLayers.`,
     "",
     "| Column | Type | Missing | Distinct | Summary |",
     "|---|---|---|---|---|",

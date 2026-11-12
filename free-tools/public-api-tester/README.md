@@ -1,6 +1,6 @@
 # Public API tester
 
-**Live demo:** [quantumlayers.github.io/QuantumLayers-Public/free-tools/public-api-tester/](https://quantumlayers.github.io/QuantumLayers-Public/free-tools/public-api-tester/)
+**Live demo:** [quantumlayers.com/tools/public-api-tester/](https://quantumlayers.com/tools/public-api-tester/)
 
 <!-- Replace with a short screencast: preset clicked, table + findings, path suggestion applied, CSV downloaded. -->
 ![demo](./demo.gif)

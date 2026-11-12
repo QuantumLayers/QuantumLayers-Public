@@ -61,6 +61,14 @@ register/sign-in prompt (see `CONVENTIONS.md`). If a future tool
 genuinely needs a public dataset for some other reason, reopen this
 section rather than reusing this retired version of it.
 
+## Where the tools are served
+
+`free-tools/` is published as `https://quantumlayers.com/tools/` by a deploy
+hook on the quantumlayers.com host (push to `main` → deploy). Served from that
+origin, cross-origin concerns for the QL-backed tools go away entirely. The
+dataset pages are rebuilt weekly by `.github/workflows/refresh-datasets.yml`,
+whose commits trigger the same hook. See README's "Hosting" section.
+
 ## Failing gracefully
 
 Every tool must degrade to a clear, honest message rather than a blank
