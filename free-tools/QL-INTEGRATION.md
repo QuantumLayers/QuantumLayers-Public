@@ -69,7 +69,7 @@ wins**, and the affected sections below have been corrected in place:
 | `ql_user_signin` `remember` | Read with `isset()`, so *any* value (including `false`) turns "remember me" on. `QL.login()` only sends it when truthy. |
 | `ql_upload_dataset` | Uses `wp_send_json_success`, so the payload is nested: `{ success, data: { message, dataset_id, dataset_name } }`. Accepted MIME types: `text/csv`, `text/plain`, `application/csv`, `application/vnd.ms-excel`. Processing is synchronous. |
 | `ql_get_recommended_charts` | Returns **`{ charts: [...], analysis_summary }`**, and every entry *does* carry a ready-to-render `chart_data` (candidates whose chart fails to generate are dropped server-side). The `candidates` shape without `chart_data` belongs to a different function — the lightweight discovery behind QL's MCP/agent `get_recommended_charts` tool. See the corrected section below. |
-| Chart types | `ql_get_chart_data` handles `histogram`, `time_series`, `stacked_area`, `scatter`, `bar`, `horizontal_bar`, `pie`, `doughnut`, `regression`, `box_plot`, `violin`, `bubble`, `heatmap`/`matrix` (aliases), plus `column_types` and `missing_data`. **Line and area charts exist under other names:** `time_series` returns a Chart.js `line` config on a time axis, and `stacked_area` is the same with `fill: true` (a plain area chart with one value column). A literal `chart_type: line` or `area` returns "Unknown chart type" — the API guide's Quick Reference table, which lists them, is wrong (it also misnames `box_plot`, `heatmap` and `time_series` params). |
+| Chart types | `ql_get_chart_data` handles `histogram`, `time_series`, `stacked_area`, `scatter`, `bar`, `horizontal_bar`, `pie`, `doughnut`, `regression`, `box_plot`, `violin`, `bubble`, `heatmap`/`matrix` (aliases), plus `column_types` and `missing_data`. **Line and area charts exist under other names:** `time_series` returns a Chart.js `line` config on a time axis, and `stacked_area` is the same with `fill: true` (a plain area chart with one value column). A literal `chart_type: line` or `area` returns "Unknown chart type". The API guide's Quick Reference table used to list them (and misname the `bar`, `box_plot`, `heatmap` and `time_series` params); it was corrected on 2026-11-12 in this repo's `docs/`, in the private repo's `pages/`, and on the live quantumlayers.com page. |
 | `box_plot` / `violin` | `y_column` required (numeric). `x_column` is **optional**: omitted → one box for the whole column. When given it must be a string column or a numeric column with < 1 % distinct values. |
 | Aggregation keywords | `bar`/`horizontal_bar`: `sum`, `average` (also `avg`/`mean`) — anything else silently becomes `sum`. `pie`/`doughnut`: `sum`, `average`, `min`, `max`; omit `value_column` to count rows. `heatmap`: `average` (default), `sum`, `min`, `max`, `count`. `time_series`/`stacked_area`: `none` (raw points), `sum`, `mean`/`average`, `min`, `max`, `count`, `median`. |
 | `ql_get_statistical_summary` | Its `count` field is the column's **distinct** count (`dataset_columns.distinct_count`), not the non-null count. Use `ql_get_dataset_detail`'s `row_count − null_count` for that. |
@@ -284,7 +284,10 @@ the "Type-specific params" and "Chart Type Quick Reference" tables in
 filter params `filter_category_column`/`filter_category_value` and
 `filter_date_column`/`filter_date_from`/`filter_date_to`.
 
-**⚠️ Those two tables disagree with each other for `bar`/`horizontal_bar`,
+**✅ Fixed 2026-11-12:** the Quick Reference table now matches the server
+code and the "Type-specific params" table. Historical note follows.
+
+**⚠️ Those two tables disagreed with each other for `bar`/`horizontal_bar`,
 `box_plot`/`violin`, `heatmap`, and `time_series`/`stacked_area`** — e.g.
 the "Type-specific params" table names `bar`'s params `category_column` +
 `value_columns[]`, while the separate "Chart Type Quick Reference" table
