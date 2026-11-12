@@ -1,0 +1,68 @@
+{
+  "world-bank-life-expectancy": {
+    "sha256": "711f6550c7e35191787a729087549b9c06dcb1dc7b1e686fcbc11e781e776a08",
+    "changed": "2026-11-12",
+    "rows": 6625,
+    "coverage": "2000 – 2024"
+  },
+  "imf-weo-real-gdp-growth": {
+    "sha256": "6613de27ab7b5008b9f846278d085e29baf8a2286c9ff73bb6c90727b613b783",
+    "changed": "2026-11-12",
+    "rows": 52,
+    "coverage": "1980 – 2031"
+  },
+  "noaa-central-park-monthly-climate": {
+    "sha256": "61e884ddf4ac93523152be78142490d9dd32a9a8c54ed6738b20158d4b397231",
+    "changed": "2026-11-12",
+    "rows": 420,
+    "coverage": "1990-01 – 2024-12"
+  },
+  "berlin-daily-weather-2015-2024": {
+    "sha256": "6130498b03b463d3c2c43530ae325e9468d00e2a1304443542594f24f669287c",
+    "changed": "2026-11-12",
+    "rows": 3653,
+    "coverage": "2015-01-01 – 2024-12-31"
+  },
+  "nasa-power-solar-irradiance-iowa": {
+    "sha256": "8218df60f44272a5614846d3797657db5182754b9639bfb61a6027ae693f7f80",
+    "changed": "2026-11-12",
+    "rows": 3653,
+    "coverage": "2015-01-01 – 2024-12-31"
+  },
+  "world-bank-gdp-per-capita": {
+    "sha256": "3358197e9841c2c2e42bcb8e8d09529731ea92c96da56d2e756fee51bdfaa803",
+    "changed": "2026-11-12",
+    "rows": 225,
+    "coverage": "2000 – 2024"
+  },
+  "world-bank-population": {
+    "sha256": "5781be5fe282921651dabd6000f1e2fee2d9a40c33d3283fea8fbc34c7fb0afd",
+    "changed": "2026-11-12",
+    "rows": 225,
+    "coverage": "2000 – 2024"
+  },
+  "world-bank-inflation": {
+    "sha256": "8b2e8349c77b8b3ca3777f92dbf06077312f72bed830a1dc7cdba497bbd2720c",
+    "changed": "2026-11-12",
+    "rows": 225,
+    "coverage": "2000 – 2024"
+  },
+  "world-bank-unemployment": {
+    "sha256": "2e5b294c6a497b4f2e5086b7c474ec321a158f87c13302893b816ad81eb8ff4b",
+    "changed": "2026-11-12",
+    "rows": 225,
+    "coverage": "2000 – 2024"
+  },
+  "imf-weo-government-debt": {
+    "sha256": "e4cbc4eca3bf719180f4f1729d51a9833eec2b3ff80f57daf7d0e5592232348f",
+    "changed": "2026-11-12",
+    "rows": 52,
+    "coverage": "1980 – 2031"
+  },
+  "imf-weo-inflation": {
+    "sha256": "2e7eebc013cabd1b8a8cc8ea1a859ba98bc617f08cb7cb5ec78d666fc58fcf6a",
+    "changed": "2026-11-12",
+    "rows": 52,
+    "coverage": "1980 – 2031"
+  }
+}
