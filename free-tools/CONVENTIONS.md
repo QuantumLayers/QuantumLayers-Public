@@ -112,10 +112,32 @@ backend, cross-origin. Replace it everywhere with:
 Don't imply local-only processing anywhere in copy, meta descriptions, or
 README text.
 
-## Visual tokens
+## Visual design: the quantumlayers.com site theme
 
-Space Grotesk for display/headings, IBM Plex Sans for body copy, IBM Plex
-Mono for anything data-shaped (column names, numbers, code, the KIND tag).
+Every page loads [`ql-theme.css`](./ql-theme.css) **last** in `<head>`
+(after its own `<style>`), plus Inter from Google Fonts. It carries the
+quantumlayers.com design system: the same `--ql-*` tokens as the site's
+custom CSS (violet `#8b7cf6` / `#5b4bd8`, surfaces `#15121f` / `#1c1830`,
+borders `rgba(196,181,253,.14)`, Inter body, Space Grotesk display), the
+gradient primary button, glass-gradient cards, the wave background and the
+site header (logo, Free tools, Pricing, Help, Blog, GitHub, Login,
+Register). It remaps the older tool tokens below onto those values, so
+existing tool CSS keeps working, and it's dark-only like the site.
+
+For a new page: copy the `<header class="ql-site-header">` block and the
+crumbs line from any tool (or use `siteHeader()` in `datasets/build.js`),
+write the page's CSS against the tokens below, and load `ql-theme.css` after
+it. When the site's design changes, update `ql-theme.css`; individual
+tools shouldn't need edits. The KIND tag and strength meter remain the
+collection's signature, now rendered as a violet pill and a violet ramp.
+
+The token names below are what tool CSS is written against; their values
+are overridden by `ql-theme.css`.
+
+## Visual tokens (names; values come from ql-theme.css)
+
+Space Grotesk for display/headings, Inter for body copy (was IBM Plex
+Sans), IBM Plex Mono for anything data-shaped (column names, numbers, code, the KIND tag).
 All three from Google Fonts (on the CDN allowlist).
 
 ```css

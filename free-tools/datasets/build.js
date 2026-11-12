@@ -296,15 +296,35 @@ function chartSVG(ds, sr) {
 // ---------------------------------------------------------------------
 const SHARED_HEAD = `<link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />`;
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />`;
+
+const LOGO = 'https://quantumlayers.com/wp-content/uploads/2026/08/cropped-image-rounded.png';
+/** The quantumlayers.com site header (styled by the shared site theme). */
+function siteHeader(hub, campaign) {
+  const q = utm(campaign, 'header');
+  return `<header class="ql-site-header">
+  <div class="ql-site-header-inner">
+    <a class="ql-logo" href="https://quantumlayers.com/?${q}"><img src="${LOGO}" alt="QuantumLayers" width="40" height="40" /></a>
+    <nav class="ql-nav" aria-label="Site">
+      <a class="ql-link" href="${hub}" aria-current="page">Free tools</a>
+      <a class="ql-link" href="https://quantumlayers.com/pricing?${q}">Pricing</a>
+      <a class="ql-link" href="https://quantumlayers.com/help">Help</a>
+      <a class="ql-link" href="https://quantumlayers.com/blog">Blog</a>
+    </nav>
+    <div class="ql-nav-right">
+      <a class="ql-link ql-hide-sm" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools/datasets" target="_blank" rel="noopener">GitHub</a>
+      <a class="ql-link ql-hide-sm" href="https://quantumlayers.com/ql-login">Login</a>
+      <a class="ql-link" href="https://quantumlayers.com/ql-register?${q}">Register</a>
+    </div>
+  </div>
+</header>
+`;
+}
 
 function seriesCSS() {
-  const rule = (pal) => pal.map((c, i) => `.s${i}{stroke:${c}} .sw.s${i}{background:${c}}`).join('\n  ');
+  // The site (and its shared theme) is dark-only, so only the dark-surface steps are used.
   return `<style>
-  ${rule(SERIES_DARK)}
-  @media (prefers-color-scheme:light){
-  ${rule(SERIES_LIGHT)}
-  }
+  ${SERIES_DARK.map((c, i) => `.s${i}{stroke:${c}} .sw.s${i}{background:${c}}`).join('\n  ')}
 </style>`;
 }
 
@@ -352,15 +372,12 @@ function datasetPage(ds, t, sr, meta) {
 <link rel="canonical" href="${url}" />
 ${SHARED_HEAD}
 <link rel="stylesheet" href="../datasets.css" />
+<link rel="stylesheet" href="../../ql-theme.css" />
 ${seriesCSS()}
 <script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <a class="mark" href="../"><span class="dot"></span>public datasets</a>
-    <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools/datasets" target="_blank" rel="noopener">open source &nearr;</a>
-  </div>
+${siteHeader('../../', 'dataset-' + ds.slug)}<div class="wrap">
   <nav class="crumbs"><a href="../../">Free data tools</a> / <a href="../">Public datasets</a> / ${esc(ds.source)}</nav>
 
   <header class="hero">
@@ -464,14 +481,11 @@ function hubPage(entries) {
 <link rel="canonical" href="${SITE}/datasets/" />
 ${SHARED_HEAD}
 <link rel="stylesheet" href="datasets.css" />
+<link rel="stylesheet" href="../ql-theme.css" />
 <script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <a class="mark" href="./"><span class="dot"></span>public datasets</a>
-    <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools/datasets" target="_blank" rel="noopener">open source &nearr;</a>
-  </div>
+${siteHeader('../', 'datasets-hub')}<div class="wrap">
   <nav class="crumbs"><a href="../">Free data tools</a> / Public datasets</nav>
   <header class="hero">
     <h1>Free public datasets</h1>

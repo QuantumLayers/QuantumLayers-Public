@@ -8,7 +8,7 @@
 <link rel="canonical" href="https://quantumlayers.com/tools/whats-in-this-csv/" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
   :root{
@@ -134,13 +134,35 @@
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 </style>
+<style>
+  .ql-subbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .ql-subbar .crumbs{margin:18px 0 0}
+  .ql-subbar .auth-status{margin-top:18px}
+</style>
+<link rel="stylesheet" href="../ql-theme.css" />
 </head>
 <body>
+<header class="ql-site-header">
+  <div class="ql-site-header-inner">
+    <a class="ql-logo" href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=whats-in-this-csv&amp;utm_content=header"><img src="https://quantumlayers.com/wp-content/uploads/2026/08/cropped-image-rounded.png" alt="QuantumLayers" width="40" height="40" /></a>
+    <nav class="ql-nav" aria-label="Site">
+      <a class="ql-link" href="../" aria-current="page">Free tools</a>
+      <a class="ql-link" href="https://quantumlayers.com/pricing?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=whats-in-this-csv&amp;utm_content=header">Pricing</a>
+      <a class="ql-link" href="https://quantumlayers.com/help">Help</a>
+      <a class="ql-link" href="https://quantumlayers.com/blog">Blog</a>
+    </nav>
+    <div class="ql-nav-right">
+      <a class="ql-link ql-hide-sm" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools/whats-in-this-csv" target="_blank" rel="noopener">GitHub</a>
+      <a class="ql-link ql-hide-sm" href="https://quantumlayers.com/ql-login">Login</a>
+      <a class="ql-link" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=whats-in-this-csv&amp;utm_content=header">Register</a>
+    </div>
+  </div>
+</header>
 <div class="wrap">
 
-  <div class="top">
-    <a class="mark" href="./"><span class="dot"></span>what&rsquo;s in this csv?</a>
-    <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">open source &nearr;</a>
+  <div class="ql-subbar">
+    <nav class="crumbs"><a href="../">Free data tools</a> / What’s in this CSV?</nav>
+    
   </div>
 
   <header class="hero">
@@ -441,13 +463,13 @@ function sparkline(vals) {
   const mn = Math.min(...vals), mx = Math.max(...vals), rng = mx - mn || 1;
   const pts = vals.map((v, i) => [p + (i / (vals.length - 1)) * (w - 2 * p), h - p - ((v - mn) / rng) * (h - 2 * p)]);
   const d = pts.map((pt, i) => (i ? "L" : "M") + pt[0].toFixed(1) + " " + pt[1].toFixed(1)).join(" ");
-  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="trend sparkline"><path d="${d}" fill="none" stroke="#E0A11B" stroke-width="1.6"/><circle cx="${pts[pts.length - 1][0].toFixed(1)}" cy="${pts[pts.length - 1][1].toFixed(1)}" r="2.4" fill="#E0A11B"/></svg>`;
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="trend sparkline"><path d="${d}" fill="none" stroke="#8b7cf6" stroke-width="1.6"/><circle cx="${pts[pts.length - 1][0].toFixed(1)}" cy="${pts[pts.length - 1][1].toFixed(1)}" r="2.4" fill="#8b7cf6"/></svg>`;
 }
 function dotstrip(vals, lo, hi) {
   const w = 220, h = 24, mn = Math.min(...vals), mx = Math.max(...vals), rng = mx - mn || 1;
   const x = (v) => 3 + ((v - mn) / rng) * (w - 6);
-  const dots = vals.map((v) => { const out = v < lo || v > hi; return `<circle cx="${x(v).toFixed(1)}" cy="12" r="${out ? 3.4 : 2}" fill="${out ? "#E0A11B" : "#C4CBD6"}" ${out ? '' : 'opacity="0.7"'}/>`; }).join("");
-  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="value distribution with outliers highlighted"><line x1="3" y1="12" x2="${w - 3}" y2="12" stroke="#EDF0F4" stroke-width="1"/>${dots}</svg>`;
+  const dots = vals.map((v) => { const out = v < lo || v > hi; return `<circle cx="${x(v).toFixed(1)}" cy="12" r="${out ? 3.4 : 2}" fill="${out ? "#c4b5fd" : "#5b5672"}" ${out ? '' : 'opacity="0.7"'}/>`; }).join("");
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="value distribution with outliers highlighted"><line x1="3" y1="12" x2="${w - 3}" y2="12" stroke="rgba(196,181,253,0.18)" stroke-width="1"/>${dots}</svg>`;
 }
 function scatter(av, bv) {
   const pts = []; for (let i = 0; i < av.length; i++) if (av[i] !== null && bv[i] !== null) pts.push([av[i], bv[i]]);
@@ -455,7 +477,7 @@ function scatter(av, bv) {
   const axs = pts.map((p) => p[0]), ays = pts.map((p) => p[1]);
   const nx = Math.min(...axs), xx = Math.max(...axs), ny = Math.min(...ays), xy = Math.max(...ays);
   const rx = xx - nx || 1, ry = xy - ny || 1;
-  const c = pts.map((p) => `<circle cx="${(3 + ((p[0] - nx) / rx) * (w - 6)).toFixed(1)}" cy="${(h - 3 - ((p[1] - ny) / ry) * (h - 6)).toFixed(1)}" r="2" fill="#E0A11B" opacity="0.65"/>`).join("");
+  const c = pts.map((p) => `<circle cx="${(3 + ((p[0] - nx) / rx) * (w - 6)).toFixed(1)}" cy="${(h - 3 - ((p[1] - ny) / ry) * (h - 6)).toFixed(1)}" r="2" fill="#8b7cf6" opacity="0.65"/>`).join("");
   return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="scatter of the two columns">${c}</svg>`;
 }
 

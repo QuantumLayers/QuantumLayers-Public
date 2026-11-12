@@ -1,0 +1,279 @@
+/* =========================================================================
+   ql-theme.css — the quantumlayers.com site look (v2 homepage design system)
+   for every page in free-tools/.
+
+   Loaded AFTER each page's own <style>, so it:
+     1. defines the site's --ql-* tokens (copied from quantumlayers.com's
+        custom CSS: same names and values), and
+     2. remaps each tool's own tokens (--bg, --text, --accent, --meter-*…, and
+        whats-in-this-csv's --ink/--paper/--amber…) onto them, then restyles
+        the shared components (buttons, panels, CTA band, KIND tag, meter)
+        and the site header.
+   Tools keep working without it; it only changes appearance.
+
+   Dark only, like the site. A later plain :root rule beats the tools'
+   earlier @media (prefers-color-scheme: light) token blocks, which is what
+   keeps light-mode visitors on the site palette.
+   ========================================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* --- quantumlayers.com tokens (v2) --- */
+  --ql-font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --ql-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ql-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --ql-bg: #0b0a12;
+  --ql-veil: rgba(11, 10, 18, 0.6);
+  --ql-surface: #15121f;
+  --ql-surface-2: #1c1830;
+  --ql-band: rgba(91, 75, 216, 0.08);
+  --ql-border: rgba(196, 181, 253, 0.14);
+  --ql-border-strong: rgba(196, 181, 253, 0.28);
+  --ql-text: #eceaf5;
+  --ql-muted: #a9a6bc;
+  --ql-faint: #8a869f;
+  --ql-primary: #8b7cf6;
+  --ql-primary-strong: #5b4bd8;
+  --ql-primary-soft: #c4b5fd;
+  --ql-accent: #22d3ee;
+  --ql-radius: 16px;
+  --ql-card: linear-gradient(180deg, var(--ql-surface-2), var(--ql-surface));
+  --ql-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 60px -24px rgba(0, 0, 0, 0.6);
+  --ql-btn-gradient: linear-gradient(135deg, #5b4bd8 0%, #6d5deb 100%);
+  --ql-btn-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset, 0 10px 30px -8px rgba(109, 93, 235, 0.65);
+  --ql-btn-shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.18) inset, 0 14px 36px -8px rgba(109, 93, 235, 0.8);
+  --ql-wave-bg: url("https://quantumlayers.com/wp-content/uploads/2025/12/1000013672-purple.png");
+
+  /* --- free-tools tokens, remapped --- */
+  --font-display: var(--ql-font-display);
+  --font-body: var(--ql-font-body);
+  --font-mono: var(--ql-font-mono);
+  --bg: var(--ql-bg);
+  --bg-raised: var(--ql-surface);
+  --bg-inset: #110e1a;
+  --border: var(--ql-border);
+  --grid: rgba(196, 181, 253, 0.08);
+  --text: var(--ql-text);
+  --text-dim: var(--ql-muted);
+  --text-faint: var(--ql-faint);
+  --accent: var(--ql-primary);
+  --accent-dim: var(--ql-primary-soft);
+  /* strength meter: violet ramp instead of amber */
+  --meter-empty: rgba(196, 181, 253, 0.12);
+  --meter-1: #3a2f7a;
+  --meter-2: #4838a8;
+  --meter-3: #5b4bd8;
+  --meter-4: #6d5deb;
+  --meter-5: #8b7cf6;
+  --meter-6: #c4b5fd;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  /* correlation-matrix diverging ends */
+  --neg: #22d3ee;
+  --pos: #8b7cf6;
+
+  /* --- whats-in-this-csv tokens, remapped --- */
+  --ink: var(--ql-text);
+  --slate: var(--ql-muted);
+  --slate-2: var(--ql-faint);
+  --paper: #110e1a;
+  --card: var(--ql-surface);
+  --line: var(--ql-border);
+  --line-2: rgba(196, 181, 253, 0.08);
+  --amber: var(--ql-primary);
+  --amber-ink: var(--ql-primary-soft);
+  --amber-soft: rgba(139, 124, 246, 0.16);
+  --panel: var(--ql-band);
+  --panel-line: var(--ql-border);
+  --panel-slate: var(--ql-muted);
+}
+
+/* --- page ground: the site's wave image under a veil --- */
+html { background: var(--ql-bg); }
+body {
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--ql-text);
+  font-family: var(--ql-font-body);
+  position: relative;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(11, 10, 18, 0.35) 0%, rgba(11, 10, 18, 0.88) 420px, rgba(11, 10, 18, 0.94) 100%),
+    var(--ql-wave-bg) center top / cover no-repeat,
+    var(--ql-bg);
+}
+a { color: var(--ql-primary-soft); }
+::selection { background: rgba(139, 124, 246, 0.35); }
+
+/* --- site header (matches quantumlayers.com) --- */
+.ql-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(11, 10, 18, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--ql-border);
+}
+.ql-site-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 64px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.ql-logo { display: flex; align-items: center; flex: 0 0 auto; }
+.ql-logo img { width: 40px; height: 40px; border-radius: 9px; display: block; }
+.ql-nav, .ql-nav-right { display: flex; align-items: center; gap: 4px; }
+.ql-nav-right { margin-left: auto; }
+.ql-site-header a.ql-link {
+  font: 500 14px/1 var(--ql-font-body);
+  letter-spacing: 0.01em;
+  color: #d9d6e8;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+.ql-site-header a.ql-link:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+.ql-site-header a.ql-link[aria-current] { color: #fff; }
+@media (max-width: 720px) {
+  .ql-nav .ql-link:not([aria-current]), .ql-nav-right .ql-hide-sm { display: none; }
+  .ql-site-header-inner { gap: 8px; }
+}
+
+.crumbs { font-family: var(--ql-font-body); font-size: 13px; color: var(--ql-faint); margin: 18px 0 0; }
+.crumbs a { color: var(--ql-muted); text-decoration: none; }
+.crumbs a:hover { color: #fff; }
+
+/* --- typography --- */
+.hero h1, h1 {
+  font-family: var(--ql-font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(#fff 30%, #d9d2ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--ql-text);
+  text-wrap: balance;
+}
+h2, h3 { font-family: var(--ql-font-display); color: var(--ql-text); }
+.lede { color: #d9d6e8; }
+.privacy-line, .privacy { font-family: var(--ql-font-body); color: var(--ql-muted); }
+/* whats-in-this-csv's highlighted phrase */
+h1 .hl { background: none; -webkit-text-fill-color: var(--ql-primary-soft); color: var(--ql-primary-soft); padding: 0; }
+
+/* --- buttons --- */
+.btn, .btn-primary, a.btn, a.btn-primary {
+  background: var(--ql-btn-gradient) !important;
+  color: #fff !important;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  box-shadow: var(--ql-btn-shadow);
+  font-family: var(--ql-font-body);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn:hover, .btn-primary:hover:not(:disabled), a.btn:hover, a.btn-primary:hover {
+  background: var(--ql-btn-gradient) !important;
+  box-shadow: var(--ql-btn-shadow-hover);
+  transform: translateY(-1px);
+}
+.btn-ghost, .filebar .again, .zone .sample, .chip, .dict-actions button, .export-row button {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-radius: 7px;
+}
+.btn-ghost:hover, .filebar .again:hover, .zone .sample:hover, .chip:hover, .dict-actions button:hover, .export-row button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--ql-border-strong);
+}
+.chip.active { border-color: var(--ql-primary); color: var(--ql-primary-soft); }
+
+/* --- surfaces --- */
+.panel, .card, figure.chart, .f, .filebar, .maker .picker, .maker .chart-panel, .col-card {
+  background: var(--ql-card);
+  border: 1px solid var(--ql-border);
+  border-radius: var(--ql-radius);
+  box-shadow: var(--ql-card-shadow);
+}
+.tile, .grp, .col, .zone, .rec-chip, ul.findings li, ul.notes li, ul.pairs li, .dataset-row {
+  background: rgba(11, 10, 18, 0.55);
+  border-color: var(--ql-border);
+}
+.zone:hover, .zone:focus-within, .zone.drag { background: rgba(139, 124, 246, 0.08); border-color: var(--ql-primary); }
+input[type=text], input[type=url], input[type=email], input[type=password], input[type=number], select, textarea {
+  background: rgba(11, 10, 18, 0.7);
+  border-color: var(--ql-border-strong);
+  color: var(--ql-text);
+  font-family: var(--ql-font-body);
+}
+input:focus, select:focus, textarea:focus { border-color: var(--ql-primary) !important; box-shadow: 0 0 0 3px rgba(139, 124, 246, 0.2); outline: none; }
+
+/* tables: site-style header row */
+table.t th, .tbl th, table.dict th, table.mx th { color: var(--ql-primary-soft); }
+
+/* --- labels: KIND tag and type tags as violet pills --- */
+.kind-tag, .kind, .tag {
+  font-family: var(--ql-font-body);
+  font-weight: 600;
+  color: var(--ql-primary-soft);
+  background: rgba(139, 124, 246, 0.12);
+  border: 1px solid var(--ql-border-strong);
+  border-radius: 999px;
+}
+.meter i.on { background: var(--ql-primary); }
+.meter i { background: rgba(196, 181, 253, 0.12); }
+
+/* --- tabs / segmented controls --- */
+.tabs button.on { color: #fff; border-bottom-color: var(--ql-primary); }
+.seg { border-color: var(--ql-border); border-radius: 999px; padding: 3px; background: rgba(255, 255, 255, 0.02); }
+.seg button { border-radius: 999px; }
+.seg button.on { background: var(--ql-primary-strong); color: #fff; box-shadow: 0 6px 20px -6px rgba(109, 93, 235, 0.7); }
+
+/* --- CTA band --- */
+.cta {
+  background: var(--ql-band) !important;
+  border: 1px solid var(--ql-border) !important;
+  border-radius: var(--ql-radius);
+  color: var(--ql-text);
+}
+.cta .eyebrow {
+  font-family: var(--ql-font-body);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: var(--ql-primary-soft);
+}
+.cta .ladder div { color: #d9d6e8; }
+.cta .ladder .arrow { color: var(--ql-primary); }
+
+/* --- states --- */
+.err, .err-box {
+  background: rgba(248, 113, 113, 0.1) !important;
+  border: 1px solid rgba(248, 113, 113, 0.35) !important;
+  color: var(--ql-text) !important;
+}
+.sugg { background: rgba(139, 124, 246, 0.1); border-color: var(--ql-border-strong); }
+.summary { border-left-color: var(--ql-primary); }
+
+footer { color: var(--ql-faint); }
+footer a { color: var(--ql-muted); border-bottom-color: var(--ql-border); }
+footer a:hover { color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover, .btn-primary:hover { transform: none; }
+}
