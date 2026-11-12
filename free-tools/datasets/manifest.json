@@ -64,5 +64,11 @@
     "changed": "2026-11-12",
     "rows": 52,
     "coverage": "1980 – 2031"
+  },
+  "world-bank-gdp": {
+    "sha256": "db8d8188a65a6fb3904a665663f2bd1e235c81011142c5092f7f101d91e21833",
+    "changed": "2026-11-12",
+    "rows": 200,
+    "coverage": "2000 – 2024"
   }
 }
