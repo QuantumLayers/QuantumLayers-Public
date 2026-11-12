@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Dataset Profiler — exhaustive per-column data dictionary | QuantumLayers</title>
 <meta name="description" content="Dataset profiler: an exhaustive, reference-style profile of every column in your dataset — type, missing %, distinct values, five-number summaries, histograms — exportable as a data dictionary. Powered by QuantumLayers." />
+<link rel="canonical" href="https://quantumlayers.com/tools/csv-data-profiler/" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4.2.5/build/index.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -177,16 +178,35 @@
   footer a:hover{color:var(--text)}
   footer .sep{color:var(--border)}
 </style>
+<style>
+  .ql-subbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .ql-subbar .crumbs{margin:18px 0 0}
+  .ql-subbar .auth-status{margin-top:18px}
+</style>
+<link rel="stylesheet" href="../ql-theme.css" />
 </head>
 <body>
+<header class="ql-site-header">
+  <div class="ql-site-header-inner">
+    <a class="ql-logo" href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=csv-data-profiler&amp;utm_content=header"><img src="https://quantumlayers.com/wp-content/uploads/2026/08/cropped-image-rounded.png" alt="QuantumLayers" width="40" height="40" /></a>
+    <nav class="ql-nav" aria-label="Site">
+      <a class="ql-link" href="../" aria-current="page">Free tools</a>
+      <a class="ql-link" href="https://quantumlayers.com/pricing?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=csv-data-profiler&amp;utm_content=header">Pricing</a>
+      <a class="ql-link" href="https://quantumlayers.com/help">Help</a>
+      <a class="ql-link" href="https://quantumlayers.com/blog">Blog</a>
+    </nav>
+    <div class="ql-nav-right">
+      <a class="ql-link ql-hide-sm" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools/csv-data-profiler" target="_blank" rel="noopener">GitHub</a>
+      <a class="ql-link ql-hide-sm" href="https://quantumlayers.com/ql-login">Login</a>
+      <a class="ql-link" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=csv-data-profiler&amp;utm_content=header">Register</a>
+    </div>
+  </div>
+</header>
 <div class="wrap">
 
-  <div class="top">
-    <a class="mark" href="./"><span class="dot"></span>dataset profiler</a>
-    <div class="top-right">
-      <span class="auth-status" id="authStatus"></span>
-      <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">open source &nearr;</a>
-    </div>
+  <div class="ql-subbar">
+    <nav class="crumbs"><a href="../">Free data tools</a> / Dataset profiler</nav>
+    <span class="auth-status" id="authStatus"></span>
   </div>
 
   <header class="hero">
@@ -209,13 +229,14 @@
       <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>flags new data-quality issues the moment they appear, not next time someone checks</span></div>
       <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>full stats, correlations, PCA and AI insights beyond a per-column dictionary</span></div>
     </div>
-    <a class="btn" href="https://quantumlayers.com/ql-register" target="_blank" rel="noopener">Keep your data dictionary current free &rarr;</a>
+    <a class="btn" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=csv-data-profiler&amp;utm_content=cta" target="_blank" rel="noopener">Keep your data dictionary current free &rarr;</a>
   </section>
 
   <footer>
     <span>MIT licensed</span><span class="sep">&middot;</span>
-    <span>built by <a href="https://quantumlayers.com" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
-    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+    <span>built by <a href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=csv-data-profiler&amp;utm_content=footer" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a><span class="sep">&middot;</span>
+    <a href="../">all free data tools</a>
   </footer>
 
 </div>
@@ -269,7 +290,7 @@ function friendlyError(err) {
   const codes = (window.QL && QL.ErrorCodes) || {};
   switch (err.code) {
     case codes.NETWORK:
-      return "Can’t reach the QuantumLayers demo backend right now — this is usually a temporary configuration issue (see DEPLOYMENT.md), not something wrong with your data. Try again shortly.";
+      return "Can’t reach QuantumLayers right now — check your connection and try again shortly.";
     case codes.AUTH_REQUIRED:
       return "Sign in to see this — it needs an authenticated session even on a public dataset.";
     case codes.INVALID_RESPONSE:
@@ -502,7 +523,7 @@ function dictionaryToMarkdown(dict, datasetName, rowCount) {
   const lines = [
     `# Data dictionary — ${datasetName}`,
     "",
-    `${rowCount.toLocaleString()} rows · ${dict.length} columns · generated ${new Date().toISOString().slice(0, 10)} via [Dataset Profiler](https://quantumlayers.github.io/QuantumLayers-Public/free-tools/csv-data-profiler/), powered by QuantumLayers.`,
+    `${rowCount.toLocaleString()} rows · ${dict.length} columns · generated ${new Date().toISOString().slice(0, 10)} via [Dataset Profiler](https://quantumlayers.com/tools/csv-data-profiler/), powered by QuantumLayers.`,
     "",
     "| Column | Type | Missing | Distinct | Summary |",
     "|---|---|---|---|---|",
@@ -788,10 +809,12 @@ function uploadPanelHTML() {
 function renderAuthPanel(opts) {
   opts = opts || {};
   const tab = opts.tab || "register";
+  const notice = opts.notice ? `<p class="empty-note">${esc(opts.notice)}</p>` : "";
   mount(`
     <div class="panel">
       <h2>Run this on your own data</h2>
       <p class="sub">This tool profiles real QuantumLayers datasets — it doesn’t run against a shared public demo. Create a free account (about 30 seconds) and we’ll build a full per-column profile and data dictionary for one of your own datasets, or sign in if you already have one.</p>
+      ${notice}
       <div class="tabs">
         <button data-action="auth-tab" data-tab="register" class="${tab === "register" ? "active" : ""}">Create free account</button>
         <button data-action="auth-tab" data-tab="login" class="${tab === "login" ? "active" : ""}">Sign in</button>
@@ -813,8 +836,8 @@ function registerFormHTML() {
   return `
     <form class="auth-form" data-form="register">
       <div class="row2">
-        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" /></div>
-        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" /></div>
+        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" autocomplete="given-name" required /></div>
+        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" autocomplete="family-name" required /></div>
       </div>
       <div class="field"><label for="re-email">Email</label><input id="re-email" name="email" type="email" required /></div>
       <div class="field"><label for="re-pass">Password</label><input id="re-pass" name="password" type="password" required minlength="8" /></div>
@@ -898,7 +921,14 @@ document.addEventListener("submit", (e) => {
       lastName: data.lastName,
       termsAgreed: !!data.termsAgreed,
     })
-      .then(() => route())
+      // QL doesn't sign a new account in: the address has to be verified
+      // by email first (see register() in ql-client.js). Send the visitor
+      // to the sign-in tab with QL's own message instead of a dead end.
+      .then((res) => {
+        if (res && res.pendingVerification) {
+          renderAuthPanel({ tab: "login", notice: (res.message || "Account created.") + " Once verified, sign in below." });
+        } else route();
+      })
       .catch((err) => { errEl.textContent = friendlyError(err); done(); });
   } else if (kind === "upload-dataset") {
     QL.uploadDataset(data.csvFile, data.datasetName, "private")

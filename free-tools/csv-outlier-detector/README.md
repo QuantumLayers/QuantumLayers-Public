@@ -3,7 +3,7 @@
 Free, QL-backed live demo. One job: surface the values in a dataset that
 don't belong.
 
-**[▶ Try the live demo](https://quantumlayers.github.io/QuantumLayers-Public/free-tools/csv-outlier-detector/)** &nbsp;·&nbsp; [Report an issue](https://github.com/quantumlayers/quantumlayers-public/issues)
+**[▶ Try the live demo](https://quantumlayers.com/tools/csv-outlier-detector/)** &nbsp;·&nbsp; [Report an issue](https://github.com/quantumlayers/quantumlayers-public/issues)
 
 <!-- Replace with a short screencast: the box plot loading, sensitivity toggled, sign-in → own dataset. -->
 ![demo](./demo.gif)
@@ -15,7 +15,9 @@ don't belong.
 - Underneath each chart: a plain-language summary ("N of M values fall
   outside the typical range"), an adjustable sensitivity control (Loose /
   Standard / Strict, i.e. 3×/1.5×/1×IQR), and a table of the flagged
-  values with which category group each one showed up in.
+  values with which category group each one showed up in. If the dataset
+  has no low-cardinality category column, each numeric column is scanned
+  as a single box (QL's `box_plot` with `x_column` omitted).
 - When signed in, cross-checks against QL's own authenticated
   `ql_get_distribution_analysis` call — its official outlier count,
   percentage, and distribution shape (skew/kurtosis-derived normality

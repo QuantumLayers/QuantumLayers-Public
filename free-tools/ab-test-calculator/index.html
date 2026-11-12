@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A/B test calculator — significance, lift confidence interval & SRM check | QuantumLayers</title>
+<meta name="description" content="A/B test calculator: enter visitors and conversions for control and variant to see whether the lift is statistically significant, with a confidence interval, sample-ratio-mismatch check and power. Free, runs in your browser." />
+<link rel="canonical" href="https://quantumlayers.com/tools/ab-test-calculator/" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../ab-test-calculator/calc.css" />
+<script src="../ql-stats.js"></script>
+<link rel="stylesheet" href="../ql-theme.css" />
+</head>
+<body data-default-tab="conv">
+<header class="ql-site-header">
+  <div class="ql-site-header-inner">
+    <a class="ql-logo" href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=ab-test-calculator&amp;utm_content=header"><img src="https://quantumlayers.com/wp-content/uploads/2026/08/cropped-image-rounded.png" alt="QuantumLayers" width="40" height="40" /></a>
+    <nav class="ql-nav" aria-label="Site">
+      <a class="ql-link" href="../" aria-current="page">Free tools</a>
+      <a class="ql-link" href="https://quantumlayers.com/pricing?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=ab-test-calculator&amp;utm_content=header">Pricing</a>
+      <a class="ql-link" href="https://quantumlayers.com/help">Help</a>
+      <a class="ql-link" href="https://quantumlayers.com/blog">Blog</a>
+    </nav>
+    <div class="ql-nav-right">
+      <a class="ql-link ql-hide-sm" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools/ab-test-calculator" target="_blank" rel="noopener">GitHub</a>
+      <a class="ql-link ql-hide-sm" href="https://quantumlayers.com/ql-login">Login</a>
+      <a class="ql-link" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=ab-test-calculator&amp;utm_content=header">Register</a>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="crumbs"><a href="../">Free data tools</a> / A/B test calculator</nav>
+
+  <header class="hero">
+    <h1>A/B test calculator</h1>
+    <p class="lede">Did the variant really win, or is it noise? Enter your results to get a plain-language verdict, the p-value, a confidence interval for the lift, and a check that traffic was split the way you intended — or plan how many visitors a test needs before you start.</p>
+    <p class="privacy-line">Free, no sign-up. All maths runs in your browser; nothing is sent anywhere.</p>
+  </header>
+
+  <main>
+    <div id="calc"></div>
+
+    <section class="explain">
+      <h2>What the numbers mean</h2>
+      <ul>
+        <li><b>p-value</b> — if A and B were truly identical, how often would a gap at least this big show up by chance? Below 0.05 is the usual bar for “significant” at 95% confidence.</li>
+        <li><b>Confidence interval</b> — the range of lifts that fit your data. If it spans zero, the data can’t rule out “no effect” — even if the point estimate looks great.</li>
+        <li><b>Sample ratio mismatch</b> — if you meant to split traffic 50:50 but got 52:48 on a big sample, something in the assignment or tracking is broken, and the result can’t be trusted whatever the p-value says.</li>
+        <li><b>Don’t peek and stop.</b> Checking every day and stopping the first time p dips under 0.05 inflates false positives a lot. Decide the sample size up front and evaluate once.</li>
+        <li><b>Methods.</b> Conversion rates: two-sided pooled two-proportion z-test (equivalent to a 2×2 chi-square), Wald interval for the difference, delta-method interval for the relative lift. Averages: Welch’s t-test and Cohen’s d; Mann–Whitney U on raw values. Sample size: normal approximation for two proportions. All checked against SciPy.</li>
+      </ul>
+      <p class="related">Related: <a href="../statistical-significance-calculator/">Statistical significance calculator</a><a href="../sample-size-calculator/">Sample size calculator</a><a href="../correlation-matrix/">Correlation matrix calculator</a><a href="https://quantumlayers.com/ab-testing-statistics">Guide: A/B testing statistics</a><a href="../">All free data tools</a></p>
+    </section>
+  </main>
+
+  <section class="cta">
+    <p class="eyebrow">one test vs. every metric</p>
+    <h2>Know when a metric really changed — without running the numbers by hand.</h2>
+    <p>QuantumLayers connects to your database, analytics or spreadsheets, runs significance tests like these across every segment, and monitors your key metrics so you’re emailed when something statistically shifts.</p>
+    <a class="btn" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=ab-test-calculator&amp;utm_content=cta" target="_blank" rel="noopener">Monitor your metrics free &rarr;</a>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span><span class="sep">&middot;</span>
+    <span>built by <a href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=ab-test-calculator&amp;utm_content=footer" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+  </footer>
+</div>
+<script src="../ab-test-calculator/calc.js"></script>
+</body>
+</html>

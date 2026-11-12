@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Data Chart Maker — instant charts from any dataset | QuantumLayers</title>
 <meta name="description" content="Data chart maker: pick a dataset and columns, get a clean chart in seconds — powered by QuantumLayers' real chart engine and auto-recommendation. Free live demo, sign in to chart your own data." />
+<link rel="canonical" href="https://quantumlayers.com/tools/instant-chart-maker/" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4.2.5/build/index.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -175,16 +176,35 @@
   footer a:hover{color:var(--text)}
   footer .sep{color:var(--border)}
 </style>
+<style>
+  .ql-subbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .ql-subbar .crumbs{margin:18px 0 0}
+  .ql-subbar .auth-status{margin-top:18px}
+</style>
+<link rel="stylesheet" href="../ql-theme.css" />
 </head>
 <body>
+<header class="ql-site-header">
+  <div class="ql-site-header-inner">
+    <a class="ql-logo" href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=instant-chart-maker&amp;utm_content=header"><img src="https://quantumlayers.com/wp-content/uploads/2026/08/cropped-image-rounded.png" alt="QuantumLayers" width="40" height="40" /></a>
+    <nav class="ql-nav" aria-label="Site">
+      <a class="ql-link" href="../" aria-current="page">Free tools</a>
+      <a class="ql-link" href="https://quantumlayers.com/pricing?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=instant-chart-maker&amp;utm_content=header">Pricing</a>
+      <a class="ql-link" href="https://quantumlayers.com/help">Help</a>
+      <a class="ql-link" href="https://quantumlayers.com/blog">Blog</a>
+    </nav>
+    <div class="ql-nav-right">
+      <a class="ql-link ql-hide-sm" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools/instant-chart-maker" target="_blank" rel="noopener">GitHub</a>
+      <a class="ql-link ql-hide-sm" href="https://quantumlayers.com/ql-login">Login</a>
+      <a class="ql-link" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=instant-chart-maker&amp;utm_content=header">Register</a>
+    </div>
+  </div>
+</header>
 <div class="wrap">
 
-  <div class="top">
-    <a class="mark" href="./"><span class="dot"></span>data chart maker</a>
-    <div class="top-right">
-      <span class="auth-status" id="authStatus"></span>
-      <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">open source &nearr;</a>
-    </div>
+  <div class="ql-subbar">
+    <nav class="crumbs"><a href="../">Free data tools</a> / Instant chart maker</nav>
+    <span class="auth-status" id="authStatus"></span>
   </div>
 
   <header class="hero">
@@ -207,13 +227,14 @@
       <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>writes the narrative &mdash; what changed, why it matters, in plain English</span></div>
       <div><span class="from">QuantumLayers</span><span class="arrow">&rarr;</span><span>saves charts and schedules reports, so you&rsquo;re not rebuilding this every time</span></div>
     </div>
-    <a class="btn" href="https://quantumlayers.com/ql-register" target="_blank" rel="noopener">Auto-chart your live data free &rarr;</a>
+    <a class="btn" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=instant-chart-maker&amp;utm_content=cta" target="_blank" rel="noopener">Auto-chart your live data free &rarr;</a>
   </section>
 
   <footer>
     <span>MIT licensed</span><span class="sep">&middot;</span>
-    <span>built by <a href="https://quantumlayers.com" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
-    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+    <span>built by <a href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=instant-chart-maker&amp;utm_content=footer" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a><span class="sep">&middot;</span>
+    <a href="../">all free data tools</a>
   </footer>
 
 </div>
@@ -266,28 +287,41 @@ const FIELD_DEFS = {
   // get_chart_data tool's own param schema and a real recommended-charts
   // response used "average"); the docs' prose says "sum/avg/count/min/max"
   // but that abbreviation doesn't match what the server actually accepts.
-  aggregation: { param: "aggregation",     label: "Aggregation",        select: ["sum", "average", "count", "min", "max"] },
+  // Each chart type's server-side handler accepts a different set of
+  // aggregation keywords (checked against QL's charts.php): bar/horizontal_bar
+  // only know sum/average (anything else silently becomes sum); pie/doughnut
+  // add min/max (counting is done by omitting the value column); heatmap
+  // adds count; time series add count/median and "none" (raw points).
+  aggregation: { param: "aggregation",     label: "Aggregation",        select: ["sum", "average"] },
+  aggPie:      { param: "aggregation",     label: "Aggregation (when a value column is set)", select: ["sum", "average", "min", "max"] },
+  aggHeat:     { param: "aggregation",     label: "Aggregation",        select: ["average", "sum", "min", "max", "count"] },
+  aggTime:     { param: "aggregation",     label: "Aggregation",        select: ["sum", "average", "min", "max", "count", "median", "none"] },
   interval:    { param: "interval",        label: "Interval",           select: ["day", "week", "month", "year"] },
   limit:       { param: "limit",           label: "Limit",              number: true, default: 10 },
 };
 const CHART_TYPES = {
   bar:            { label: "Bar",            fields: ["category", "valueMulti", "aggregation"] },
   horizontal_bar: { label: "Horizontal bar", fields: ["category", "valueMulti", "aggregation"] },
-  line:           { label: "Line",           fields: ["x", "y", "aggregation"] },
-  area:           { label: "Area",           fields: ["x", "y", "aggregation"] },
-  pie:            { label: "Pie",            fields: ["category", "value", "aggregation", "limit"] },
-  doughnut:       { label: "Doughnut",       fields: ["category", "value", "aggregation", "limit"] },
+  // No literal "line"/"area" chart_type: QL's ql_get_chart_data answers
+  // "Unknown chart type" for both. Line and area charts are QL's
+  // time_series (Chart.js "line" on a time axis) and stacked_area (same,
+  // fill: true — a plain area chart with one value column), below.
+  pie:            { label: "Pie",            fields: ["category", "value", "aggPie", "limit"] },
+  doughnut:       { label: "Doughnut",       fields: ["category", "value", "aggPie", "limit"] },
   scatter:        { label: "Scatter",        fields: ["x", "y", "colorOpt", "sizeOpt"] },
   bubble:         { label: "Bubble",         fields: ["x", "y", "size", "colorOpt"] },
   box_plot:       { label: "Box plot",       fields: ["x", "y"] },
   violin:         { label: "Violin",         fields: ["x", "y"] },
-  heatmap:        { label: "Heatmap",        fields: ["x", "y", "z", "aggregation"] },
+  heatmap:        { label: "Heatmap",        fields: ["x", "y", "z", "aggHeat"] },
   histogram:      { label: "Histogram",      fields: ["column"] },
-  time_series:    { label: "Time series",    fields: ["time", "valueMulti", "aggregation", "interval"] },
-  stacked_area:   { label: "Stacked area",   fields: ["time", "valueMulti", "aggregation", "interval"] },
+  time_series:    { label: "Line (time series)",    fields: ["time", "valueMulti", "aggTime", "interval"] },
+  stacked_area:   { label: "Area / stacked area",   fields: ["time", "valueMulti", "aggTime", "interval"] },
   regression:     { label: "Regression",     fields: ["y", "xMulti"] },
 };
 const MAX_RECOMMENDATIONS = 5;
+// QL's insight pipeline can recommend "matrix" — the server's alias for
+// heatmap (same handler, same params).
+function normalizeChartType(t) { return t === "matrix" ? "heatmap" : t; }
 
 // ---------------------------------------------------------------------
 // small helpers
@@ -308,7 +342,7 @@ function friendlyError(err) {
   const codes = (window.QL && QL.ErrorCodes) || {};
   switch (err.code) {
     case codes.NETWORK:
-      return "Can’t reach the QuantumLayers demo backend right now — this is usually a temporary configuration issue (see DEPLOYMENT.md), not something wrong with your data. Try again shortly.";
+      return "Can’t reach QuantumLayers right now — check your connection and try again shortly.";
     case codes.AUTH_REQUIRED:
       return "Sign in to see this — it needs an authenticated session even on a public dataset.";
     case codes.INVALID_RESPONSE:
@@ -375,7 +409,7 @@ function themeConfig(config) {
       if (!ds.backgroundColor || typeof ds.backgroundColor === "string") ds.backgroundColor = ds.backgroundColor || c + "cc";
       if (!ds.borderColor) ds.borderColor = c;
       if (config.type === "boxplot" || config.type === "violin") {
-        ds.outlierColor = "#ffcc33";
+        ds.outlierColor = "#22d3ee";
         ds.outlierRadius = 4;
       }
     });
@@ -636,11 +670,17 @@ async function renderOwnChartMaker(datasetId, datasetName) {
     let recommendations = null;
     try {
       const recData = await QL.recommendedCharts(datasetId, { maxCharts: MAX_RECOMMENDATIONS });
-      // The response envelope key is "candidates", not "charts" — confirmed
-      // against a live response (this was wrong in an earlier version and
-      // meant this whole recommendation feature silently never fired,
-      // always falling through to the manual default below instead).
-      recommendations = (recData && recData.candidates) || null;
+      // The AJAX endpoint (QL_Charts::getRecommendedCharts) returns
+      // { charts: [{ chart_type, chart_data, params, insight_score, reason }] }
+      // — each with a ready-to-render chart_data. The `candidates` shape
+      // (no chart_data) belongs to the lighter discovery call behind QL's
+      // MCP/agent get_recommended_charts tool, which is what an earlier
+      // "live check" actually hit. Accept both, normalised.
+      const raw = (recData && (recData.charts || recData.candidates)) || [];
+      recommendations = raw
+        .map((r) => Object.assign({}, r, { chart_type: normalizeChartType(r.chart_type) }))
+        .filter((r) => CHART_TYPES[r.chart_type]);
+      if (!recommendations.length) recommendations = null;
     } catch (e) {
       recommendations = null; // optional enrichment — fall back to a manual default below
     }
@@ -649,10 +689,8 @@ async function renderOwnChartMaker(datasetId, datasetName) {
     if (recommendations && recommendations.length) {
       chartType = recommendations[0].chart_type;
       params = recommendations[0].params;
-      // Candidates don't actually include a ready-made chart_data (also
-      // confirmed against a live response, despite QL-INTEGRATION.md
-      // documenting one) — this stays undefined and the code below
-      // correctly falls back to fetching it via QL.chart().
+      // Present on the AJAX endpoint's `charts` entries; if a candidate
+      // without it ever comes back, the code below fetches it via QL.chart().
       initialConfig = recommendations[0].chart_data;
     } else {
       // No recommendation available (e.g. too few columns/rows) — fall back
@@ -717,10 +755,12 @@ async function boot() {
 function renderAuthPanel(opts) {
   opts = opts || {};
   const tab = opts.tab || "register";
+  const notice = opts.notice ? `<p class="empty-note">${esc(opts.notice)}</p>` : "";
   mount(`
     <div class="panel">
       <h2>Run this on your own data</h2>
       <p class="sub">This tool runs on real QuantumLayers datasets. Create a free account (about 30 seconds) and we’ll load QL’s auto-recommended chart for one of your own datasets &mdash; or sign in if you already have one.</p>
+      ${notice}
       <div class="tabs">
         <button data-action="auth-tab" data-tab="register" class="${tab === "register" ? "active" : ""}">Create free account</button>
         <button data-action="auth-tab" data-tab="login" class="${tab === "login" ? "active" : ""}">Sign in</button>
@@ -742,8 +782,8 @@ function registerFormHTML() {
   return `
     <form class="auth-form" data-form="register">
       <div class="row2">
-        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" /></div>
-        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" /></div>
+        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" autocomplete="given-name" required /></div>
+        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" autocomplete="family-name" required /></div>
       </div>
       <div class="field"><label for="re-email">Email</label><input id="re-email" name="email" type="email" required /></div>
       <div class="field"><label for="re-pass">Password</label><input id="re-pass" name="password" type="password" required minlength="8" /></div>
@@ -832,7 +872,14 @@ document.addEventListener("submit", (e) => {
       lastName: data.lastName,
       termsAgreed: !!data.termsAgreed,
     })
-      .then(() => route())
+      // QL doesn't sign a new account in: the address has to be verified
+      // by email first (see register() in ql-client.js). Send the visitor
+      // to the sign-in tab with QL's own message instead of a dead end.
+      .then((res) => {
+        if (res && res.pendingVerification) {
+          renderAuthPanel({ tab: "login", notice: (res.message || "Account created.") + " Once verified, sign in below." });
+        } else route();
+      })
       .catch((err) => { errEl.textContent = friendlyError(err); done(); });
   } else if (kind === "upload-dataset") {
     QL.uploadDataset(data.csvFile, data.datasetName, "private")

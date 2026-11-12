@@ -54,6 +54,27 @@ implications" section below) — every tool here always requires a Bearer
 token before showing any QL output, so the `ql_try_auth`/`ql_verify_auth`
 distinction no longer changes what a tool can build.
 
+## Verified against QL's server code (2026-11-12)
+
+Everything below in this file was originally written from the public docs
+plus a handful of live calls. A later pass checked each endpoint this repo
+uses against QL's actual PHP handlers. Where the two disagree, **the code
+wins**, and the affected sections below have been corrected in place:
+
+| Topic | What the server code actually does |
+|---|---|
+| CORS | `ql_cors_headers()` runs on `init` for every `admin-ajax.php` request, echoes the caller's `Origin` (allow-list filter `ql_cors_allowed_origins`, default `*`), allows `Authorization, Content-Type`, and answers `OPTIONS` preflights with 204. That's *why* CORS isn't a blocker — not an assumption. |
+| Token transport | `ql_get_request_token()` reads `Authorization: Bearer …` first, then falls back to a `session_token` POST field (useful if a proxy strips the header). |
+| `ql_user_signup` | Requires `email`, `password` (≥ 8 chars), **`first_name` and `last_name`** (blank → "All fields except company are required."), and `terms_agreed` equal to the string `"true"`. Success is flat `{ success, message, user_id }` with **no `session_token`** — the account must verify its email before `ql_user_signin` will accept it. `QL.register()` now resolves `{ pendingVerification: true, message }` for this case and every tool sends the visitor to the sign-in tab with QL's message. |
+| `ql_user_signin` `remember` | Read with `isset()`, so *any* value (including `false`) turns "remember me" on. `QL.login()` only sends it when truthy. |
+| `ql_upload_dataset` | Uses `wp_send_json_success`, so the payload is nested: `{ success, data: { message, dataset_id, dataset_name } }`. Accepted MIME types: `text/csv`, `text/plain`, `application/csv`, `application/vnd.ms-excel`. Processing is synchronous. |
+| `ql_get_recommended_charts` | Returns **`{ charts: [...], analysis_summary }`**, and every entry *does* carry a ready-to-render `chart_data` (candidates whose chart fails to generate are dropped server-side). The `candidates` shape without `chart_data` belongs to a different function — the lightweight discovery behind QL's MCP/agent `get_recommended_charts` tool. See the corrected section below. |
+| Chart types | `ql_get_chart_data` handles `histogram`, `time_series`, `stacked_area`, `scatter`, `bar`, `horizontal_bar`, `pie`, `doughnut`, `regression`, `box_plot`, `violin`, `bubble`, `heatmap`/`matrix` (aliases), plus `column_types` and `missing_data`. **Line and area charts exist under other names:** `time_series` returns a Chart.js `line` config on a time axis, and `stacked_area` is the same with `fill: true` (a plain area chart with one value column). A literal `chart_type: line` or `area` returns "Unknown chart type". The API guide's Quick Reference table used to list them (and misname the `bar`, `box_plot`, `heatmap` and `time_series` params); it was corrected on 2026-11-12 in this repo's `docs/`, in the private repo's `pages/`, and on the live quantumlayers.com page. |
+| `box_plot` / `violin` | `y_column` required (numeric). `x_column` is **optional**: omitted → one box for the whole column. When given it must be a string column or a numeric column with < 1 % distinct values. |
+| Aggregation keywords | `bar`/`horizontal_bar`: `sum`, `average` (also `avg`/`mean`) — anything else silently becomes `sum`. `pie`/`doughnut`: `sum`, `average`, `min`, `max`; omit `value_column` to count rows. `heatmap`: `average` (default), `sum`, `min`, `max`, `count`. `time_series`/`stacked_area`: `none` (raw points), `sum`, `mean`/`average`, `min`, `max`, `count`, `median`. |
+| `ql_get_statistical_summary` | Its `count` field is the column's **distinct** count (`dataset_columns.distinct_count`), not the non-null count. Use `ql_get_dataset_detail`'s `row_count − null_count` for that. |
+| Correlation | `ql_get_correlation_matrix` is Pearson with pairwise deletion (each pair uses rows where both values are numeric), rounded to 4 dp; no p-values are returned. |
+
 ## Endpoints tools in this repo actually use
 
 All via POST to `admin-ajax.php`:
@@ -114,7 +135,19 @@ after the bug was caught by a live API check — its sensitivity control
 only offers "QL's default" and "a stricter subset of QL's default" for
 exactly this reason.
 
-### `ql_get_recommended_charts`'s response envelope key — CORRECTED
+### `ql_get_recommended_charts`'s response envelope key — RE-CORRECTED against the server code
+
+⚠️ **The "correction" below was itself wrong for this endpoint.** QL's
+`QL_Charts::getRecommendedCharts()` — the function behind the
+`ql_get_recommended_charts` AJAX action — returns `{ charts: [{ chart_type,
+chart_data, insight_score, reason, metadata, params }], analysis_summary }`.
+The `candidates` envelope with no `chart_data` is what QL's *MCP/agent*
+`get_recommended_charts` tool returns (a lighter discovery function), which
+is almost certainly what the "live call" below exercised.
+`instant-chart-maker` now reads `charts` first and falls back to
+`candidates`, so it works with either. Original (superseded) note follows.
+
+#### Superseded note
 
 ⚠️ Also previously documented wrong: the response's chart-candidates array
 is under the key **`candidates`**, not `charts`. Confirmed against a live
@@ -212,8 +245,10 @@ This is genuinely inconsistent across the endpoint *family*, not just
 nested (`res.data.session_token`), per QL's own "Complete Code Example" in
 `embedded-analytics-api.html`, and `ql_check_auth`'s is nested too
 (`response.data.logged_in`, `response.data.user`) per the JDK guide.
-`ql_user_signup`'s shape isn't confirmed either way by the docs or by a
-live call yet.
+`ql_user_signup`'s shape is now confirmed from QL's server code: flat
+`{ success, message, user_id }`, and **no session token at all** — new
+accounts must verify their email before signing in. See the "Verified
+against QL's server code" table at the top.
 
 **Fix applied:** `login()`/`register()`/`thirdPartySignin()` now call
 `call()` with `{ raw: true }` (resolving to the whole envelope, not
@@ -226,7 +261,9 @@ sign-in (`message`/`error` probably also flat on `ql_user_signin`, not
 If you add a new sign-in-issuing endpoint, don't assume either shape —
 verify against a live call first.
 
-**Same caution applied to `ql_upload_dataset`, unverified:** the API
+**`ql_upload_dataset` — now confirmed from the server code:** it uses
+`wp_send_json_success`, so the payload is nested under `data`. The
+both-shapes check described next stays in place and handles it. Original note: the API
 guide's own example shows a flat `{ message, dataset_id, dataset_name }`
 — exactly the shape its `ql_user_signin` example turned out to be right
 about, right before that same abbreviated-example format proved wrong for
@@ -247,7 +284,10 @@ the "Type-specific params" and "Chart Type Quick Reference" tables in
 filter params `filter_category_column`/`filter_category_value` and
 `filter_date_column`/`filter_date_from`/`filter_date_to`.
 
-**⚠️ Those two tables disagree with each other for `bar`/`horizontal_bar`,
+**✅ Fixed 2026-11-12:** the Quick Reference table now matches the server
+code and the "Type-specific params" table. Historical note follows.
+
+**⚠️ Those two tables disagreed with each other for `bar`/`horizontal_bar`,
 `box_plot`/`violin`, `heatmap`, and `time_series`/`stacked_area`** — e.g.
 the "Type-specific params" table names `bar`'s params `category_column` +
 `value_columns[]`, while the separate "Chart Type Quick Reference" table
@@ -258,9 +298,15 @@ prose explicitly says `box_plot` "groups raw `y_column` values by the
 categories in `x_column`" and `heatmap` "aggregates `z_column` for every
 unique `(x_column, y_column)` coordinate pair," which settles those two
 in favor of the first table's naming. `line` and `area` aren't described
-in prose at all (only in the quick-reference table), so for those two
-specifically the quick-reference table's `x_column`/`y_column`/`aggregation`
-is the only source and what's used. If you hit a `success: false` from
+in prose at all (only in the quick-reference table) — and QL's server has
+**no handler for either name** (verified against `charts.php`; both answer
+"Unknown chart type"). The charts themselves are `time_series` (line) and
+`stacked_area` (area), which `instant-chart-maker` labels "Line (time
+series)" and "Area / stacked area". The
+server code also settles the table conflict for good: `bar`/`horizontal_bar`
+take `category_column` + `value_columns[]`; `box_plot`/`violin` and
+`heatmap` take `x_column`/`y_column` (+ `z_column`); `time_series`/
+`stacked_area` take `time_column` + `value_columns[]` + `interval`. If you hit a `success: false` from
 one of these four chart types, the param names are the first thing to
 double-check against the live API before assuming something else is wrong.
 

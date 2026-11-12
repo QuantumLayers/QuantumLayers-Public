@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sample size calculator for A/B tests — visitors and duration needed | QuantumLayers</title>
+<meta name="description" content="Sample size calculator for A/B tests: from your baseline conversion rate, minimum detectable effect, power and confidence, get the visitors needed per variant and how many days the test must run. Free, runs in your browser." />
+<link rel="canonical" href="https://quantumlayers.com/tools/sample-size-calculator/" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../ab-test-calculator/calc.css" />
+<script src="../ql-stats.js"></script>
+<link rel="stylesheet" href="../ql-theme.css" />
+</head>
+<body data-default-tab="plan">
+<header class="ql-site-header">
+  <div class="ql-site-header-inner">
+    <a class="ql-logo" href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=sample-size-calculator&amp;utm_content=header"><img src="https://quantumlayers.com/wp-content/uploads/2026/08/cropped-image-rounded.png" alt="QuantumLayers" width="40" height="40" /></a>
+    <nav class="ql-nav" aria-label="Site">
+      <a class="ql-link" href="../" aria-current="page">Free tools</a>
+      <a class="ql-link" href="https://quantumlayers.com/pricing?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=sample-size-calculator&amp;utm_content=header">Pricing</a>
+      <a class="ql-link" href="https://quantumlayers.com/help">Help</a>
+      <a class="ql-link" href="https://quantumlayers.com/blog">Blog</a>
+    </nav>
+    <div class="ql-nav-right">
+      <a class="ql-link ql-hide-sm" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools/ab-test-calculator" target="_blank" rel="noopener">GitHub</a>
+      <a class="ql-link ql-hide-sm" href="https://quantumlayers.com/ql-login">Login</a>
+      <a class="ql-link" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=sample-size-calculator&amp;utm_content=header">Register</a>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="crumbs"><a href="../">Free data tools</a> / Sample size calculator</nav>
+
+  <header class="hero">
+    <h1>Sample size calculator</h1>
+    <p class="lede">How many visitors does a test need before its result means anything? Enter your current conversion rate, the smallest lift worth detecting and your daily traffic to get the sample size per variant and the test duration.</p>
+    <p class="privacy-line">Free, no sign-up. All maths runs in your browser; nothing is sent anywhere.</p>
+  </header>
+
+  <main>
+    <div id="calc"></div>
+
+    <section class="explain">
+      <h2>Choosing the inputs</h2>
+      <ul>
+        <li><b>Minimum detectable effect</b> — the smallest relative lift you’d act on. Halving it roughly quadruples the sample size, so be honest about what’s worth detecting.</li>
+        <li><b>Power</b> — the chance the test detects the effect if it’s real. 80% is standard; 90% costs about a third more traffic.</li>
+        <li><b>Confidence</b> — 95% means a 5% false-positive rate when there’s no real effect. With more than two variants the calculator splits that budget across comparisons (Bonferroni).</li>
+        <li><b>Run whole weeks</b> and don’t stop early when results look good — stopping on a lucky day is the most common way tests mislead.</li>
+        <li><b>Methods.</b> Conversion rates: two-sided pooled two-proportion z-test (equivalent to a 2×2 chi-square), Wald interval for the difference, delta-method interval for the relative lift. Averages: Welch’s t-test and Cohen’s d; Mann–Whitney U on raw values. Sample size: normal approximation for two proportions. All checked against SciPy.</li>
+      </ul>
+      <p class="related">Related: <a href="../ab-test-calculator/">A/B test calculator</a><a href="../statistical-significance-calculator/">Statistical significance calculator</a><a href="../correlation-matrix/">Correlation matrix calculator</a><a href="https://quantumlayers.com/ab-testing-statistics">Guide: A/B testing statistics</a><a href="../">All free data tools</a></p>
+    </section>
+  </main>
+
+  <section class="cta">
+    <p class="eyebrow">one test vs. every metric</p>
+    <h2>Know when a metric really changed — without running the numbers by hand.</h2>
+    <p>QuantumLayers connects to your database, analytics or spreadsheets, runs significance tests like these across every segment, and monitors your key metrics so you’re emailed when something statistically shifts.</p>
+    <a class="btn" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=sample-size-calculator&amp;utm_content=cta" target="_blank" rel="noopener">Monitor your metrics free &rarr;</a>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span><span class="sep">&middot;</span>
+    <span>built by <a href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=sample-size-calculator&amp;utm_content=footer" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+  </footer>
+</div>
+<script src="../ab-test-calculator/calc.js"></script>
+</body>
+</html>

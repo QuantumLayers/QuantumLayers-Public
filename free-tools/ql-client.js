@@ -304,17 +304,33 @@
    * QL-INTEGRATION.md's "What a static tool actually uses" section.
    */
   function login(email, password, remember) {
+    // ql_user_signin reads `remember` with isset(), not its value — sending
+    // remember=false would still turn "remember me" on. Only send it when
+    // it's actually wanted.
     return call(
       'ql_user_signin',
-      { email: email, password: password, remember: !!remember },
+      { email: email, password: password, remember: remember ? 1 : undefined },
       { auth: 'none', raw: true }
     ).then(applySessionResponse);
   }
 
   /**
    * Native QL registration (ql_user_signup). `fields` mirrors the form
-   * QL's own registration page submits; only email/password/terms_agreed
-   * are truly required, the rest are optional metadata QL accepts.
+   * QL's own registration page submits.
+   *
+   * Verified against QL's server code (QL_Auth::ajaxRegister/register):
+   *  - email, password (>= 8 chars), first_name AND last_name are all
+   *    required — the server rejects the request with "All fields except
+   *    company are required." if either name is blank.
+   *  - terms_agreed must be the literal string "true".
+   *  - A successful signup does NOT sign the user in: the response is a flat
+   *    `{ success: true, message, user_id }` with no session_token, because
+   *    QL requires the email address to be verified first (ql_user_signin
+   *    refuses unverified accounts and re-sends the verification email).
+   *
+   * So this resolves to `{ pendingVerification: true, message, userId }`
+   * when no token comes back (the normal case today), and only signs the
+   * user in if a future QL version starts returning a session_token here.
    */
   function register(fields) {
     fields = fields || {};
@@ -332,7 +348,21 @@
         referred_by_code: fields.referredByCode,
       },
       { auth: 'none', raw: true }
-    ).then(applySessionResponse);
+    ).then(function (json) {
+      var hasToken =
+        (json && typeof json.session_token === 'string' && json.session_token) ||
+        (json && json.data && typeof json.data.session_token === 'string' && json.data.session_token);
+      if (hasToken) {
+        return { pendingVerification: false, user: applySessionResponse(json) };
+      }
+      return {
+        pendingVerification: true,
+        userId: (json && (json.user_id || (json.data && json.data.user_id))) || null,
+        message:
+          (json && (json.message || (json.data && json.data.message))) ||
+          'Account created — check your email to verify it, then sign in.',
+      };
+    });
   }
 
   /**
@@ -377,9 +407,15 @@
         clearSession();
         return null;
       })
-      .catch(function () {
-        clearSession();
-        return null;
+      .catch(function (err) {
+        // Only an answer from QL itself (expired/invalid token) means the
+        // session is gone. A NETWORK/INVALID_RESPONSE blip shouldn't sign
+        // the visitor out — keep the token and let the next call retry.
+        if (err && err.code === 'API_ERROR') {
+          clearSession();
+          return null;
+        }
+        return getCurrentUser();
       });
   }
 

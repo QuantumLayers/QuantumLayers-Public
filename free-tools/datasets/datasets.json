@@ -1,0 +1,611 @@
+{
+  "_readme": "Curated public datasets published as static pages at quantumlayers.com/tools/datasets/<slug>/. Each entry is fetched with the same parser QuantumLayers' REST connector uses (../public-api-tester/api-parse.js). Pages state facts only — interpretation belongs in the Analyze This! posts linked under `analysis`. Set analysis.published to true once the post is live; until then the link is left out. Build: node free-tools/datasets/build.js (see README.md).",
+  "datasets": [
+    {
+      "slug": "world-bank-life-expectancy",
+      "title": "Life expectancy at birth by country, 2000–2024",
+      "source": "World Bank",
+      "source_url": "https://data.worldbank.org/indicator/SP.DYN.LE00.IN",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "World Bank, World Development Indicators (SP.DYN.LE00.IN)",
+      "description": "Life expectancy at birth, in years, for every country and World Bank region or income group, annually from 2000 to 2024, from the World Bank's World Development Indicators.",
+      "keywords": [
+        "life expectancy by country",
+        "life expectancy data",
+        "World Bank life expectancy",
+        "SP.DYN.LE00.IN",
+        "life expectancy CSV"
+      ],
+      "api_url": "https://api.worldbank.org/v2/country/all/indicator/SP.DYN.LE00.IN?format=json&date=2000:2024&per_page=20000",
+      "response_path": "1",
+      "template": "World Bank → Life expectancy at birth — all countries",
+      "columns": {
+        "country.value": "country",
+        "countryiso3code": "iso3",
+        "date": "year",
+        "value": "life_expectancy_years"
+      },
+      "fields": {
+        "country": "Country, region or income group name",
+        "iso3": "ISO 3166-1 alpha-3 code (World Bank aggregate code for regions and groups)",
+        "year": "Calendar year",
+        "life_expectancy_years": "Life expectancy at birth, total, in years"
+      },
+      "sort": [
+        "country",
+        "year"
+      ],
+      "chart": {
+        "x": "year",
+        "y": "life_expectancy_years",
+        "series": "country",
+        "show": [
+          "World",
+          "Japan",
+          "United States",
+          "China",
+          "India",
+          "Sub-Saharan Africa"
+        ]
+      },
+      "analysis": {
+        "title": "Analyze This! 25 Years of Life Expectancy from the World Bank",
+        "url": "https://quantumlayers.com/analyze-this-world-bank-life-expectancy",
+        "published": false
+      }
+    },
+    {
+      "slug": "imf-weo-real-gdp-growth",
+      "title": "Real GDP growth by country, IMF World Economic Outlook",
+      "source": "International Monetary Fund",
+      "source_url": "https://www.imf.org/en/Publications/WEO",
+      "license": "IMF copyright — free reuse with attribution",
+      "license_url": "https://www.imf.org/external/terms.htm",
+      "attribution": "IMF, World Economic Outlook database (NGDP_RPCH)",
+      "description": "Annual real GDP growth (percent change) for eight major economies from the IMF World Economic Outlook, including the IMF's estimates and projections for recent and coming years.",
+      "keywords": [
+        "real GDP growth by country",
+        "IMF GDP growth data",
+        "World Economic Outlook GDP",
+        "NGDP_RPCH",
+        "GDP growth CSV"
+      ],
+      "api_url": "https://api.imf.org/external/sdmx/3.0/data/dataflow/IMF.RES/WEO/+/USA+CHN+JPN+DEU+IND+GBR+FRA+BRA.NGDP_RPCH.A",
+      "response_path": "",
+      "template": "IMF → Real GDP growth (%) — WEO",
+      "columns": {
+        "TIME_PERIOD": "year",
+        "USA": "united_states",
+        "CHN": "china",
+        "JPN": "japan",
+        "DEU": "germany",
+        "IND": "india",
+        "GBR": "united_kingdom",
+        "FRA": "france",
+        "BRA": "brazil"
+      },
+      "fields": {
+        "year": "Calendar year",
+        "*": "Real GDP growth, percent change from the previous year"
+      },
+      "sort": [
+        "year"
+      ],
+      "chart": {
+        "x": "year",
+        "y": [
+          "united_states",
+          "china",
+          "japan",
+          "germany",
+          "india",
+          "united_kingdom",
+          "france",
+          "brazil"
+        ],
+        "unit": "%",
+        "mark_today": true
+      },
+      "note": "Values for the current and future years are IMF projections from the latest World Economic Outlook edition.",
+      "analysis": {
+        "title": "Analyze This! 50 Years of GDP Growth from the IMF World Economic Outlook",
+        "url": "https://quantumlayers.com/analyze-this-imf-world-economic-outlook-gdp-growth",
+        "published": false
+      }
+    },
+    {
+      "slug": "noaa-central-park-monthly-climate",
+      "title": "Central Park, New York monthly temperature and precipitation, 1990–2024",
+      "source": "NOAA National Centers for Environmental Information",
+      "source_url": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-monthly",
+      "license": "US Government work — public domain",
+      "license_url": "https://www.noaa.gov/disclaimer",
+      "attribution": "NOAA NCEI, Global Summary of the Month, station USW00094728 (New York Central Park)",
+      "description": "Monthly average, maximum and minimum temperature (°C) and total precipitation (mm) at the New York Central Park weather station (USW00094728), January 1990 to December 2024, from NOAA's Global Summary of the Month.",
+      "keywords": [
+        "Central Park weather data",
+        "New York monthly temperature data",
+        "NOAA GSOM",
+        "NYC historical weather CSV",
+        "USW00094728"
+      ],
+      "api_url": "https://www.ncei.noaa.gov/access/services/data/v1?format=json&units=metric&includeStationName=true&stations=USW00094728&dataset=global-summary-of-the-month&dataTypes=TAVG,TMAX,TMIN,PRCP&startDate=1990-01-01&endDate=2024-12-31",
+      "response_path": "",
+      "template": "NOAA → Monthly climate summaries (GSOM)",
+      "columns": {
+        "DATE": "month",
+        "TAVG": "temp_avg_c",
+        "TMAX": "temp_max_c",
+        "TMIN": "temp_min_c",
+        "PRCP": "precipitation_mm"
+      },
+      "fields": {
+        "month": "Year and month (YYYY-MM)",
+        "temp_avg_c": "Average temperature for the month, °C",
+        "temp_max_c": "Average daily maximum temperature, °C",
+        "temp_min_c": "Average daily minimum temperature, °C",
+        "precipitation_mm": "Total precipitation for the month, mm"
+      },
+      "sort": [
+        "month"
+      ],
+      "chart": {
+        "x": "month",
+        "y": [
+          "temp_max_c",
+          "temp_avg_c",
+          "temp_min_c"
+        ],
+        "unit": "°C",
+        "aggregate": "year",
+        "labels": {
+          "temp_max_c": "Average daily maximum",
+          "temp_avg_c": "Monthly average",
+          "temp_min_c": "Average daily minimum"
+        }
+      },
+      "analysis": {
+        "title": "Analyze This! 35 Years of Central Park Weather from NOAA",
+        "url": "https://quantumlayers.com/analyze-this-noaa-central-park-climate",
+        "published": false
+      }
+    },
+    {
+      "slug": "berlin-daily-weather-2015-2024",
+      "title": "Berlin daily weather, 2015–2024 (ERA5 via Open-Meteo)",
+      "source": "Open-Meteo",
+      "source_url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "Weather data by Open-Meteo.com; ERA5 reanalysis by Copernicus Climate Change Service / ECMWF",
+      "description": "Daily mean, maximum and minimum temperature (°C), precipitation (mm) and maximum wind speed (km/h) for Berlin (52.52° N, 13.41° E), 1 January 2015 to 31 December 2024, from the ERA5 reanalysis served by Open-Meteo.",
+      "keywords": [
+        "Berlin historical weather data",
+        "Berlin daily temperature",
+        "Open-Meteo historical weather",
+        "ERA5 Berlin",
+        "Berlin weather CSV"
+      ],
+      "api_url": "https://archive-api.open-meteo.com/v1/archive?latitude=52.52&longitude=13.41&timezone=auto&start_date=2015-01-01&end_date=2024-12-31&daily=temperature_2m_mean,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
+      "response_path": "daily",
+      "template": "Open-Meteo → Historical daily weather (ERA5)",
+      "columns": {
+        "time": "date",
+        "temperature_2m_mean": "temp_mean_c",
+        "temperature_2m_max": "temp_max_c",
+        "temperature_2m_min": "temp_min_c",
+        "precipitation_sum": "precipitation_mm",
+        "wind_speed_10m_max": "wind_max_kmh"
+      },
+      "fields": {
+        "date": "Date (local time, Europe/Berlin)",
+        "temp_mean_c": "Mean air temperature at 2 m, °C",
+        "temp_max_c": "Maximum air temperature at 2 m, °C",
+        "temp_min_c": "Minimum air temperature at 2 m, °C",
+        "precipitation_mm": "Total precipitation, mm",
+        "wind_max_kmh": "Maximum wind speed at 10 m, km/h"
+      },
+      "sort": [
+        "date"
+      ],
+      "chart": {
+        "x": "date",
+        "y": [
+          "temp_max_c",
+          "temp_mean_c",
+          "temp_min_c"
+        ],
+        "unit": "°C",
+        "aggregate": "month",
+        "labels": {
+          "temp_max_c": "Daily maximum",
+          "temp_mean_c": "Daily mean",
+          "temp_min_c": "Daily minimum"
+        }
+      },
+      "analysis": {
+        "title": "Analyze This! Ten Years of Berlin Weather from Open-Meteo",
+        "url": "https://quantumlayers.com/analyze-this-open-meteo-berlin-weather",
+        "published": false
+      }
+    },
+    {
+      "slug": "nasa-power-solar-irradiance-iowa",
+      "title": "Daily solar irradiance, Ames, Iowa, 2015–2024 (NASA POWER)",
+      "source": "NASA POWER",
+      "source_url": "https://power.larc.nasa.gov/",
+      "license": "NASA open data — free to use with acknowledgement",
+      "license_url": "https://power.larc.nasa.gov/docs/referencing/",
+      "attribution": "NASA Langley Research Center POWER Project, funded through the NASA Earth Science Applied Sciences Program",
+      "description": "Daily all-sky and clear-sky surface shortwave irradiance (kWh/m²/day) and clearness index for Ames, Iowa (42.03° N, 93.62° W), 2015 to 2024, from NASA's POWER project.",
+      "keywords": [
+        "solar irradiance data",
+        "NASA POWER solar data",
+        "daily solar radiation Iowa",
+        "GHI data CSV",
+        "clearness index"
+      ],
+      "api_url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN,CLRSKY_SFC_SW_DWN,ALLSKY_KT&community=RE&start=20150101&end=20241231&latitude=42.03&longitude=-93.62&format=JSON",
+      "response_path": "properties.parameter",
+      "template": "NASA POWER → Daily solar irradiance (renewable energy)",
+      "columns": {
+        "period": "date",
+        "ALLSKY_SFC_SW_DWN": "allsky_irradiance_kwh_m2",
+        "CLRSKY_SFC_SW_DWN": "clearsky_irradiance_kwh_m2",
+        "ALLSKY_KT": "clearness_index"
+      },
+      "missing_values": [
+        -999
+      ],
+      "fields": {
+        "date": "Date (UTC)",
+        "allsky_irradiance_kwh_m2": "All-sky surface shortwave downward irradiance (GHI), kWh/m²/day",
+        "clearsky_irradiance_kwh_m2": "Clear-sky surface shortwave downward irradiance, kWh/m²/day",
+        "clearness_index": "All-sky insolation clearness index (fraction of top-of-atmosphere irradiance reaching the surface)"
+      },
+      "sort": [
+        "date"
+      ],
+      "chart": {
+        "x": "date",
+        "y": [
+          "clearsky_irradiance_kwh_m2",
+          "allsky_irradiance_kwh_m2"
+        ],
+        "unit": "kWh/m²/day",
+        "aggregate": "month",
+        "labels": {
+          "clearsky_irradiance_kwh_m2": "Clear sky",
+          "allsky_irradiance_kwh_m2": "All sky (actual)"
+        }
+      },
+      "analysis": {
+        "title": "Analyze This! Ten Years of Solar Irradiance from NASA POWER",
+        "url": "https://quantumlayers.com/analyze-this-nasa-power-solar-irradiance",
+        "published": false
+      }
+    },
+    {
+      "slug": "world-bank-gdp-per-capita",
+      "title": "GDP per capita (current US$) for major economies, 2000–2024",
+      "source": "World Bank",
+      "source_url": "https://data.worldbank.org/indicator/NY.GDP.PCAP.CD",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "World Bank, World Development Indicators (NY.GDP.PCAP.CD)",
+      "description": "GDP per capita in current US dollars for the United States, China, Japan, Germany, India, the United Kingdom, France, Brazil and the world, annually from 2000 to 2024.",
+      "keywords": [
+        "GDP per capita by country",
+        "GDP per capita data",
+        "World Bank GDP per capita",
+        "NY.GDP.PCAP.CD",
+        "GDP per capita CSV"
+      ],
+      "api_url": "https://api.worldbank.org/v2/country/USA;CHN;JPN;DEU;IND;GBR;FRA;BRA;WLD/indicator/NY.GDP.PCAP.CD?format=json&date=2000:2024&per_page=20000",
+      "response_path": "1",
+      "template": "World Bank → GDP per capita (current US$) — major economies",
+      "columns": {
+        "country.value": "country",
+        "countryiso3code": "iso3",
+        "date": "year",
+        "value": "gdp_per_capita_usd"
+      },
+      "fields": {
+        "country": "Country or aggregate",
+        "iso3": "ISO 3166-1 alpha-3 code (WLD = world)",
+        "year": "Calendar year",
+        "gdp_per_capita_usd": "GDP per capita, current US$"
+      },
+      "sort": [
+        "country",
+        "year"
+      ],
+      "chart": {
+        "x": "year",
+        "y": "gdp_per_capita_usd",
+        "series": "country",
+        "unit": "US$"
+      }
+    },
+    {
+      "slug": "world-bank-gdp",
+      "title": "GDP (current US$) for major economies, 2000–2024",
+      "source": "World Bank",
+      "source_url": "https://data.worldbank.org/indicator/NY.GDP.MKTP.CD",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "World Bank, World Development Indicators (NY.GDP.MKTP.CD)",
+      "description": "Gross domestic product in current US dollars for the United States, China, Japan, Germany, India, the United Kingdom, France and Brazil, annually from 2000 to 2024.",
+      "keywords": [
+        "GDP by country",
+        "GDP data",
+        "World Bank GDP",
+        "NY.GDP.MKTP.CD",
+        "GDP current US dollars CSV"
+      ],
+      "api_url": "https://api.worldbank.org/v2/country/USA;CHN;JPN;DEU;IND;GBR;FRA;BRA/indicator/NY.GDP.MKTP.CD?format=json&date=2000:2024&per_page=20000",
+      "response_path": "1",
+      "template": "World Bank → GDP (current US$)",
+      "columns": {
+        "country.value": "country",
+        "countryiso3code": "iso3",
+        "date": "year",
+        "value": "gdp_usd"
+      },
+      "fields": {
+        "country": "Country",
+        "iso3": "ISO 3166-1 alpha-3 code",
+        "year": "Calendar year",
+        "gdp_usd": "GDP, current US$"
+      },
+      "sort": [
+        "country",
+        "year"
+      ],
+      "chart": {
+        "x": "year",
+        "y": "gdp_usd",
+        "series": "country",
+        "unit": "US$"
+      }
+    },
+    {
+      "slug": "world-bank-population",
+      "title": "Population of major economies and the world, 2000–2024",
+      "source": "World Bank",
+      "source_url": "https://data.worldbank.org/indicator/SP.POP.TOTL",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "World Bank, World Development Indicators (SP.POP.TOTL)",
+      "description": "Total population of the United States, China, Japan, Germany, India, the United Kingdom, France, Brazil and the world, annually from 2000 to 2024.",
+      "keywords": [
+        "population by country",
+        "world population data",
+        "World Bank population",
+        "SP.POP.TOTL",
+        "population CSV"
+      ],
+      "api_url": "https://api.worldbank.org/v2/country/USA;CHN;JPN;DEU;IND;GBR;FRA;BRA;WLD/indicator/SP.POP.TOTL?format=json&date=2000:2024&per_page=20000",
+      "response_path": "1",
+      "template": "World Bank → Population",
+      "columns": {
+        "country.value": "country",
+        "countryiso3code": "iso3",
+        "date": "year",
+        "value": "population"
+      },
+      "fields": {
+        "country": "Country or aggregate",
+        "iso3": "ISO 3166-1 alpha-3 code (WLD = world)",
+        "year": "Calendar year",
+        "population": "Total population (de facto, mid-year estimate)"
+      },
+      "sort": [
+        "country",
+        "year"
+      ],
+      "chart": {
+        "x": "year",
+        "y": "population",
+        "series": "country",
+        "hide": [
+          "World"
+        ]
+      }
+    },
+    {
+      "slug": "world-bank-inflation",
+      "title": "Inflation, consumer prices (annual %) for major economies, 2000–2024",
+      "source": "World Bank",
+      "source_url": "https://data.worldbank.org/indicator/FP.CPI.TOTL.ZG",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "World Bank, World Development Indicators (FP.CPI.TOTL.ZG)",
+      "description": "Annual consumer price inflation (percent) for the United States, China, Japan, Germany, India, the United Kingdom, France, Brazil and the world, 2000 to 2024.",
+      "keywords": [
+        "inflation rate by country",
+        "CPI inflation data",
+        "World Bank inflation",
+        "FP.CPI.TOTL.ZG",
+        "inflation CSV"
+      ],
+      "api_url": "https://api.worldbank.org/v2/country/USA;CHN;JPN;DEU;IND;GBR;FRA;BRA;WLD/indicator/FP.CPI.TOTL.ZG?format=json&date=2000:2024&per_page=20000",
+      "response_path": "1",
+      "template": "World Bank → Inflation, consumer prices (annual %)",
+      "columns": {
+        "country.value": "country",
+        "countryiso3code": "iso3",
+        "date": "year",
+        "value": "inflation_pct"
+      },
+      "fields": {
+        "country": "Country or aggregate",
+        "iso3": "ISO 3166-1 alpha-3 code (WLD = world)",
+        "year": "Calendar year",
+        "inflation_pct": "Inflation, consumer prices, annual %"
+      },
+      "sort": [
+        "country",
+        "year"
+      ],
+      "chart": {
+        "x": "year",
+        "y": "inflation_pct",
+        "series": "country",
+        "unit": "%"
+      }
+    },
+    {
+      "slug": "world-bank-unemployment",
+      "title": "Unemployment rate (% of labor force) for major economies, 2000–2024",
+      "source": "World Bank",
+      "source_url": "https://data.worldbank.org/indicator/SL.UEM.TOTL.ZS",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "World Bank, World Development Indicators (SL.UEM.TOTL.ZS), modeled ILO estimate",
+      "description": "Unemployment as a percentage of the total labor force (modeled ILO estimate) for the United States, China, Japan, Germany, India, the United Kingdom, France, Brazil and the world, 2000 to 2024.",
+      "keywords": [
+        "unemployment rate by country",
+        "unemployment data",
+        "World Bank unemployment",
+        "SL.UEM.TOTL.ZS",
+        "unemployment CSV"
+      ],
+      "api_url": "https://api.worldbank.org/v2/country/USA;CHN;JPN;DEU;IND;GBR;FRA;BRA;WLD/indicator/SL.UEM.TOTL.ZS?format=json&date=2000:2024&per_page=20000",
+      "response_path": "1",
+      "template": "World Bank → Unemployment rate (% of labor force)",
+      "columns": {
+        "country.value": "country",
+        "countryiso3code": "iso3",
+        "date": "year",
+        "value": "unemployment_pct"
+      },
+      "fields": {
+        "country": "Country or aggregate",
+        "iso3": "ISO 3166-1 alpha-3 code (WLD = world)",
+        "year": "Calendar year",
+        "unemployment_pct": "Unemployment, total, % of total labor force (modeled ILO estimate)"
+      },
+      "sort": [
+        "country",
+        "year"
+      ],
+      "chart": {
+        "x": "year",
+        "y": "unemployment_pct",
+        "series": "country",
+        "unit": "%"
+      }
+    },
+    {
+      "slug": "imf-weo-government-debt",
+      "title": "Government gross debt (% of GDP) by country, IMF World Economic Outlook",
+      "source": "International Monetary Fund",
+      "source_url": "https://www.imf.org/en/Publications/WEO",
+      "license": "IMF copyright — free reuse with attribution",
+      "license_url": "https://www.imf.org/external/terms.htm",
+      "attribution": "IMF, World Economic Outlook database (GGXWDG_NGDP)",
+      "description": "General government gross debt as a percentage of GDP for eight major economies from the IMF World Economic Outlook, including the IMF's estimates and projections.",
+      "keywords": [
+        "government debt to GDP by country",
+        "debt to GDP ratio data",
+        "IMF government debt",
+        "GGXWDG_NGDP",
+        "public debt CSV"
+      ],
+      "api_url": "https://api.imf.org/external/sdmx/3.0/data/dataflow/IMF.RES/WEO/+/USA+CHN+JPN+DEU+IND+GBR+FRA+BRA.GGXWDG_NGDP.A",
+      "response_path": "",
+      "template": "IMF → Government gross debt (% of GDP) — WEO",
+      "columns": {
+        "TIME_PERIOD": "year",
+        "USA": "united_states",
+        "CHN": "china",
+        "JPN": "japan",
+        "DEU": "germany",
+        "IND": "india",
+        "GBR": "united_kingdom",
+        "FRA": "france",
+        "BRA": "brazil"
+      },
+      "fields": {
+        "year": "Calendar year",
+        "*": "General government gross debt, % of GDP"
+      },
+      "sort": [
+        "year"
+      ],
+      "chart": {
+        "x": "year",
+        "y": [
+          "united_states",
+          "china",
+          "japan",
+          "germany",
+          "india",
+          "united_kingdom",
+          "france",
+          "brazil"
+        ],
+        "unit": "%",
+        "mark_today": true
+      },
+      "note": "Values for the current and future years are IMF projections from the latest World Economic Outlook edition."
+    },
+    {
+      "slug": "imf-weo-inflation",
+      "title": "Inflation, average consumer prices (%) by country, IMF World Economic Outlook",
+      "source": "International Monetary Fund",
+      "source_url": "https://www.imf.org/en/Publications/WEO",
+      "license": "IMF copyright — free reuse with attribution",
+      "license_url": "https://www.imf.org/external/terms.htm",
+      "attribution": "IMF, World Economic Outlook database (PCPIPCH)",
+      "description": "Annual average consumer price inflation (percent change) for eight major economies from the IMF World Economic Outlook, including the IMF's estimates and projections.",
+      "keywords": [
+        "inflation by country IMF",
+        "IMF inflation data",
+        "World Economic Outlook inflation",
+        "PCPIPCH",
+        "inflation projections CSV"
+      ],
+      "api_url": "https://api.imf.org/external/sdmx/3.0/data/dataflow/IMF.RES/WEO/+/USA+CHN+JPN+DEU+IND+GBR+FRA+BRA.PCPIPCH.A",
+      "response_path": "",
+      "template": "IMF → Inflation, average consumer prices (%) — WEO",
+      "columns": {
+        "TIME_PERIOD": "year",
+        "USA": "united_states",
+        "CHN": "china",
+        "JPN": "japan",
+        "DEU": "germany",
+        "IND": "india",
+        "GBR": "united_kingdom",
+        "FRA": "france",
+        "BRA": "brazil"
+      },
+      "fields": {
+        "year": "Calendar year",
+        "*": "Inflation, average consumer prices, percent change"
+      },
+      "sort": [
+        "year"
+      ],
+      "chart": {
+        "x": "year",
+        "y": [
+          "united_states",
+          "china",
+          "japan",
+          "germany",
+          "india",
+          "united_kingdom",
+          "france",
+          "brazil"
+        ],
+        "unit": "%",
+        "mark_today": true,
+        "x_from": 2000
+      },
+      "note": "Values for the current and future years are IMF projections from the latest World Economic Outlook edition. The chart starts in 2000 so earlier high-inflation episodes (e.g. Brazil in the early 1990s) don’t flatten the other lines; the table and CSV include every year."
+    }
+  ]
+}

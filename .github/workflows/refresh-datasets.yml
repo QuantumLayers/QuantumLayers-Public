@@ -1,0 +1,58 @@
+# Rebuilds the static public-dataset pages (free-tools/datasets/) from the
+# source APIs and commits any change, which the quantumlayers.com deploy hook
+# then publishes under /tools/datasets/.
+#
+# Runs weekly, on demand, and whenever the registry or the build code changes
+# on main. Pages only change when the underlying data does (manifest.json
+# tracks a hash per dataset), so most weekly runs commit nothing.
+name: Refresh public datasets
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"   # Mondays 04:17 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "free-tools/datasets/datasets.json"
+      - "free-tools/datasets/build.js"
+      - "free-tools/public-api-tester/api-parse.js"
+      - "free-tools/ql-stats.js"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-datasets
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Test parser and stats library
+        run: |
+          node free-tools/tests/api-parse.test.js
+          node free-tools/tests/ql-stats.test.js
+
+      - name: Build dataset pages
+        run: node free-tools/datasets/build.js
+
+      - name: Commit changes
+        run: |
+          git add free-tools/datasets free-tools/sitemap.xml
+          if git diff --cached --quiet; then
+            echo "No dataset changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(datasets): refresh public dataset pages"
+          git push

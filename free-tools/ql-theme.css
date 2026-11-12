@@ -1,0 +1,475 @@
+/* =========================================================================
+   ql-theme.css — the quantumlayers.com site look (v2 homepage design system)
+   for every page in free-tools/.
+
+   Loaded AFTER each page's own <style>, so it:
+     1. defines the site's --ql-* tokens (copied from quantumlayers.com's
+        custom CSS: same names and values), and
+     2. remaps each tool's own tokens (--bg, --text, --accent, --meter-*…, and
+        whats-in-this-csv's --ink/--paper/--amber…) onto them, then restyles
+        the shared components (buttons, panels, CTA band, KIND tag, meter)
+        and the site header.
+   Tools keep working without it; it only changes appearance.
+
+   Dark only, like the site. A later plain :root rule beats the tools'
+   earlier @media (prefers-color-scheme: light) token blocks, which is what
+   keeps light-mode visitors on the site palette.
+   ========================================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* --- quantumlayers.com tokens (v2) --- */
+  --ql-font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --ql-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ql-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --ql-bg: #0b0a12;
+  --ql-veil: rgba(11, 10, 18, 0.6);
+  --ql-surface: #15121f;
+  --ql-surface-2: #1c1830;
+  --ql-band: rgba(91, 75, 216, 0.08);
+  --ql-border: rgba(196, 181, 253, 0.14);
+  --ql-border-strong: rgba(196, 181, 253, 0.28);
+  --ql-text: #eceaf5;
+  --ql-muted: #a9a6bc;
+  --ql-faint: #8a869f;
+  --ql-primary: #8b7cf6;
+  --ql-primary-strong: #5b4bd8;
+  --ql-primary-soft: #c4b5fd;
+  --ql-accent: #22d3ee;
+  --ql-radius: 16px;
+  --ql-card: linear-gradient(180deg, var(--ql-surface-2), var(--ql-surface));
+  --ql-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 60px -24px rgba(0, 0, 0, 0.6);
+  --ql-btn-gradient: linear-gradient(135deg, #5b4bd8 0%, #6d5deb 100%);
+  --ql-btn-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset, 0 10px 30px -8px rgba(109, 93, 235, 0.65);
+  --ql-btn-shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.18) inset, 0 14px 36px -8px rgba(109, 93, 235, 0.8);
+  --ql-wave-bg: url("https://quantumlayers.com/wp-content/uploads/2025/12/1000013672-purple.png");
+  --ql-wave-bg-mobile: var(--ql-wave-bg);
+
+  /* --- free-tools tokens, remapped --- */
+  --font-display: var(--ql-font-display);
+  --font-body: var(--ql-font-body);
+  --font-mono: var(--ql-font-mono);
+  --bg: var(--ql-bg);
+  --bg-raised: var(--ql-surface);
+  --bg-inset: #110e1a;
+  --border: var(--ql-border);
+  --grid: rgba(196, 181, 253, 0.08);
+  --text: var(--ql-text);
+  --text-dim: var(--ql-muted);
+  --text-faint: var(--ql-faint);
+  --accent: var(--ql-primary);
+  --accent-dim: var(--ql-primary-soft);
+  /* strength meter: violet ramp instead of amber */
+  --meter-empty: rgba(196, 181, 253, 0.12);
+  --meter-1: #3a2f7a;
+  --meter-2: #4838a8;
+  --meter-3: #5b4bd8;
+  --meter-4: #6d5deb;
+  --meter-5: #8b7cf6;
+  --meter-6: #c4b5fd;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  /* correlation-matrix diverging ends */
+  --neg: #22d3ee;
+  --pos: #8b7cf6;
+
+  /* --- whats-in-this-csv tokens, remapped --- */
+  --ink: var(--ql-text);
+  --slate: var(--ql-muted);
+  --slate-2: var(--ql-faint);
+  --paper: #110e1a;
+  --card: var(--ql-surface);
+  --line: var(--ql-border);
+  --line-2: rgba(196, 181, 253, 0.08);
+  --amber: var(--ql-primary);
+  --amber-ink: var(--ql-primary-soft);
+  --amber-soft: rgba(139, 124, 246, 0.16);
+  --panel: var(--ql-band);
+  --panel-line: var(--ql-border);
+  --panel-slate: var(--ql-muted);
+}
+
+/* --- page ground: the site's animated waves ---------------------------
+   The block between the BEGIN/END markers is copied verbatim from the QL
+   plugin's assets/common-dark.css (the same rules quantumlayers.com runs):
+   two copies of the wave image drifting at different speeds, touch and
+   portrait variants, and a prefers-reduced-motion opt-out. Re-copy it when
+   that file changes. */
+html { background: #000; }
+body {
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--ql-text);
+  font-family: var(--ql-font-body);
+}
+
+/* BEGIN copied from QuantumLayers assets/common-dark.css */
+body {
+    position: relative; /* Essential for positioning the pseudo-element */
+    overflow-x: hidden; /* Prevent scrollbar from scaled background */
+}
+
+/* Two overlapping, semi-transparent copies of the same wave image drifting
+   at different speeds/angles create a more complex, layered motion than a
+   single background could, without needing extra image assets. */
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    top: -10%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
+    background-image: var(--ql-wave-bg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1;
+    will-change: transform;
+    pointer-events: none;
+}
+
+body::before {
+    opacity: 1;
+    animation: ql-bg-drift-3 26s ease-in-out infinite;
+}
+
+body::after {
+    position: fixed;
+    inset: -15%;
+    background-image: var(--ql-wave-bg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.3;
+    mix-blend-mode: lighten;
+    filter: blur(1px) hue-rotate(24deg) saturate(1.35);
+    animation: ql-bg-drift-1 32s ease-in-out infinite;
+    will-change: transform;
+    pointer-events: none;
+}
+
+@keyframes ql-bg-drift-1 {
+    0%   { transform: scale(1)    translate(0%, 0%)    rotate(180deg); }
+    33%  { transform: scale(1.12) translate(-2%, 1.5%)  rotate(182deg); }
+    66%  { transform: scale(1.2)  translate(2%, -1%)    rotate(178deg); }
+    100% { transform: scale(1)    translate(0%, 0%)    rotate(180deg); }
+}
+
+@keyframes ql-bg-drift-2 {
+    0%   { transform: scaleX(-2) scale(1.15) translate(0%, 0%)    rotate(0deg); }
+    50%  { transform: scaleX(-1) scale(1.3)  translate(3%, -2%)  rotate(1.2deg); }
+    100% { transform: scaleX(-2) scale(1.15) translate(0%, 0%)    rotate(0deg); }
+}
+
+@keyframes ql-bg-drift-3 {
+    0%   { transform: scale(1.25) translate(0%, 0%)   rotate(0deg); }
+    50%  { transform: scale(1.4)  translate(-3%, 2%)  rotate(-2deg); }
+    100% { transform: scale(1.25) translate(0%, 0%)   rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before,
+    body::after {
+        animation: none !important;
+    }
+}
+
+/* ===== Touch devices (phones/tablets, any orientation) =====
+   Why the desktop rules look magnified and soft on a phone:
+   - The wave image is only 1536x1024 px. Phones render at 2-3 device pixels
+     per CSS pixel, so even with no zoom at all a landscape iPhone
+     (844 CSS px = 2532 device px wide) already upscales it ~1.65x.
+   - The desktop drift then scales the layer by up to 1.4x on top of the
+     120% oversizing, i.e. ~2.8x upscaling (vs ~1.6x on a 1x laptop).
+     The old mobile override only applied below 600px, so landscape phones
+     (640-930px wide) got the full desktop zoom.
+   - Animating scale() on a will-change layer makes mobile GPUs rasterise
+     the layer once and stretch that bitmap while zooming, which softens it
+     further (mobile browsers also cap raster resolution of big layers).
+   - The layers were sized in %, i.e. relative to the fixed containing
+     block, which mobile browsers can enlarge beyond the visible screen
+     (e.g. when page content overflows horizontally). Explicit viewport
+     units pin the size to the actual screen.
+
+   So on touch devices: size the layers explicitly in vw/lvh with a small
+   overscan, never scale() (pan + tiny sway only, so the texture is never
+   stretched), drop the blur filter, and allow a separate, higher-
+   resolution source via --ql-wave-bg-mobile (set it to a ~3072px-wide
+   version of the image for sharp results on 3x screens). */
+:root {
+    --ql-wave-bg-mobile: var(--ql-wave-bg);
+}
+
+@media (hover: none) and (pointer: coarse), (max-width: 600px) {
+    body::before,
+    body::after {
+        inset: auto;
+        top: -5vh;
+        top: -5lvh;
+        left: -5vw;
+        width: 110vw;
+        height: 110vh;
+        height: 110lvh;
+        margin: 0;
+        background-image: var(--ql-wave-bg-mobile);
+        background-size: cover;
+        background-position: center;
+        transform-origin: center center;
+    }
+
+    body::before {
+        transform: rotate(0deg);
+        animation: ql-bg-pan-mobile 16s ease-in-out infinite;
+    }
+
+    body::after {
+        filter: hue-rotate(24deg) saturate(1.35);
+        transform: rotate(180deg);
+        animation: ql-bg-pan-mobile-alt 22s ease-in-out infinite;
+    }
+
+    /* Movement stays inside the 5% overscan on each side. */
+    @keyframes ql-bg-pan-mobile {
+        0%   { transform: translate(0%, 0%)       rotate(0deg); }
+        33%  { transform: translate(-4%, 2.5%)    rotate(-0.5deg); }
+        66%  { transform: translate(4%, -2%)      rotate(0.5deg); }
+        100% { transform: translate(0%, 0%)       rotate(0deg); }
+    }
+
+    @keyframes ql-bg-pan-mobile-alt {
+        0%   { transform: translate(0%, 0%)       rotate(180deg); }
+        50%  { transform: translate(4%, -2.5%)    rotate(179.5deg); }
+        100% { transform: translate(0%, 0%)       rotate(180deg); }
+    }
+}
+
+/* Portrait touch screens: a 3:2 landscape image under `cover` would only
+   show ~30% of its width. Swap the layer's width/height (width = screen
+   height, height = screen width, +15% overscan), centre it and rotate it
+   90deg so the whole wave fits the tall screen. */
+@media (hover: none) and (pointer: coarse) and (orientation: portrait),
+       (max-width: 600px) and (orientation: portrait) {
+    body::before,
+    body::after {
+        top: 50%;
+        left: 50%;
+        width: 115vh;
+        width: 115lvh;
+        height: 115vw;
+    }
+
+    body::before {
+        transform: translate(-50%, -50%) rotate(90deg);
+        animation-name: ql-bg-pan-mobile-portrait;
+    }
+
+    body::after {
+        transform: translate(-50%, -50%) rotate(270deg);
+        animation-name: ql-bg-pan-mobile-portrait-alt;
+    }
+
+    /* The trailing translate is in the rotated frame: its first value moves
+       the layer up/down the screen, its second left/right. */
+    @keyframes ql-bg-pan-mobile-portrait {
+        0%   { transform: translate(-50%, -50%) rotate(90deg)   translate(0%, 0%); }
+        33%  { transform: translate(-50%, -50%) rotate(88.5deg) translate(-4%, 2%); }
+        66%  { transform: translate(-50%, -50%) rotate(91.5deg) translate(4%, -2%); }
+        100% { transform: translate(-50%, -50%) rotate(90deg)   translate(0%, 0%); }
+    }
+
+    @keyframes ql-bg-pan-mobile-portrait-alt {
+        0%   { transform: translate(-50%, -50%) rotate(270deg)   translate(0%, 0%); }
+        50%  { transform: translate(-50%, -50%) rotate(268.5deg) translate(4%, -2%); }
+        100% { transform: translate(-50%, -50%) rotate(270deg)   translate(0%, 0%); }
+    }
+}
+
+/* If the animation still doesn't run on a phone, check whether "Reduce
+   motion" (iOS) / "Remove animations" (Android, also enabled by some
+   battery-saver modes) is on: the prefers-reduced-motion rule above
+   deliberately stops it. */
+/* END copied from QuantumLayers assets/common-dark.css */
+
+/* Tools put dense text and tables on top of the waves, so a fixed veil sits
+   between them and the content: lighter at the top (the hero shows the waves
+   like the homepage does), darker further down. html::after is painted after
+   body's pseudo-elements at the same z-index, i.e. above the waves and below
+   the page content. */
+html::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(11, 10, 18, 0.25) 0%, rgba(11, 10, 18, 0.7) 55%, rgba(11, 10, 18, 0.86) 100%);
+}
+a { color: var(--ql-primary-soft); }
+::selection { background: rgba(139, 124, 246, 0.35); }
+
+/* --- site header (matches quantumlayers.com) --- */
+.ql-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(11, 10, 18, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--ql-border);
+}
+.ql-site-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 64px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.ql-logo { display: flex; align-items: center; flex: 0 0 auto; }
+.ql-logo img { width: 40px; height: 40px; border-radius: 9px; display: block; }
+.ql-nav, .ql-nav-right { display: flex; align-items: center; gap: 4px; }
+.ql-nav-right { margin-left: auto; }
+.ql-site-header a.ql-link {
+  font: 500 14px/1 var(--ql-font-body);
+  letter-spacing: 0.01em;
+  color: #d9d6e8;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+.ql-site-header a.ql-link:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+.ql-site-header a.ql-link[aria-current] { color: #fff; }
+@media (max-width: 720px) {
+  .ql-nav .ql-link:not([aria-current]), .ql-nav-right .ql-hide-sm { display: none; }
+  .ql-site-header-inner { gap: 8px; }
+}
+
+.crumbs { font-family: var(--ql-font-body); font-size: 13px; color: var(--ql-faint); margin: 18px 0 0; }
+.crumbs a { color: var(--ql-muted); text-decoration: none; }
+.crumbs a:hover { color: #fff; }
+
+/* --- typography --- */
+.hero h1, h1 {
+  font-family: var(--ql-font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(#fff 30%, #d9d2ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--ql-text);
+  text-wrap: balance;
+}
+h2, h3 { font-family: var(--ql-font-display); color: var(--ql-text); }
+.lede { color: #d9d6e8; }
+.privacy-line, .privacy { font-family: var(--ql-font-body); color: var(--ql-muted); }
+/* whats-in-this-csv's highlighted phrase */
+h1 .hl { background: none; -webkit-text-fill-color: var(--ql-primary-soft); color: var(--ql-primary-soft); padding: 0; }
+
+/* --- buttons --- */
+.btn, .btn-primary, a.btn, a.btn-primary {
+  background: var(--ql-btn-gradient) !important;
+  color: #fff !important;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  box-shadow: var(--ql-btn-shadow);
+  font-family: var(--ql-font-body);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn:hover, .btn-primary:hover:not(:disabled), a.btn:hover, a.btn-primary:hover {
+  background: var(--ql-btn-gradient) !important;
+  box-shadow: var(--ql-btn-shadow-hover);
+  transform: translateY(-1px);
+}
+.btn-ghost, .filebar .again, .zone .sample, .chip, .dict-actions button, .export-row button {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-radius: 7px;
+}
+.btn-ghost:hover, .filebar .again:hover, .zone .sample:hover, .chip:hover, .dict-actions button:hover, .export-row button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--ql-border-strong);
+}
+.chip.active { border-color: var(--ql-primary); color: var(--ql-primary-soft); }
+
+/* --- surfaces --- */
+.panel, .card, figure.chart, .findings .f, .filebar, .maker .picker, .maker .chart-panel, .col-card {
+  background: var(--ql-card);
+  border: 1px solid var(--ql-border);
+  border-radius: var(--ql-radius);
+  box-shadow: var(--ql-card-shadow);
+}
+.tile, .grp, .col, .zone, .rec-chip, ul.findings li, ul.notes li, ul.pairs li, .dataset-row {
+  background: rgba(11, 10, 18, 0.55);
+  border-color: var(--ql-border);
+}
+.zone:hover, .zone:focus-within, .zone.drag { background: rgba(139, 124, 246, 0.08); border-color: var(--ql-primary); }
+input[type=text], input[type=url], input[type=email], input[type=password], input[type=number], select, textarea {
+  background: rgba(11, 10, 18, 0.7);
+  border-color: var(--ql-border-strong);
+  color: var(--ql-text);
+  font-family: var(--ql-font-body);
+}
+input:focus, select:focus, textarea:focus { border-color: var(--ql-primary) !important; box-shadow: 0 0 0 3px rgba(139, 124, 246, 0.2); outline: none; }
+
+/* tables: site-style header row */
+table.t th, .tbl th, table.dict th, table.mx th { color: var(--ql-primary-soft); }
+
+/* --- labels: KIND tag and type tags as violet pills --- */
+.kind-tag, .kind, .tag {
+  font-family: var(--ql-font-body);
+  font-weight: 600;
+  color: var(--ql-primary-soft);
+  background: rgba(139, 124, 246, 0.12);
+  border: 1px solid var(--ql-border-strong);
+  border-radius: 999px;
+}
+.meter i.on { background: var(--ql-primary); }
+.meter i { background: rgba(196, 181, 253, 0.12); }
+
+/* --- tabs / segmented controls --- */
+.tabs button.on { color: #fff; border-bottom-color: var(--ql-primary); }
+.seg { border-color: var(--ql-border); border-radius: 999px; padding: 3px; background: rgba(255, 255, 255, 0.02); }
+.seg button { border-radius: 999px; }
+.seg button.on { background: var(--ql-primary-strong); color: #fff; box-shadow: 0 6px 20px -6px rgba(109, 93, 235, 0.7); }
+
+/* --- CTA band --- */
+.cta {
+  background: var(--ql-band) !important;
+  border: 1px solid var(--ql-border) !important;
+  border-radius: var(--ql-radius);
+  color: var(--ql-text);
+}
+.cta .eyebrow {
+  font-family: var(--ql-font-body);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: var(--ql-primary-soft);
+}
+.cta .ladder div { color: #d9d6e8; }
+.cta .ladder .arrow { color: var(--ql-primary); }
+
+/* --- states --- */
+.err, .err-box {
+  background: rgba(248, 113, 113, 0.1) !important;
+  border: 1px solid rgba(248, 113, 113, 0.35) !important;
+  color: var(--ql-text) !important;
+}
+.sugg { background: rgba(139, 124, 246, 0.1); border-color: var(--ql-border-strong); }
+.summary { border-left-color: var(--ql-primary); }
+
+footer { color: var(--ql-faint); }
+footer a { color: var(--ql-muted); border-bottom-color: var(--ql-border); }
+footer a:hover { color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover, .btn-primary:hover { transform: none; }
+}

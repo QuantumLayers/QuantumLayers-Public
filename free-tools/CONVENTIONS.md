@@ -13,19 +13,69 @@ read this end to end before writing HTML.
 > QL-backed sign-in-first pattern (`ql-client.js`, the states in the next
 > section) rather than `whats-in-this-csv`'s client-only shape.
 
+## Standalone client-side tools
+
+Per direction from QL's operator (2026-11-12), the collection also hosts
+tools that are **100% independent of QuantumLayers**: no sign-in, no
+`ql-client.js`, no call to QL's backend — everything runs in the visitor's
+browser. `whats-in-this-csv`, `public-api-tester`, `correlation-matrix` and
+`ab-test-calculator` are in this family. The sign-in-first rules below apply
+only to QL-backed tools. For standalone tools:
+
+- **Privacy copy** is the opposite of the QL-backed line: say plainly that
+  it's free, needs no sign-up, and that data stays in the browser — and make
+  sure that's literally true (no analytics beacons, no uploads; a tool that
+  calls a third-party API, like `public-api-tester`, says the browser calls
+  that API directly).
+- **No anonymous-mode concerns** — state (a) *is* the working tool, usable
+  with zero clicks beyond choosing input. Offer a built-in sample so a
+  crawler-free first visit shows a real result in one click.
+- **Match QL where QL does the same thing.** Shared maths lives in
+  [`ql-stats.js`](./ql-stats.js) (tested against SciPy) and includes a port
+  of QL's column typing (`inferType()` = `ql_infer_type()`). Port QL logic
+  rather than inventing a parallel rule, so a visitor who later connects the
+  same data in QL sees consistent results.
+- **Small sibling modules are fine** when they make logic testable in Node
+  (e.g. `public-api-tester/api-parse.js`, `../ql-stats.js`) — still plain
+  `<script>` tags, still no build step. Add a test under `tests/`.
+- **Charts** don't have to be Chart.js — there's no QL config to render.
+  Small inline SVG is preferred over pulling in a library.
+- **CTA**: still exactly one — a band at the bottom linking to
+  `https://quantumlayers.com/ql-register`, framed as what the live product
+  adds (scheduled sync, monitoring, more analysis), never as a gate.
+- Same visual tokens, KIND tag + amber meter, SEO rules and README shape;
+  the README's "How it works" says it's client-side and needs no account.
+
+## Hosting, canonical URLs and tracking (all tools)
+
+- **Public URL:** every tool is served at `https://quantumlayers.com/tools/<name>/`
+  (see README's "Hosting"). Put `<link rel="canonical" href="https://quantumlayers.com/tools/<name>/" />`
+  right after the meta description.
+- **One page per search intent.** When one tool answers several distinct
+  searches (e.g. "A/B test calculator" vs "sample size calculator"), publish a
+  page per intent with its own `<title>`, H1, intro and explainer, sharing the
+  logic from one module (see `ab-test-calculator/calc.js`) — don't copy code.
+- **UTM-tag links to quantumlayers.com:**
+  `utm_source=quantumlayers-tools&utm_medium=free-tool&utm_campaign=<tool-name>&utm_content=cta|footer`
+  (dataset pages use `utm_medium=dataset-page`, `utm_campaign=dataset-<slug>`).
+  These are plain query strings on outbound links — no analytics script, so the
+  "nothing leaves your browser" promise of the standalone tools still holds.
+- **Cross-links:** footer links to the GitHub repo and to the hub
+  (`../`); README "Live demo" links to quantumlayers.com, never GitHub Pages.
+
 ## The sign-in-first pattern
 
 ⚠️ **Per direction from QL's operator, there is no anonymous public-dataset
 mode.** An earlier version of this doc specified a "dual-source" pattern
 — an anonymous visitor driving the tool against a curated public dataset,
 with a logged-in visitor as the upsell path. That's been retired for the
-whole collection: **every tool always requires signing in.** An anonymous
+whole collection: **every QL-backed tool always requires signing in** (standalone client-side tools, above, are a separate family). An anonymous
 visitor never sees computed QL output of any kind — they see the tool's
 explanation and a register/sign-in prompt, full stop. There is no public
 demo dataset to curate, and `DEPLOYMENT.md`'s prerequisite for one no
 longer applies to any tool in this collection.
 
-Every tool has exactly one UI, with exactly one data source: **the signed-
+Every QL-backed tool has exactly one UI, with exactly one data source: **the signed-
 in user's own QuantumLayers datasets.** The conversion moment is the
 register/sign-in step itself — not a wall in front of a working demo (there
 is no demo to wall off), but the honest, only way to see the tool run at
@@ -62,10 +112,34 @@ backend, cross-origin. Replace it everywhere with:
 Don't imply local-only processing anywhere in copy, meta descriptions, or
 README text.
 
-## Visual tokens
+## Visual design: the quantumlayers.com site theme
 
-Space Grotesk for display/headings, IBM Plex Sans for body copy, IBM Plex
-Mono for anything data-shaped (column names, numbers, code, the KIND tag).
+Every page loads [`ql-theme.css`](./ql-theme.css) **last** in `<head>`
+(after its own `<style>`), plus Inter from Google Fonts. It carries the
+quantumlayers.com design system: the same `--ql-*` tokens as the site's
+custom CSS (violet `#8b7cf6` / `#5b4bd8`, surfaces `#15121f` / `#1c1830`,
+borders `rgba(196,181,253,.14)`, Inter body, Space Grotesk display), the
+gradient primary button, glass-gradient cards, the animated wave background
+(copied verbatim from the QL plugin's `assets/common-dark.css`; re-copy it
+when that changes) and the
+site header (logo, Free tools, Pricing, Help, Blog, GitHub, Login,
+Register). It remaps the older tool tokens below onto those values, so
+existing tool CSS keeps working, and it's dark-only like the site.
+
+For a new page: copy the `<header class="ql-site-header">` block and the
+crumbs line from any tool (or use `siteHeader()` in `datasets/build.js`),
+write the page's CSS against the tokens below, and load `ql-theme.css` after
+it. When the site's design changes, update `ql-theme.css`; individual
+tools shouldn't need edits. The KIND tag and strength meter remain the
+collection's signature, now rendered as a violet pill and a violet ramp.
+
+The token names below are what tool CSS is written against; their values
+are overridden by `ql-theme.css`.
+
+## Visual tokens (names; values come from ql-theme.css)
+
+Space Grotesk for display/headings, Inter for body copy (was IBM Plex
+Sans), IBM Plex Mono for anything data-shaped (column names, numbers, code, the KIND tag).
 All three from Google Fonts (on the CDN allowlist).
 
 ```css
