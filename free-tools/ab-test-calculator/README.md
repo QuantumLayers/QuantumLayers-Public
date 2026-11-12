@@ -1,6 +1,6 @@
 # A/B test significance calculator
 
-**Live demo:** [quantumlayers.github.io/QuantumLayers-Public/free-tools/ab-test-calculator/](https://quantumlayers.github.io/QuantumLayers-Public/free-tools/ab-test-calculator/)
+**Live demo:** [quantumlayers.com/tools/ab-test-calculator/](https://quantumlayers.com/tools/ab-test-calculator/)
 
 <!-- Replace with a short screencast: conversion numbers edited live, SRM warning, planner tab. -->
 ![demo](./demo.gif)
@@ -19,6 +19,15 @@ Three tabs:
 - **Sample size planner** — baseline rate, smallest lift worth detecting,
   power, confidence, variants and daily traffic → visitors per variant and
   test duration, with a lift/duration trade-off table.
+
+The same calculator is published as three pages, one per search intent,
+each with its own title, intro and explainer:
+[`ab-test-calculator`](https://quantumlayers.com/tools/ab-test-calculator/),
+[`statistical-significance-calculator`](https://quantumlayers.com/tools/statistical-significance-calculator/)
+and [`sample-size-calculator`](https://quantumlayers.com/tools/sample-size-calculator/)
+(opens on the planner tab). The UI and logic live once, in
+[`calc.js`](./calc.js) and [`calc.css`](./calc.css); each page sets its
+opening tab with `<body data-default-tab="…">`.
 
 Results update as you type and can be shared as a link (inputs in the URL
 hash — no data is stored anywhere).
