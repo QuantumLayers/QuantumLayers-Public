@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Free data tools — API tester, A/B test & statistics calculators, CSV analysis | QuantumLayers</title>
+<meta name="description" content="Free, open-source data tools: test any public API and export CSV, A/B test and sample size calculators, a correlation matrix, instant CSV findings, and curated public datasets. Most run entirely in your browser with no sign-up." />
+<link rel="canonical" href="https://quantumlayers.com/tools/" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="datasets/datasets.css" />
+<style>
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; margin:0 0 8px}
+  .card{display:block; background:var(--bg-raised); border:1px solid var(--border); border-radius:14px; padding:16px 18px; text-decoration:none; color:var(--text)}
+  .card:hover{border-color:var(--accent)}
+  .card h3{font-family:var(--font-display); font-weight:600; font-size:17px; margin:0 0 6px}
+  .card p{margin:0; font-size:14px; color:var(--text-dim)}
+  .group-h{font-family:var(--font-display); font-weight:600; font-size:20px; margin:26px 0 4px}
+  .group-sub{color:var(--text-faint); font-size:14px; margin:0 0 12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="mark" href="./"><span class="dot"></span>free data tools</a>
+    <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools" target="_blank" rel="noopener">open source &nearr;</a>
+  </div>
+
+  <header class="hero">
+    <h1>Free data tools</h1>
+    <p class="lede">Small, single-purpose tools for testing APIs, checking statistics and getting a first read on a dataset. Open source, MIT licensed, and most of them run entirely in your browser — no sign-up, nothing uploaded.</p>
+  </header>
+
+  <h2 class="group-h">No account needed</h2>
+  <p class="group-sub">Everything runs in your browser.</p>
+  <div class="grid">
+    <a class="card" href="public-api-tester/"><h3>Public API tester</h3><p>Paste a JSON or XML API URL and see it as a table: the rows, column types, data-quality checks, the response path, and a CSV export.</p></a>
+    <a class="card" href="datasets/"><h3>Public datasets</h3><p>GDP, inflation, population, life expectancy, weather and solar data from the World Bank, IMF, NOAA, NASA and Open-Meteo — charted, with CSV downloads.</p></a>
+    <a class="card" href="ab-test-calculator/"><h3>A/B test calculator</h3><p>Is the variant’s lift real? p-value, confidence interval for the lift, and a sample-ratio-mismatch check.</p></a>
+    <a class="card" href="statistical-significance-calculator/"><h3>Statistical significance calculator</h3><p>Compare two rates or two averages: z-test, Welch t-test and Mann–Whitney, with a plain-language verdict.</p></a>
+    <a class="card" href="sample-size-calculator/"><h3>Sample size calculator</h3><p>How many visitors a test needs, and how many days it must run, from your baseline rate and the lift you care about.</p></a>
+    <a class="card" href="correlation-matrix/"><h3>Correlation matrix calculator</h3><p>Pearson or Spearman matrix from a CSV, with p-values, confidence intervals, multiple-testing correction and scatter plots.</p></a>
+    <a class="card" href="whats-in-this-csv/"><h3>What’s in this CSV?</h3><p>Drop a CSV and get ranked, plain-language findings: trends, correlations, outliers and data-quality flags.</p></a>
+  </div>
+
+  <h2 class="group-h">With a free QuantumLayers account</h2>
+  <p class="group-sub">These run QuantumLayers’ analytics engine on your own datasets.</p>
+  <div class="grid">
+    <a class="card" href="csv-outlier-detector/"><h3>CSV outlier detector</h3><p>Every numeric column scanned for outliers, with box plots and an adjustable sensitivity.</p></a>
+    <a class="card" href="instant-chart-maker/"><h3>Instant chart maker</h3><p>Pick a dataset and get the chart QuantumLayers recommends, or build your own; export as PNG.</p></a>
+    <a class="card" href="csv-data-profiler/"><h3>Dataset profiler</h3><p>A per-column profile — types, missing values, histograms, top values — exportable as a data dictionary.</p></a>
+  </div>
+
+  <section class="cta">
+    <p class="eyebrow">from one-off checks to live data</p>
+    <h2>Run these analyses on your live data, automatically.</h2>
+    <p>QuantumLayers connects to databases, APIs and spreadsheets, runs a full statistical pipeline on every sync, and emails you when something changes.</p>
+    <a class="btn" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=tools-hub&amp;utm_content=cta" target="_blank" rel="noopener">Start free &rarr;</a>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span><span class="sep">&middot;</span>
+    <span>built by <a href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=tools-hub&amp;utm_content=footer" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">source on GitHub</a>
+  </footer>
+</div>
+</body>
+</html>
