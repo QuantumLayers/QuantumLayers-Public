@@ -266,28 +266,39 @@ const FIELD_DEFS = {
   // get_chart_data tool's own param schema and a real recommended-charts
   // response used "average"); the docs' prose says "sum/avg/count/min/max"
   // but that abbreviation doesn't match what the server actually accepts.
-  aggregation: { param: "aggregation",     label: "Aggregation",        select: ["sum", "average", "count", "min", "max"] },
+  // Each chart type's server-side handler accepts a different set of
+  // aggregation keywords (checked against QL's charts.php): bar/horizontal_bar
+  // only know sum/average (anything else silently becomes sum); pie/doughnut
+  // add min/max (counting is done by omitting the value column); heatmap
+  // adds count; time series add count/median and "none" (raw points).
+  aggregation: { param: "aggregation",     label: "Aggregation",        select: ["sum", "average"] },
+  aggPie:      { param: "aggregation",     label: "Aggregation (when a value column is set)", select: ["sum", "average", "min", "max"] },
+  aggHeat:     { param: "aggregation",     label: "Aggregation",        select: ["average", "sum", "min", "max", "count"] },
+  aggTime:     { param: "aggregation",     label: "Aggregation",        select: ["sum", "average", "min", "max", "count", "median", "none"] },
   interval:    { param: "interval",        label: "Interval",           select: ["day", "week", "month", "year"] },
   limit:       { param: "limit",           label: "Limit",              number: true, default: 10 },
 };
 const CHART_TYPES = {
   bar:            { label: "Bar",            fields: ["category", "valueMulti", "aggregation"] },
   horizontal_bar: { label: "Horizontal bar", fields: ["category", "valueMulti", "aggregation"] },
-  line:           { label: "Line",           fields: ["x", "y", "aggregation"] },
-  area:           { label: "Area",           fields: ["x", "y", "aggregation"] },
-  pie:            { label: "Pie",            fields: ["category", "value", "aggregation", "limit"] },
-  doughnut:       { label: "Doughnut",       fields: ["category", "value", "aggregation", "limit"] },
+  // No "line"/"area": QL's ql_get_chart_data has no handler for either and
+  // answers "Unknown chart type" — a line over time is time_series.
+  pie:            { label: "Pie",            fields: ["category", "value", "aggPie", "limit"] },
+  doughnut:       { label: "Doughnut",       fields: ["category", "value", "aggPie", "limit"] },
   scatter:        { label: "Scatter",        fields: ["x", "y", "colorOpt", "sizeOpt"] },
   bubble:         { label: "Bubble",         fields: ["x", "y", "size", "colorOpt"] },
   box_plot:       { label: "Box plot",       fields: ["x", "y"] },
   violin:         { label: "Violin",         fields: ["x", "y"] },
-  heatmap:        { label: "Heatmap",        fields: ["x", "y", "z", "aggregation"] },
+  heatmap:        { label: "Heatmap",        fields: ["x", "y", "z", "aggHeat"] },
   histogram:      { label: "Histogram",      fields: ["column"] },
-  time_series:    { label: "Time series",    fields: ["time", "valueMulti", "aggregation", "interval"] },
-  stacked_area:   { label: "Stacked area",   fields: ["time", "valueMulti", "aggregation", "interval"] },
+  time_series:    { label: "Time series",    fields: ["time", "valueMulti", "aggTime", "interval"] },
+  stacked_area:   { label: "Stacked area",   fields: ["time", "valueMulti", "aggTime", "interval"] },
   regression:     { label: "Regression",     fields: ["y", "xMulti"] },
 };
 const MAX_RECOMMENDATIONS = 5;
+// QL's insight pipeline can recommend "matrix" — the server's alias for
+// heatmap (same handler, same params).
+function normalizeChartType(t) { return t === "matrix" ? "heatmap" : t; }
 
 // ---------------------------------------------------------------------
 // small helpers
@@ -308,7 +319,7 @@ function friendlyError(err) {
   const codes = (window.QL && QL.ErrorCodes) || {};
   switch (err.code) {
     case codes.NETWORK:
-      return "Can’t reach the QuantumLayers demo backend right now — this is usually a temporary configuration issue (see DEPLOYMENT.md), not something wrong with your data. Try again shortly.";
+      return "Can’t reach QuantumLayers right now — check your connection and try again shortly.";
     case codes.AUTH_REQUIRED:
       return "Sign in to see this — it needs an authenticated session even on a public dataset.";
     case codes.INVALID_RESPONSE:
@@ -636,11 +647,17 @@ async function renderOwnChartMaker(datasetId, datasetName) {
     let recommendations = null;
     try {
       const recData = await QL.recommendedCharts(datasetId, { maxCharts: MAX_RECOMMENDATIONS });
-      // The response envelope key is "candidates", not "charts" — confirmed
-      // against a live response (this was wrong in an earlier version and
-      // meant this whole recommendation feature silently never fired,
-      // always falling through to the manual default below instead).
-      recommendations = (recData && recData.candidates) || null;
+      // The AJAX endpoint (QL_Charts::getRecommendedCharts) returns
+      // { charts: [{ chart_type, chart_data, params, insight_score, reason }] }
+      // — each with a ready-to-render chart_data. The `candidates` shape
+      // (no chart_data) belongs to the lighter discovery call behind QL's
+      // MCP/agent get_recommended_charts tool, which is what an earlier
+      // "live check" actually hit. Accept both, normalised.
+      const raw = (recData && (recData.charts || recData.candidates)) || [];
+      recommendations = raw
+        .map((r) => Object.assign({}, r, { chart_type: normalizeChartType(r.chart_type) }))
+        .filter((r) => CHART_TYPES[r.chart_type]);
+      if (!recommendations.length) recommendations = null;
     } catch (e) {
       recommendations = null; // optional enrichment — fall back to a manual default below
     }
@@ -649,10 +666,8 @@ async function renderOwnChartMaker(datasetId, datasetName) {
     if (recommendations && recommendations.length) {
       chartType = recommendations[0].chart_type;
       params = recommendations[0].params;
-      // Candidates don't actually include a ready-made chart_data (also
-      // confirmed against a live response, despite QL-INTEGRATION.md
-      // documenting one) — this stays undefined and the code below
-      // correctly falls back to fetching it via QL.chart().
+      // Present on the AJAX endpoint's `charts` entries; if a candidate
+      // without it ever comes back, the code below fetches it via QL.chart().
       initialConfig = recommendations[0].chart_data;
     } else {
       // No recommendation available (e.g. too few columns/rows) — fall back
@@ -717,10 +732,12 @@ async function boot() {
 function renderAuthPanel(opts) {
   opts = opts || {};
   const tab = opts.tab || "register";
+  const notice = opts.notice ? `<p class="empty-note">${esc(opts.notice)}</p>` : "";
   mount(`
     <div class="panel">
       <h2>Run this on your own data</h2>
       <p class="sub">This tool runs on real QuantumLayers datasets. Create a free account (about 30 seconds) and we’ll load QL’s auto-recommended chart for one of your own datasets &mdash; or sign in if you already have one.</p>
+      ${notice}
       <div class="tabs">
         <button data-action="auth-tab" data-tab="register" class="${tab === "register" ? "active" : ""}">Create free account</button>
         <button data-action="auth-tab" data-tab="login" class="${tab === "login" ? "active" : ""}">Sign in</button>
@@ -742,8 +759,8 @@ function registerFormHTML() {
   return `
     <form class="auth-form" data-form="register">
       <div class="row2">
-        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" /></div>
-        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" /></div>
+        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" autocomplete="given-name" required /></div>
+        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" autocomplete="family-name" required /></div>
       </div>
       <div class="field"><label for="re-email">Email</label><input id="re-email" name="email" type="email" required /></div>
       <div class="field"><label for="re-pass">Password</label><input id="re-pass" name="password" type="password" required minlength="8" /></div>
@@ -832,7 +849,14 @@ document.addEventListener("submit", (e) => {
       lastName: data.lastName,
       termsAgreed: !!data.termsAgreed,
     })
-      .then(() => route())
+      // QL doesn't sign a new account in: the address has to be verified
+      // by email first (see register() in ql-client.js). Send the visitor
+      // to the sign-in tab with QL's own message instead of a dead end.
+      .then((res) => {
+        if (res && res.pendingVerification) {
+          renderAuthPanel({ tab: "login", notice: (res.message || "Account created.") + " Once verified, sign in below." });
+        } else route();
+      })
       .catch((err) => { errEl.textContent = friendlyError(err); done(); });
   } else if (kind === "upload-dataset") {
     QL.uploadDataset(data.csvFile, data.datasetName, "private")

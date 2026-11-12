@@ -270,7 +270,7 @@ function friendlyError(err) {
   const codes = (window.QL && QL.ErrorCodes) || {};
   switch (err.code) {
     case codes.NETWORK:
-      return "Can’t reach the QuantumLayers demo backend right now — this is usually a temporary configuration issue (see DEPLOYMENT.md), not something wrong with your data. Try again shortly.";
+      return "Can’t reach QuantumLayers right now — check your connection and try again shortly.";
     case codes.AUTH_REQUIRED:
       return "Sign in to see this — it needs an authenticated session even on a public dataset.";
     case codes.INVALID_RESPONSE:
@@ -469,7 +469,7 @@ function columnCardHTML(colName, chartConfig, signedIn) {
   return `
     <div class="card" data-col="${esc(colName)}">
       <h3>${esc(colName)}</h3>
-      <p class="col-meta">grouped by ${esc(chartConfig.__categoryColumn || "")}</p>
+      <p class="col-meta">${chartConfig.__categoryColumn ? `grouped by ${esc(chartConfig.__categoryColumn)}` : "whole column (no low-cardinality category column to group by)"}</p>
       <div class="chart-box"><canvas id="${canvasId}"></canvas></div>
       <div class="col-body">${renderColumnBody(colName, signedIn, chartConfig.__distribution)}</div>
     </div>`;
@@ -516,7 +516,7 @@ async function loadColumnResults(datasetId, numericColumns, categoryColumn, sign
     numericColumns.map(async (colName) => {
       let chartConfig = null, chartErr = null, distribution = null;
       try {
-        chartConfig = await QL.chart(datasetId, "box_plot", { x_column: categoryColumn, y_column: colName });
+        chartConfig = await QL.chart(datasetId, "box_plot", { x_column: categoryColumn || undefined, y_column: colName });
         chartConfig.__categoryColumn = categoryColumn;
       } catch (e) {
         chartErr = e;
@@ -585,8 +585,8 @@ function registerFormHTML() {
   return `
     <form class="auth-form" data-form="register">
       <div class="row2">
-        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" /></div>
-        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" /></div>
+        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" autocomplete="given-name" required /></div>
+        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" autocomplete="family-name" required /></div>
       </div>
       <div class="field"><label for="re-email">Email</label><input id="re-email" name="email" type="email" required /></div>
       <div class="field"><label for="re-pass">Password</label><input id="re-pass" name="password" type="password" required minlength="8" /></div>
@@ -652,10 +652,9 @@ async function renderOwnResults(datasetId, datasetName) {
       mount(`<div class="empty-note">No numeric columns found in <b>${esc(datasetName)}</b> to scan for outliers.</div>${backToPickerLink()}`);
       return;
     }
-    if (!category) {
-      mount(`<p class="empty-note">No low-cardinality category column found in <b>${esc(datasetName)}</b> to group the chart by — outlier detection needs at least one to render QL’s box plot.</p>${backToPickerLink()}`);
-      return;
-    }
+    // No low-cardinality category column is fine: QL's box_plot treats an
+    // omitted x_column as "one box for the whole column" (getBoxPlotData in
+    // QL's charts.php), so every numeric column still gets scanned.
     mount(`
       <div class="invite-bar">
         <span>${kindTag("YOUR DATA")} &nbsp;${esc(datasetName)}</span>
@@ -752,7 +751,14 @@ document.addEventListener("submit", (e) => {
       lastName: data.lastName,
       termsAgreed: !!data.termsAgreed,
     })
-      .then(() => route())
+      // QL doesn't sign a new account in: the address has to be verified
+      // by email first (see register() in ql-client.js). Send the visitor
+      // to the sign-in tab with QL's own message instead of a dead end.
+      .then((res) => {
+        if (res && res.pendingVerification) {
+          renderAuthPanel({ tab: "login", notice: (res.message || "Account created.") + " Once verified, sign in below." });
+        } else route();
+      })
       .catch((err) => { errEl.textContent = friendlyError(err); done(); });
   } else if (kind === "upload-dataset") {
     QL.uploadDataset(data.csvFile, data.datasetName, "private")

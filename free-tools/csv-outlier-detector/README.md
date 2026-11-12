@@ -15,7 +15,9 @@ don't belong.
 - Underneath each chart: a plain-language summary ("N of M values fall
   outside the typical range"), an adjustable sensitivity control (Loose /
   Standard / Strict, i.e. 3×/1.5×/1×IQR), and a table of the flagged
-  values with which category group each one showed up in.
+  values with which category group each one showed up in. If the dataset
+  has no low-cardinality category column, each numeric column is scanned
+  as a single box (QL's `box_plot` with `x_column` omitted).
 - When signed in, cross-checks against QL's own authenticated
   `ql_get_distribution_analysis` call — its official outlier count,
   percentage, and distribution shape (skew/kurtosis-derived normality

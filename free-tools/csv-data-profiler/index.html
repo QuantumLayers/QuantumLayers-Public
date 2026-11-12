@@ -269,7 +269,7 @@ function friendlyError(err) {
   const codes = (window.QL && QL.ErrorCodes) || {};
   switch (err.code) {
     case codes.NETWORK:
-      return "Can’t reach the QuantumLayers demo backend right now — this is usually a temporary configuration issue (see DEPLOYMENT.md), not something wrong with your data. Try again shortly.";
+      return "Can’t reach QuantumLayers right now — check your connection and try again shortly.";
     case codes.AUTH_REQUIRED:
       return "Sign in to see this — it needs an authenticated session even on a public dataset.";
     case codes.INVALID_RESPONSE:
@@ -788,10 +788,12 @@ function uploadPanelHTML() {
 function renderAuthPanel(opts) {
   opts = opts || {};
   const tab = opts.tab || "register";
+  const notice = opts.notice ? `<p class="empty-note">${esc(opts.notice)}</p>` : "";
   mount(`
     <div class="panel">
       <h2>Run this on your own data</h2>
       <p class="sub">This tool profiles real QuantumLayers datasets — it doesn’t run against a shared public demo. Create a free account (about 30 seconds) and we’ll build a full per-column profile and data dictionary for one of your own datasets, or sign in if you already have one.</p>
+      ${notice}
       <div class="tabs">
         <button data-action="auth-tab" data-tab="register" class="${tab === "register" ? "active" : ""}">Create free account</button>
         <button data-action="auth-tab" data-tab="login" class="${tab === "login" ? "active" : ""}">Sign in</button>
@@ -813,8 +815,8 @@ function registerFormHTML() {
   return `
     <form class="auth-form" data-form="register">
       <div class="row2">
-        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" /></div>
-        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" /></div>
+        <div class="field"><label for="re-fn">First name</label><input id="re-fn" name="firstName" type="text" autocomplete="given-name" required /></div>
+        <div class="field"><label for="re-ln">Last name</label><input id="re-ln" name="lastName" type="text" autocomplete="family-name" required /></div>
       </div>
       <div class="field"><label for="re-email">Email</label><input id="re-email" name="email" type="email" required /></div>
       <div class="field"><label for="re-pass">Password</label><input id="re-pass" name="password" type="password" required minlength="8" /></div>
@@ -898,7 +900,14 @@ document.addEventListener("submit", (e) => {
       lastName: data.lastName,
       termsAgreed: !!data.termsAgreed,
     })
-      .then(() => route())
+      // QL doesn't sign a new account in: the address has to be verified
+      // by email first (see register() in ql-client.js). Send the visitor
+      // to the sign-in tab with QL's own message instead of a dead end.
+      .then((res) => {
+        if (res && res.pendingVerification) {
+          renderAuthPanel({ tab: "login", notice: (res.message || "Account created.") + " Once verified, sign in below." });
+        } else route();
+      })
       .catch((err) => { errEl.textContent = friendlyError(err); done(); });
   } else if (kind === "upload-dataset") {
     QL.uploadDataset(data.csvFile, data.datasetName, "private")
