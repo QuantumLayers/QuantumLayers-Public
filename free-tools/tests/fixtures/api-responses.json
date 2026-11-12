@@ -1,0 +1,414 @@
+{
+ "worldbank": {
+  "path": "",
+  "expectPath": "",
+  "expectFormat": "direct_array",
+  "expectRows": 2,
+  "body": [
+   {
+    "page": 1,
+    "pages": 3,
+    "per_page": 2,
+    "total": 6
+   },
+   [
+    {
+     "indicator": {
+      "id": "NY.GDP.MKTP.CD",
+      "value": "GDP (current US$)"
+     },
+     "country": {
+      "id": "US",
+      "value": "United States"
+     },
+     "countryiso3code": "USA",
+     "date": "2023",
+     "value": 27360935000000,
+     "unit": "",
+     "obs_status": "",
+     "decimal": 0
+    },
+    {
+     "indicator": {
+      "id": "NY.GDP.MKTP.CD",
+      "value": "GDP (current US$)"
+     },
+     "country": {
+      "id": "US",
+      "value": "United States"
+     },
+     "countryiso3code": "USA",
+     "date": "2022",
+     "value": 25744108000000,
+     "unit": "",
+     "obs_status": "",
+     "decimal": 0
+    }
+   ]
+  ],
+  "expectSuggest": "1"
+ },
+ "worldbank_with_path": {
+  "path": "1",
+  "expectPath": "1",
+  "expectFormat": "direct_array",
+  "expectRows": 2,
+  "body": [
+   {
+    "page": 1,
+    "pages": 1
+   },
+   [
+    {
+     "date": "2023",
+     "value": 1.5
+    },
+    {
+     "date": "2022",
+     "value": null
+    }
+   ]
+  ]
+ },
+ "openmeteo": {
+  "path": "daily",
+  "expectPath": "daily",
+  "expectFormat": "pure_columnar",
+  "expectRows": 3,
+  "body": {
+   "latitude": 52.52,
+   "longitude": 13.41,
+   "daily_units": {
+    "time": "iso8601",
+    "temperature_2m_max": "°C"
+   },
+   "daily": {
+    "time": [
+     "2026-11-12",
+     "2026-11-13",
+     "2026-11-14"
+    ],
+    "temperature_2m_max": [
+     9.1,
+     8.4,
+     7.7
+    ],
+    "precipitation_sum": [
+     0.0,
+     1.2,
+     null
+    ]
+   }
+  }
+ },
+ "openmeteo_nopath": {
+  "path": "",
+  "expectError": true,
+  "body": {
+   "latitude": 52.52,
+   "longitude": 13.41,
+   "generationtime_ms": 0.1,
+   "daily_units": {
+    "time": "iso8601"
+   },
+   "daily": {
+    "time": [
+     "2026-11-12",
+     "2026-11-13"
+    ],
+    "t": [
+     1,
+     2
+    ]
+   }
+  },
+  "expectSuggest": "daily"
+ },
+ "nasapower": {
+  "path": "properties.parameter",
+  "expectPath": "properties.parameter",
+  "expectFormat": "period_keyed_map",
+  "expectRows": 2,
+  "expectHeaders": [
+   "period",
+   "T2M",
+   "PRECTOTCORR"
+  ],
+  "body": {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -93.62,
+     42.03,
+     300
+    ]
+   },
+   "properties": {
+    "parameter": {
+     "T2M": {
+      "20240101": -5.2,
+      "20240102": -999.0
+     },
+     "PRECTOTCORR": {
+      "20240101": 0.1,
+      "20240102": 0.0
+     }
+    }
+   }
+  }
+ },
+ "imf_sdmx": {
+  "path": "",
+  "expectFormat": "sdmx_json",
+  "expectRows": 2,
+  "expectHeaders": [
+   "TIME_PERIOD",
+   "USA",
+   "CHN"
+  ],
+  "body": {
+   "data": {
+    "dataSets": [
+     {
+      "series": {
+       "0:0:0": {
+        "observations": {
+         "0": [
+          "2.5"
+         ],
+         "1": [
+          "2.8"
+         ]
+        }
+       },
+       "1:0:0": {
+        "observations": {
+         "0": [
+          "5.2"
+         ],
+         "1": [
+          "NaN"
+         ]
+        }
+       }
+      }
+     }
+    ],
+    "structures": [
+     {
+      "dimensions": {
+       "series": [
+        {
+         "id": "COUNTRY",
+         "values": [
+          {
+           "id": "USA"
+          },
+          {
+           "id": "CHN"
+          }
+         ]
+        },
+        {
+         "id": "INDICATOR",
+         "values": [
+          {
+           "id": "NGDP_RPCH"
+          }
+         ]
+        },
+        {
+         "id": "FREQUENCY",
+         "values": [
+          {
+           "id": "A"
+          }
+         ]
+        }
+       ],
+       "observation": [
+        {
+         "id": "TIME_PERIOD",
+         "values": [
+          {
+           "id": "2023"
+          },
+          {
+           "id": "2024"
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ "fred": {
+  "path": "observations",
+  "expectPath": "observations",
+  "expectFormat": "direct_array",
+  "expectRows": 2,
+  "body": {
+   "realtime_start": "2026-11-12",
+   "count": 2,
+   "observations": [
+    {
+     "realtime_start": "2026-11-12",
+     "date": "2024-01-01",
+     "value": "3.7"
+    },
+    {
+     "realtime_start": "2026-11-12",
+     "date": "2024-02-01",
+     "value": "3.9"
+    }
+   ]
+  }
+ },
+ "nws_alerts": {
+  "path": "features",
+  "expectPath": "features",
+  "expectFormat": "direct_array",
+  "expectRows": 1,
+  "body": {
+   "type": "FeatureCollection",
+   "features": [
+    {
+     "id": "x",
+     "type": "Feature",
+     "geometry": null,
+     "properties": {
+      "event": "Wind Advisory",
+      "severity": "Moderate",
+      "areaDesc": "LA County"
+     }
+    }
+   ]
+  }
+ },
+ "eia_auto": {
+  "path": "",
+  "expectPath": "response.data",
+  "expectFormat": "nested_response_nested_data",
+  "expectRows": 1,
+  "body": {
+   "response": {
+    "total": "1",
+    "dateFormat": "YYYY-MM",
+    "data": [
+     {
+      "period": "2024-06",
+      "stateid": "CA",
+      "price": "30.1"
+     }
+    ]
+   },
+   "request": {
+    "command": "/v2/x"
+   }
+  }
+ },
+ "ga4": {
+  "path": "",
+  "expectFormat": "ga4_report",
+  "expectRows": 1,
+  "expectHeaders": [
+   "date",
+   "sessions"
+  ],
+  "body": {
+   "dimensionHeaders": [
+    {
+     "name": "date"
+    }
+   ],
+   "metricHeaders": [
+    {
+     "name": "sessions",
+     "type": "TYPE_INTEGER"
+    }
+   ],
+   "rows": [
+    {
+     "dimensionValues": [
+      {
+       "value": "20240101"
+      }
+     ],
+     "metricValues": [
+      {
+       "value": "42"
+      }
+     ]
+    }
+   ],
+   "rowCount": 1
+  }
+ },
+ "columns_data": {
+  "path": "",
+  "expectFormat": "column_oriented",
+  "expectRows": 2,
+  "body": {
+   "columns": [
+    "a",
+    "b"
+   ],
+   "data": [
+    [
+     1,
+     2
+    ],
+    [
+     3,
+     4
+    ]
+   ]
+  }
+ },
+ "single": {
+  "path": "",
+  "expectFormat": "single_object",
+  "expectRows": 1,
+  "body": {
+   "name": "x",
+   "price": 3.5,
+   "meta": {
+    "a": 1
+   }
+  }
+ },
+ "imf_datamapper_like": {
+  "path": "values.NGDP_RPCH",
+  "expectFormat": "period_keyed_map",
+  "expectRows": 2,
+  "body": {
+   "values": {
+    "NGDP_RPCH": {
+     "USA": {
+      "2023": 2.5,
+      "2024": 2.8
+     },
+     "CHN": {
+      "2023": 5.2,
+      "2024": 4.8
+     }
+    }
+   }
+  }
+ },
+ "missing_path_fallback": {
+  "path": "nope.x",
+  "expectFormat": "direct_array",
+  "expectRows": 1,
+  "expectPathMissing": true,
+  "body": [
+   {
+    "a": 1
+   }
+  ]
+ }
+}

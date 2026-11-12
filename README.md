@@ -23,6 +23,12 @@ adapted, and shipped in your own application.
     provision QL "shadow user" accounts for your own users via a
     backend-signed JWT.
 
+- **[`free-tools/`](free-tools/)** — single-page web tools: QL-backed
+  demos (sign in to run them on your own datasets) and standalone,
+  no-account tools that run entirely in the browser — a public API tester,
+  a correlation matrix calculator, an A/B test calculator and a CSV
+  findings scanner.
+
 Start with [`docs/embedded-analytics.html`](docs/embedded-analytics.html)
 — it explains authentication and the two ways to reach QL (raw API calls
 vs. the JDK), then links out to the full API and JDK references.

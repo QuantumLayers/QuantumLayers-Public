@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Correlation matrix calculator — Pearson & Spearman with p-values from any CSV | QuantumLayers</title>
+<meta name="description" content="Correlation matrix calculator: drop a CSV and get a Pearson or Spearman correlation matrix heatmap with p-values, confidence intervals, multiple-testing correction and scatter plots. Free, runs in your browser, no upload." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="../ql-stats.js"></script>
+<style>
+  :root{
+    --font-display:'Space Grotesk',system-ui,sans-serif;
+    --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+    --bg:#0b0d10; --bg-raised:#14171c; --bg-inset:#0e1013; --border:#262b32;
+    --text:#e8eaed; --text-dim:#9aa1ab; --text-faint:#5b6270;
+    --accent:#9b87f5; --accent-dim:#7dd3fc;
+    --meter-empty:#262b32;
+    --meter-1:#7a5a1e; --meter-2:#96701f; --meter-3:#b28620;
+    --meter-4:#cf9c21; --meter-5:#eab308; --meter-6:#ffcc33;
+    --ok:#4ade80; --warn:#eab308; --danger:#f87171;
+    /* diverging scale ends: negative / positive */
+    --neg:#38bdf8; --pos:#9b87f5;
+  }
+  @media (prefers-color-scheme:light){
+    :root{
+      --bg:#fafafa; --bg-raised:#ffffff; --bg-inset:#f2f2f4; --border:#e2e4e8;
+      --text:#14171c; --text-dim:#565c66; --text-faint:#9aa1ab;
+      --accent-dim:#0369a1; --ok:#15803d; --warn:#a16207; --danger:#b91c1c;
+      --neg:#0284c7; --pos:#7c3aed;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-body); font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased}
+  a{color:var(--accent-dim)}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 16px}
+  .top{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px 0 6px; flex-wrap:wrap}
+  .mark{font-family:var(--font-mono); font-weight:600; font-size:13px; color:var(--text); text-decoration:none; display:flex; align-items:center; gap:9px}
+  .mark .dot{width:10px; height:10px; border-radius:3px; background:var(--meter-6); box-shadow:0 0 0 4px color-mix(in srgb, var(--meter-6) 22%, transparent)}
+  .top a.ghlink{font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--border)}
+  .hero{padding:28px 0 6px}
+  h1{font-family:var(--font-display); font-weight:600; font-size:clamp(28px,5.4vw,42px); line-height:1.08; letter-spacing:-.02em; margin:0 0 12px}
+  .lede{font-size:clamp(16px,2.4vw,18px); color:var(--text-dim); max-width:62ch; margin:0 0 12px}
+  .privacy-line{font-family:var(--font-mono); font-size:12.5px; color:var(--text-faint); margin:0 0 22px}
+
+  .kind-tag{font-family:var(--font-mono); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); border:1px solid var(--border); border-radius:4px; padding:2px 8px; display:inline-block}
+  .strength-meter{display:inline-flex; gap:3px; vertical-align:middle}
+  .strength-meter span{width:14px; height:6px; border-radius:1px; background:var(--meter-empty); display:block}
+  .strength-meter span.filled:nth-child(1){background:var(--meter-1)}
+  .strength-meter span.filled:nth-child(2){background:var(--meter-2)}
+  .strength-meter span.filled:nth-child(3){background:var(--meter-3)}
+  .strength-meter span.filled:nth-child(4){background:var(--meter-4)}
+  .strength-meter span.filled:nth-child(5){background:var(--meter-5)}
+  .strength-meter span.filled:nth-child(6){background:var(--meter-6)}
+
+  .panel{background:var(--bg-raised); border:1px solid var(--border); border-radius:16px; padding:22px; margin:0 0 18px}
+  .panel h2{font-family:var(--font-display); font-weight:600; font-size:19px; margin:0 0 6px}
+  .panel .sub{color:var(--text-dim); font-size:14px; margin:0 0 14px; max-width:70ch}
+
+  .zone{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; padding:36px 20px; background:var(--bg-inset); border:1.5px dashed var(--border); border-radius:14px; position:relative; cursor:pointer}
+  .zone:hover,.zone.drag{border-color:var(--accent)}
+  .zone input[type=file]{position:absolute; inset:0; opacity:0; cursor:pointer}
+  .zone .big{font-family:var(--font-display); font-weight:600; font-size:18px}
+  .zone .s{color:var(--text-dim); font-size:14px}
+  .zone .sample{position:relative; z-index:2; font-family:var(--font-mono); font-size:12.5px; color:var(--meter-6); background:none; border:1px solid color-mix(in srgb, var(--meter-6) 40%, var(--border)); border-radius:8px; padding:7px 12px; cursor:pointer}
+  details.paste{margin-top:12px}
+  details.paste summary{cursor:pointer; font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim)}
+  textarea{width:100%; min-height:120px; margin-top:10px; font-family:var(--font-mono); font-size:12.5px; color:var(--text); background:var(--bg-inset); border:1px solid var(--border); border-radius:9px; padding:10px 12px}
+
+  .controls{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center; margin:0 0 14px}
+  .seg{display:inline-flex; border:1px solid var(--border); border-radius:9px; overflow:hidden}
+  .seg button{font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim); background:none; border:none; padding:7px 12px; cursor:pointer}
+  .seg button.on{background:var(--bg-inset); color:var(--text); box-shadow:inset 0 -2px 0 var(--accent)}
+  .ctl-l{font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); margin-right:8px}
+  .btn-ghost{font-family:var(--font-mono); font-size:12.5px; color:var(--text); background:none; border:1px solid var(--border); padding:7px 12px; border-radius:8px; cursor:pointer}
+  .btn-ghost:hover{border-color:var(--text-faint)}
+
+  .filebar{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim); margin:0 0 14px}
+  .filebar b{color:var(--text); font-weight:500}
+
+  .matrix-scroll{overflow-x:auto; padding-bottom:4px}
+  table.mx{border-collapse:separate; border-spacing:2px; font-family:var(--font-mono); font-size:11.5px}
+  table.mx th{font-weight:500; color:var(--text-dim); padding:4px 6px; white-space:nowrap; max-width:140px; overflow:hidden; text-overflow:ellipsis}
+  table.mx thead th{height:110px; vertical-align:bottom; padding:0 0 6px}
+  table.mx thead th div{writing-mode:vertical-rl; transform:rotate(180deg); max-height:104px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:0 auto}
+  table.mx tbody th{text-align:right}
+  table.mx td{width:46px; min-width:46px; height:34px; text-align:center; border-radius:4px; cursor:pointer; color:var(--text); position:relative}
+  table.mx td.diag{cursor:default; color:var(--text-faint); background:var(--bg-inset)}
+  table.mx td.na{color:var(--text-faint); background:var(--bg-inset); cursor:default}
+  table.mx td.sel{outline:2px solid var(--meter-6); outline-offset:-1px}
+  table.mx td .sig{position:absolute; top:1px; right:3px; font-size:9px; color:var(--meter-6)}
+  .legend{display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:11px; color:var(--text-faint); margin:10px 0 0; flex-wrap:wrap}
+  .legend .bar{width:180px; height:8px; border-radius:4px; background:linear-gradient(90deg, var(--neg), var(--bg-inset), var(--pos))}
+
+  .grid2{display:grid; grid-template-columns:1.1fr 1fr; gap:18px}
+  @media (max-width:820px){ .grid2{grid-template-columns:1fr} }
+  ul.pairs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+  ul.pairs li{background:var(--bg-inset); border:1px solid var(--border); border-radius:9px; padding:9px 11px; cursor:pointer; font-size:13.5px}
+  ul.pairs li:hover, ul.pairs li.sel{border-color:var(--accent)}
+  ul.pairs .ptop{display:flex; justify-content:space-between; gap:10px; align-items:center}
+  ul.pairs .nm{font-family:var(--font-mono); font-size:12.5px; overflow-wrap:anywhere}
+  ul.pairs .meta{font-family:var(--font-mono); font-size:11.5px; color:var(--text-faint)}
+  ul.pairs .flag{color:var(--warn)}
+  .scatter-box h3{font-family:var(--font-display); font-weight:600; font-size:16px; margin:0 0 4px; overflow-wrap:anywhere}
+  .scatter-box .stat{font-family:var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px}
+  .scatter-box p.read{font-size:14px; color:var(--text-dim); margin:8px 0 0}
+  .scatter-box svg text{font-family:var(--font-mono); font-size:10px; fill:var(--text-faint)}
+
+  .note{font-size:13px; color:var(--text-faint); margin:10px 0 0}
+  .err-box{background:color-mix(in srgb, var(--danger) 12%, var(--bg-raised)); border:1px solid color-mix(in srgb, var(--danger) 40%, var(--border)); border-radius:12px; padding:14px 16px; font-size:14.5px; margin:0 0 16px}
+  .warn{color:var(--warn)}
+
+  .explain h2{font-family:var(--font-display); font-weight:600; font-size:20px; margin:30px 0 8px}
+  .explain p, .explain li{color:var(--text-dim); font-size:15px; max-width:70ch}
+  code{font-family:var(--font-mono); font-size:12.5px; background:var(--bg-inset); border:1px solid var(--border); border-radius:5px; padding:1px 5px}
+
+  .cta{margin:36px 0 0; background:var(--bg-inset); border:1px solid var(--border); border-radius:18px; padding:28px 24px}
+  .cta .eyebrow{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--meter-6); margin:0 0 10px}
+  .cta h2{font-family:var(--font-display); font-weight:600; font-size:clamp(20px,3.2vw,25px); line-height:1.2; margin:0 0 10px; max-width:34ch}
+  .cta p{color:var(--text-dim); font-size:15px; max-width:60ch; margin:0 0 18px}
+  .btn{display:inline-block; background:var(--meter-6); color:#0b0d10; font-family:var(--font-display); font-weight:600; font-size:15px; text-decoration:none; padding:12px 22px; border-radius:10px}
+  .btn:hover{background:var(--meter-5)}
+  footer{margin:30px 0 48px; display:flex; flex-wrap:wrap; gap:6px 16px; font-family:var(--font-mono); font-size:12px; color:var(--text-faint)}
+  footer a{color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--border)}
+  footer .sep{color:var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="mark" href="./"><span class="dot"></span>correlation matrix</a>
+    <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">open source &nearr;</a>
+  </div>
+
+  <header class="hero">
+    <h1>Correlation matrix calculator</h1>
+    <p class="lede">Drop a CSV and see how every numeric column moves with every other one — Pearson or Spearman, with p-values, confidence intervals, a multiple-testing correction, and a scatter plot behind every cell.</p>
+    <p class="privacy-line">Free, no sign-up. Runs entirely in your browser — the file is never uploaded.</p>
+  </header>
+
+  <main>
+    <section class="panel" id="inputPanel">
+      <label class="zone" id="zone">
+        <input type="file" id="file" accept=".csv,.tsv,.txt,text/csv" aria-label="Choose a CSV file" />
+        <span class="big">Drop a CSV here, or click to choose one</span>
+        <span class="s">First row = column names. Comma, semicolon or tab separated.</span>
+        <button type="button" class="sample" id="sample">or try a sample dataset</button>
+      </label>
+      <details class="paste">
+        <summary>Paste CSV text instead</summary>
+        <textarea id="pasteText" spellcheck="false" placeholder="height,weight,age&#10;170,68,34&#10;…"></textarea>
+        <button type="button" class="btn-ghost" id="pasteBtn" style="margin-top:8px">Analyse pasted data</button>
+      </details>
+    </section>
+
+    <section id="out" aria-live="polite"></section>
+
+    <section class="explain">
+      <h2>How to read it</h2>
+      <ul>
+        <li><b>r</b> runs from −1 (move in opposite directions) to +1 (move together). Around ±0.1 is negligible, ±0.3 moderate, ±0.5 and beyond strong — but what counts as “strong” depends on the field.</li>
+        <li><b>Pearson</b> measures straight-line relationships and is sensitive to outliers. <b>Spearman</b> works on ranks, so it catches any consistently rising or falling relationship and shrugs off extreme values. When the two disagree a lot, look at the scatter plot.</li>
+        <li><b>p-values</b> test “is r different from 0?”. With many columns you run many tests, so some will look significant by chance — the Holm correction (on by default) adjusts for that. A <span style="color:var(--meter-6)">•</span> marks pairs that stay significant at 5%.</li>
+        <li><b>Missing values</b> are handled pairwise: each pair uses the rows where both columns have a number, and <em>n</em> is shown for every pair. ID-like columns (row numbers, <code>customer_id</code>, postcodes) are left out, because correlating labels is meaningless.</li>
+        <li>Correlation is not causation: two columns can move together because a third thing drives both.</li>
+      </ul>
+    </section>
+  </main>
+
+  <section class="cta">
+    <p class="eyebrow">one file vs. live data</p>
+    <h2>This matrix is a snapshot. QuantumLayers watches it.</h2>
+    <p>Connect a database, API or spreadsheet and QuantumLayers recomputes correlations as the data changes, alongside PCA, ANOVA, regression and AI-written insights — and can email you when a relationship shifts.</p>
+    <a class="btn" href="https://quantumlayers.com/ql-register" target="_blank" rel="noopener">Analyse your live data free &rarr;</a>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span><span class="sep">&middot;</span>
+    <span>built by <a href="https://quantumlayers.com" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+  </footer>
+</div>
+
+<script>
+/* =========================================================================
+   Correlation matrix calculator — 100% client-side.
+   Math: ../ql-stats.js (tested against SciPy; Pearson uses the same
+   pairwise deletion as QuantumLayers' ql_get_correlation_matrix).
+   ========================================================================= */
+const S = window.QLStats;
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const MAX_COLS = 40;
+
+const state = { name: "", rows: 0, cols: [], excluded: [], method: "pearson", correction: "holm", sel: null, result: null };
+
+function meterHTML(frac) {
+  const on = Math.max(0, Math.min(6, Math.round(frac * 6)));
+  let s = '<span class="strength-meter" aria-hidden="true">';
+  for (let i = 0; i < 6; i++) s += `<span class="${i < on ? "filled" : ""}"></span>`;
+  return s + "</span>";
+}
+const fmtR = (r) => (Number.isFinite(r) ? (r < 0 ? "−" : "") + Math.abs(r).toFixed(2).replace(/^0/, "") : "—");
+function fmtP(p) {
+  if (!Number.isFinite(p)) return "—";
+  if (p < 0.0001) return "< 0.0001";
+  return p < 0.01 ? p.toFixed(4) : p.toFixed(3);
+}
+function strengthWord(r) {
+  const a = Math.abs(r);
+  return a >= 0.7 ? "very strong" : a >= 0.5 ? "strong" : a >= 0.3 ? "moderate" : a >= 0.1 ? "weak" : "negligible";
+}
+
+// ---------------------------------------------------------------------
+// input
+// ---------------------------------------------------------------------
+function parseNumber(v) {
+  if (v === null || v === undefined) return null;
+  let s = String(v).trim();
+  if (s === "") return null;
+  s = s.replace(/[$£€\s]/g, "").replace(/%$/, "");
+  if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) s = s.replace(/,/g, ""); // 1,234.5
+  if (!/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(s)) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function analyse(text, name) {
+  const parsed = Papa.parse(text.trim(), { header: true, skipEmptyLines: "greedy", dynamicTyping: false });
+  const headers = (parsed.meta.fields || []).filter((h) => h && h.trim() !== "");
+  const rows = parsed.data;
+  if (!headers.length || !rows.length) { showError("Couldn’t find a header row and data rows. The first row should name the columns."); return; }
+
+  const cols = [], excluded = [];
+  headers.forEach((h) => {
+    const raw = rows.map((r) => r[h]);
+    const present = raw.filter((v) => v != null && String(v).trim() !== "");
+    const vals = raw.map(parseNumber);
+    const nums = vals.filter((v) => v !== null);
+    if (!present.length || nums.length / present.length < 0.8) return; // not numeric
+    const distinct = new Set(nums).size;
+    // Same rule QL applies: numeric-looking identifiers/codes are labels.
+    const qlType = S.inferType(present.map((v) => String(v).trim()), h);
+    const sorted = nums.slice().sort((a, b) => a - b);
+    const sequential = distinct === nums.length && nums.length >= 20 && nums.every(Number.isInteger) && sorted.every((v, i) => i === 0 || v - sorted[i - 1] === sorted[1] - sorted[0]);
+    if (qlType === "string" || S.nameSuggestsIdentifier(h)) excluded.push({ name: h, why: "ID / code" });
+    else if (sequential) excluded.push({ name: h, why: "row counter" });
+    else if (distinct < 3) excluded.push({ name: h, why: distinct === 1 ? "constant" : "only 2 values" });
+    else cols.push({ name: h, vals, n: nums.length });
+  });
+  if (cols.length > MAX_COLS) { cols.slice(MAX_COLS).forEach((c) => excluded.push({ name: c.name, why: "over " + MAX_COLS + "-column limit" })); cols.length = MAX_COLS; }
+  Object.assign(state, { name, rows: rows.length, cols, excluded, sel: null });
+  if (cols.length < 2) {
+    showError(`Found ${cols.length} usable numeric column${cols.length === 1 ? "" : "s"} in <b>${esc(name)}</b> — a correlation matrix needs at least two.${excluded.length ? " Left out: " + excluded.map((e) => `<code>${esc(e.name)}</code> (${e.why})`).join(", ") + "." : ""}`);
+    return;
+  }
+  compute();
+}
+
+function showError(html) {
+  $("#out").innerHTML = `<div class="err-box">${html}</div>`;
+}
+
+// ---------------------------------------------------------------------
+// compute + render
+// ---------------------------------------------------------------------
+function compute() {
+  const k = state.cols.length;
+  const cell = [];
+  const pairs = [];
+  for (let i = 0; i < k; i++) {
+    cell[i] = [];
+    for (let j = 0; j < k; j++) {
+      if (i === j) { cell[i][j] = { r: 1, diag: true }; continue; }
+      if (j < i) { cell[i][j] = cell[j][i]; continue; }
+      const c = S.correlate(state.cols[i].vals, state.cols[j].vals, state.method);
+      // Pearson vs Spearman gap is a robustness flag shown whichever is active
+      const other = S.correlate(state.cols[i].vals, state.cols[j].vals, state.method === "pearson" ? "spearman" : "pearson");
+      c.other = other.r; c.i = i; c.j = j;
+      cell[i][j] = c;
+      pairs.push(c);
+    }
+  }
+  const adj = state.correction === "holm" ? S.holm(pairs.map((p) => p.p)) : pairs.map((p) => p.p);
+  pairs.forEach((p, idx) => { p.padj = adj[idx]; });
+  state.result = { cell, pairs };
+  render();
+}
+
+function cellColor(r) {
+  if (!Number.isFinite(r)) return "";
+  const pct = Math.round(Math.min(1, Math.abs(r)) * 85);
+  return `background:color-mix(in srgb, ${r >= 0 ? "var(--pos)" : "var(--neg)"} ${pct}%, var(--bg-inset))`;
+}
+
+function render() {
+  const { cell, pairs } = state.result;
+  const k = state.cols.length;
+  const ranked = pairs.filter((p) => Number.isFinite(p.r)).sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
+  const sigCount = pairs.filter((p) => p.padj < 0.05).length;
+  if (!state.sel && ranked.length) state.sel = [ranked[0].i, ranked[0].j];
+  const strongest = ranked[0];
+
+  const head = state.cols.map((c) => `<th title="${esc(c.name)}"><div>${esc(c.name)}</div></th>`).join("");
+  const body = state.cols.map((c, i) => `<tr><th title="${esc(c.name)}">${esc(c.name)}</th>${state.cols.map((_, j) => {
+    const x = cell[i][j];
+    if (x.diag) return `<td class="diag">1</td>`;
+    if (!Number.isFinite(x.r)) return `<td class="na" title="not enough overlapping values (n=${x.n})">—</td>`;
+    const sel = state.sel && ((state.sel[0] === i && state.sel[1] === j) || (state.sel[0] === j && state.sel[1] === i));
+    const tip = `${state.cols[i].name} × ${state.cols[j].name}: r=${x.r.toFixed(3)}, p=${fmtP(x.p)}${state.correction === "holm" ? ", Holm p=" + fmtP(x.padj) : ""}, n=${x.n}`;
+    return `<td class="${sel ? "sel" : ""}" style="${cellColor(x.r)}" data-i="${i}" data-j="${j}" title="${esc(tip)}">${fmtR(x.r)}${x.padj < 0.05 ? '<span class="sig">•</span>' : ""}</td>`;
+  }).join("")}</tr>`).join("");
+
+  const pairList = ranked.slice(0, 15).map((p) => {
+    const a = state.cols[p.i].name, b = state.cols[p.j].name;
+    const flags = [];
+    if (p.n < 10) flags.push("small n");
+    if (Number.isFinite(p.other) && Math.abs(p.r - p.other) >= 0.25) flags.push(state.method === "pearson" ? "outlier-driven or curved?" : "Pearson differs a lot");
+    const sel = state.sel && state.sel[0] === p.i && state.sel[1] === p.j;
+    return `<li class="${sel ? "sel" : ""}" data-i="${p.i}" data-j="${p.j}">
+      <div class="ptop"><span class="nm">${esc(a)} × ${esc(b)}</span>${meterHTML(Math.abs(p.r))}</div>
+      <div class="meta">r ${fmtR(p.r)} · ${strengthWord(p.r)} · p ${fmtP(state.correction === "holm" ? p.padj : p.p)} · n ${p.n.toLocaleString()}${flags.length ? ` · <span class="flag">${flags.join(", ")}</span>` : ""}</div>
+    </li>`;
+  }).join("");
+
+  $("#out").innerHTML = `
+    <div class="filebar"><span><b>${esc(state.name)}</b> · ${state.rows.toLocaleString()} rows · ${k} numeric columns analysed</span><button type="button" class="btn-ghost" data-act="reset">Load another file</button></div>
+    <section class="panel">
+      <div class="controls">
+        <span><span class="kind-tag">KIND · CORRELATION</span> ${strongest ? meterHTML(Math.abs(strongest.r)) : ""}</span>
+        <span><span class="ctl-l">method</span><span class="seg"><button data-method="pearson" class="${state.method === "pearson" ? "on" : ""}">Pearson</button><button data-method="spearman" class="${state.method === "spearman" ? "on" : ""}">Spearman</button></span></span>
+        <span><span class="ctl-l">p-values</span><span class="seg"><button data-corr="holm" class="${state.correction === "holm" ? "on" : ""}">Holm-corrected</button><button data-corr="none" class="${state.correction === "none" ? "on" : ""}">raw</button></span></span>
+        <button type="button" class="btn-ghost" data-act="export">Export CSV</button>
+      </div>
+      <p class="sub" style="margin:0 0 12px">${strongest ? `Strongest: <b>${esc(state.cols[strongest.i].name)}</b> × <b>${esc(state.cols[strongest.j].name)}</b> (r ${fmtR(strongest.r)}). ` : ""}${sigCount} of ${pairs.length} pairs significant at 5%${state.correction === "holm" ? " after Holm correction" : " (uncorrected)"}.</p>
+      <div class="matrix-scroll"><table class="mx"><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>
+      <div class="legend"><span>−1</span><span class="bar"></span><span>+1</span><span>· <span style="color:var(--meter-6)">•</span> significant at 5%</span><span>· click a cell for its scatter plot</span></div>
+      ${state.excluded.length ? `<p class="note">Left out: ${state.excluded.map((e) => `<code>${esc(e.name)}</code> (${esc(e.why)})`).join(", ")}.</p>` : ""}
+    </section>
+    <section class="grid2">
+      <div class="panel"><h2>Ranked pairs</h2><p class="sub">Strongest relationships first (top 15).</p><ul class="pairs">${pairList || '<li>No pairs could be computed.</li>'}</ul></div>
+      <div class="panel scatter-box" id="scatter"></div>
+    </section>`;
+  renderScatter();
+}
+
+function renderScatter() {
+  const box = $("#scatter");
+  if (!box || !state.sel) return;
+  const [i, j] = state.sel;
+  const A = state.cols[i], B = state.cols[j];
+  const c = state.result.cell[i][j];
+  const pw = S.pairwise(A.vals, B.vals);
+  const xs = pw.xs, ys = pw.ys;
+  const W = 420, H = 300, L = 46, R = 12, T = 10, Bm = 34;
+  const ext = (a) => { let mn = Infinity, mx = -Infinity; a.forEach((v) => { if (v < mn) mn = v; if (v > mx) mx = v; }); if (mn === mx) { mn -= 1; mx += 1; } const pad = (mx - mn) * 0.05; return [mn - pad, mx + pad]; };
+  const [x0, x1] = ext(xs), [y0, y1] = ext(ys);
+  const sx = (v) => L + ((v - x0) / (x1 - x0)) * (W - L - R);
+  const sy = (v) => H - Bm - ((v - y0) / (y1 - y0)) * (H - T - Bm);
+  const step = Math.max(1, Math.ceil(xs.length / 3000));
+  let dots = "";
+  for (let k = 0; k < xs.length; k += step) dots += `<circle cx="${sx(xs[k]).toFixed(1)}" cy="${sy(ys[k]).toFixed(1)}" r="2.6"/>`;
+  const fit = S.linearFit(xs, ys);
+  const line = Number.isFinite(fit.slope) ? `<line x1="${sx(x0)}" y1="${sy(fit.intercept + fit.slope * x0)}" x2="${sx(x1)}" y2="${sy(fit.intercept + fit.slope * x1)}" stroke="var(--meter-6)" stroke-width="1.5" clip-path="url(#clip)"/>` : "";
+  const tick = (v) => { const a = Math.abs(v); return a >= 1e6 ? (v / 1e6).toFixed(1) + "M" : a >= 1e4 ? (v / 1e3).toFixed(0) + "k" : a >= 100 ? v.toFixed(0) : a >= 1 ? v.toFixed(1) : v.toPrecision(2); };
+  const ticks = [0, 0.5, 1];
+  const axes = ticks.map((t) => {
+    const xv = x0 + t * (x1 - x0), yv = y0 + t * (y1 - y0);
+    return `<text x="${sx(xv)}" y="${H - Bm + 14}" text-anchor="middle">${tick(xv)}</text><text x="${L - 6}" y="${sy(yv) + 3}" text-anchor="end">${tick(yv)}</text><line x1="${L}" x2="${W - R}" y1="${sy(yv)}" y2="${sy(yv)}" stroke="var(--border)" stroke-width="0.6"/>`;
+  }).join("");
+  const ci = c.ci || [NaN, NaN];
+  const dir = c.r >= 0 ? "tend to rise together" : "tend to move in opposite directions";
+  const read = Number.isFinite(c.r)
+    ? `<b>${esc(A.name)}</b> and <b>${esc(B.name)}</b> ${dir} — a ${strengthWord(c.r)} ${state.method === "pearson" ? "linear" : "monotonic"} relationship. ${(state.correction === "holm" ? c.padj : c.p) < 0.05 ? "Unlikely to be chance alone" + (state.correction === "holm" ? " (after correcting for the " + state.result.pairs.length + " pairs tested)." : ".") : "Not statistically distinguishable from zero" + (state.correction === "holm" ? " once you correct for testing " + state.result.pairs.length + " pairs." : ".")}${Number.isFinite(c.other) && Math.abs(c.r - c.other) >= 0.25 ? ` <span class="warn">${state.method === "pearson" ? "Spearman" : "Pearson"} gives ${fmtR(c.other)} — a few extreme points or a curved shape are shaping this result.</span>` : ""}`
+    : "Not enough overlapping values to compute this pair.";
+  box.innerHTML = `
+    <h3>${esc(A.name)} × ${esc(B.name)}</h3>
+    <p class="stat">r ${fmtR(c.r)} · 95% CI [${fmtR(ci[0])}, ${fmtR(ci[1])}] · p ${fmtP(c.p)}${state.correction === "holm" ? ` (Holm ${fmtP(c.padj)})` : ""} · n ${c.n.toLocaleString()}</p>
+    <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Scatter plot of ${esc(A.name)} against ${esc(B.name)}">
+      <defs><clipPath id="clip"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - Bm}"/></clipPath></defs>
+      ${axes}
+      <g fill="var(--accent)" fill-opacity="${xs.length > 500 ? 0.35 : 0.7}">${dots}</g>
+      ${line}
+      <text x="${(W + L) / 2}" y="${H - 4}" text-anchor="middle">${esc(A.name)}</text>
+      <text x="12" y="${(H - Bm) / 2}" text-anchor="middle" transform="rotate(-90 12 ${(H - Bm) / 2})">${esc(B.name)}</text>
+    </svg>
+    <p class="read">${read}</p>
+    ${step > 1 ? `<p class="note">Showing every ${step}th point of ${xs.length.toLocaleString()}; statistics use all of them.</p>` : ""}`;
+}
+
+function exportCSV() {
+  const { cell } = state.result;
+  const q = (s) => (/[",\n]/.test(s) ? '"' + String(s).replace(/"/g, '""') + '"' : s);
+  const names = state.cols.map((c) => q(c.name));
+  const mat = [[state.method].concat(names).join(",")].concat(state.cols.map((c, i) => [q(c.name)].concat(state.cols.map((_, j) => (Number.isFinite(cell[i][j].r) ? cell[i][j].r.toFixed(6) : ""))).join(",")));
+  const long = ["column_a,column_b,r,p_value,p_holm,n,ci_low,ci_high"].concat(state.result.pairs.map((p) => [q(state.cols[p.i].name), q(state.cols[p.j].name), p.r, p.p, p.padj, p.n, p.ci[0], p.ci[1]].map((v) => (typeof v === "number" ? (Number.isFinite(v) ? +v.toPrecision(8) : "") : v)).join(",")));
+  const text = mat.join("\r\n") + "\r\n\r\n" + long.join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + text], { type: "text/csv;charset=utf-8" }));
+  a.download = state.name.replace(/\.[^.]+$/, "") + "-correlation-" + state.method + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ---------------------------------------------------------------------
+// events
+// ---------------------------------------------------------------------
+document.addEventListener("click", (e) => {
+  const m = e.target.closest("[data-method]");
+  if (m) { state.method = m.dataset.method; compute(); return; }
+  const c = e.target.closest("[data-corr]");
+  if (c) { state.correction = c.dataset.corr; compute(); return; }
+  const cellEl = e.target.closest("td[data-i], li[data-i]");
+  if (cellEl) {
+    const i = +cellEl.dataset.i, j = +cellEl.dataset.j;
+    state.sel = i < j ? [i, j] : [j, i];
+    render();
+    if (cellEl.tagName === "TD" && window.innerWidth < 820) $("#scatter").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  const act = e.target.closest("[data-act]");
+  if (act && act.dataset.act === "export") exportCSV();
+  if (act && act.dataset.act === "reset") { $("#out").innerHTML = ""; $("#inputPanel").style.display = ""; $("#file").value = ""; }
+});
+
+function load(text, name) {
+  analyse(text, name);
+  if (state.cols.length >= 2) $("#inputPanel").style.display = "none";
+}
+function readFile(f) {
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => load(String(r.result), f.name);
+  r.readAsText(f);
+}
+$("#file").addEventListener("change", (e) => readFile(e.target.files[0]));
+const zone = $("#zone");
+["dragenter", "dragover"].forEach((ev) => zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.add("drag"); }));
+["dragleave", "drop"].forEach((ev) => zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.remove("drag"); }));
+zone.addEventListener("drop", (e) => readFile(e.dataTransfer.files[0]));
+$("#pasteBtn").addEventListener("click", () => { const t = $("#pasteText").value; if (t.trim()) load(t, "pasted data"); });
+
+// Sample: a small, deterministic housing-style dataset with a mix of
+// strong, weak, non-linear and outlier-driven relationships.
+function sampleCSV() {
+  let seed = 42;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+  const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd());
+  const lines = ["listing_id,sqft,bedrooms,age_years,distance_km,price_k,days_on_market,school_rating"];
+  for (let i = 0; i < 180; i++) {
+    const sqft = Math.round(900 + rnd() * 2400);
+    const bedrooms = Math.max(1, Math.round(sqft / 650 + gauss() * 0.6));
+    const age = Math.round(rnd() * 70);
+    const dist = +(1 + rnd() * 30).toFixed(1);
+    const school = +(4 + rnd() * 6).toFixed(1);
+    let price = Math.round(80 + sqft * 0.16 - age * 0.9 + 600 / (dist + 2) + school * 9 + gauss() * 35);
+    if (i === 17) price = 1450; // a mansion: one point that inflates Pearson
+    const dom = Math.max(3, Math.round(25 + (price > 480 ? 22 : 0) + gauss() * 12));
+    lines.push([10001 + i, sqft, bedrooms, age, dist, price, i % 11 === 0 ? "" : dom, school].join(","));
+  }
+  return lines.join("\n");
+}
+$("#sample").addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); load(sampleCSV(), "sample-housing.csv"); });
+</script>
+</body>
+</html>

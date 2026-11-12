@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Public API tester — preview any JSON or XML API as a table, export CSV | QuantumLayers</title>
+<meta name="description" content="Public API tester: paste a JSON or XML API URL and see it as a clean table — detected rows, column types, data-quality checks, a suggested response path and a CSV export. Free, no sign-up, runs in your browser." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="../ql-stats.js"></script>
+<script src="./api-parse.js"></script>
+<style>
+  :root{
+    --font-display:'Space Grotesk',system-ui,sans-serif;
+    --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+    --bg:#0b0d10; --bg-raised:#14171c; --bg-inset:#0e1013; --border:#262b32;
+    --text:#e8eaed; --text-dim:#9aa1ab; --text-faint:#5b6270;
+    --accent:#9b87f5; --accent-dim:#7dd3fc;
+    --meter-empty:#262b32;
+    --meter-1:#7a5a1e; --meter-2:#96701f; --meter-3:#b28620;
+    --meter-4:#cf9c21; --meter-5:#eab308; --meter-6:#ffcc33;
+    --ok:#4ade80; --warn:#eab308; --danger:#f87171;
+  }
+  @media (prefers-color-scheme:light){
+    :root{
+      --bg:#fafafa; --bg-raised:#ffffff; --bg-inset:#f2f2f4; --border:#e2e4e8;
+      --text:#14171c; --text-dim:#565c66; --text-faint:#9aa1ab;
+      --accent-dim:#0369a1; --ok:#15803d; --warn:#a16207; --danger:#b91c1c;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-body); font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased}
+  a{color:var(--accent-dim)}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 16px}
+  .top{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px 0 6px; flex-wrap:wrap}
+  .mark{font-family:var(--font-mono); font-weight:600; font-size:13px; color:var(--text); text-decoration:none; display:flex; align-items:center; gap:9px}
+  .mark .dot{width:10px; height:10px; border-radius:3px; background:var(--meter-6); box-shadow:0 0 0 4px color-mix(in srgb, var(--meter-6) 22%, transparent)}
+  .top a.ghlink{font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--border)}
+  .hero{padding:28px 0 6px}
+  h1{font-family:var(--font-display); font-weight:600; font-size:clamp(28px,5.4vw,42px); line-height:1.08; letter-spacing:-.02em; margin:0 0 12px}
+  .lede{font-size:clamp(16px,2.4vw,18px); color:var(--text-dim); max-width:62ch; margin:0 0 12px}
+  .privacy-line{font-family:var(--font-mono); font-size:12.5px; color:var(--text-faint); margin:0 0 22px}
+
+  .kind-tag{font-family:var(--font-mono); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); border:1px solid var(--border); border-radius:4px; padding:2px 8px; display:inline-block}
+  .strength-meter{display:inline-flex; gap:3px; vertical-align:middle}
+  .strength-meter span{width:14px; height:6px; border-radius:1px; background:var(--meter-empty); display:block}
+  .strength-meter span.filled:nth-child(1){background:var(--meter-1)}
+  .strength-meter span.filled:nth-child(2){background:var(--meter-2)}
+  .strength-meter span.filled:nth-child(3){background:var(--meter-3)}
+  .strength-meter span.filled:nth-child(4){background:var(--meter-4)}
+  .strength-meter span.filled:nth-child(5){background:var(--meter-5)}
+  .strength-meter span.filled:nth-child(6){background:var(--meter-6)}
+
+  .panel{background:var(--bg-raised); border:1px solid var(--border); border-radius:16px; padding:22px; margin:0 0 18px}
+  .panel h2{font-family:var(--font-display); font-weight:600; font-size:19px; margin:0 0 6px}
+  .panel .sub{color:var(--text-dim); font-size:14px; margin:0 0 14px; max-width:68ch}
+  label.lbl{display:block; font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); margin:0 0 6px}
+  input[type=text], input[type=url], select, textarea{
+    width:100%; font-family:var(--font-mono); font-size:13.5px; color:var(--text); background:var(--bg-inset);
+    border:1px solid var(--border); border-radius:9px; padding:10px 12px; outline:none
+  }
+  input:focus, select:focus, textarea:focus{border-color:var(--accent)}
+  textarea{min-height:140px; resize:vertical}
+  .row{display:grid; grid-template-columns:1fr 220px; gap:12px; margin:0 0 12px}
+  @media (max-width:640px){ .row{grid-template-columns:1fr} }
+  .field{margin:0 0 12px}
+  .actions{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+  .btn-primary{font-family:var(--font-display); font-weight:600; font-size:15px; color:#0b0d10; background:var(--meter-6); border:none; padding:11px 20px; border-radius:9px; cursor:pointer}
+  .btn-primary:hover{background:var(--meter-5)}
+  .btn-primary:disabled{opacity:.6; cursor:default}
+  .btn-ghost{font-family:var(--font-mono); font-size:12.5px; color:var(--text); background:none; border:1px solid var(--border); padding:8px 12px; border-radius:8px; cursor:pointer}
+  .btn-ghost:hover{border-color:var(--text-faint)}
+  .hint{font-size:13px; color:var(--text-faint); margin:6px 0 0}
+  details.paste{margin-top:14px}
+  details.paste summary{cursor:pointer; font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim)}
+  details.paste[open] summary{margin-bottom:10px}
+
+  .presets{display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; color:var(--text); background:var(--bg-inset); border:1px solid var(--border); border-radius:999px; padding:6px 11px; cursor:pointer; display:inline-flex; gap:6px; align-items:center}
+  .chip:hover{border-color:var(--accent)}
+  .chip .tag{font-size:10px; color:var(--warn); letter-spacing:.04em}
+  .chip.active{border-color:var(--accent); color:var(--accent)}
+
+  .status{display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim); margin:0 0 14px}
+  .status b{color:var(--text); font-weight:500}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--danger)}
+
+  .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin:0 0 16px}
+  .tile{background:var(--bg-inset); border:1px solid var(--border); border-radius:12px; padding:12px 14px; min-width:0}
+  .tile .n{font-family:var(--font-display); font-weight:600; font-size:21px; display:block; overflow-wrap:anywhere}
+  .tile .l{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint)}
+
+  .verdict{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 14px}
+  .verdict .v{font-family:var(--font-display); font-weight:600; font-size:17px}
+
+  ul.findings{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+  ul.findings li{background:var(--bg-inset); border:1px solid var(--border); border-left:3px solid var(--text-faint); border-radius:9px; padding:10px 12px; font-size:14px}
+  ul.findings li.good{border-left-color:var(--ok)}
+  ul.findings li.warn{border-left-color:var(--warn)}
+  ul.findings li.bad{border-left-color:var(--danger)}
+  code, .mono{font-family:var(--font-mono); font-size:12.5px}
+  code{background:var(--bg-inset); border:1px solid var(--border); border-radius:5px; padding:1px 5px; overflow-wrap:anywhere}
+
+  .table-scroll{overflow-x:auto; border:1px solid var(--border); border-radius:10px; max-height:460px; overflow-y:auto}
+  table.t{border-collapse:collapse; width:100%; font-size:13px}
+  table.t th{position:sticky; top:0; background:var(--bg-raised); font-family:var(--font-mono); font-weight:500; font-size:11px; color:var(--text-dim); text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); white-space:nowrap}
+  table.t th small{display:block; color:var(--text-faint); font-size:10px; letter-spacing:.05em; text-transform:uppercase}
+  table.t td{padding:6px 10px; border-bottom:1px solid var(--bg-inset); white-space:nowrap; max-width:280px; overflow:hidden; text-overflow:ellipsis; font-family:var(--font-mono); font-size:12.5px}
+  table.t td.null{color:var(--text-faint); font-style:italic}
+  table.t td.num{text-align:right}
+
+  .cols{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px}
+  .col{background:var(--bg-inset); border:1px solid var(--border); border-radius:10px; padding:10px 12px; min-width:0}
+  .col .nm{font-family:var(--font-mono); font-size:12.5px; overflow-wrap:anywhere}
+  .col .ty{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent)}
+  .col .st{font-size:12.5px; color:var(--text-dim)}
+  .col svg{display:block; margin-top:6px}
+
+  .settings{display:grid; grid-template-columns:150px 1fr; gap:8px 14px; font-size:13.5px; align-items:baseline}
+  .settings dt{font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint)}
+  .settings dd{margin:0; overflow-wrap:anywhere}
+  @media (max-width:560px){ .settings{grid-template-columns:1fr} }
+
+  .err-box{background:color-mix(in srgb, var(--danger) 12%, var(--bg-raised)); border:1px solid color-mix(in srgb, var(--danger) 40%, var(--border)); border-radius:12px; padding:14px 16px; font-size:14.5px; margin:0 0 16px}
+  .err-box b{color:var(--danger)}
+  .sugg{background:color-mix(in srgb, var(--meter-6) 10%, var(--bg-raised)); border:1px solid color-mix(in srgb, var(--meter-6) 40%, var(--border)); border-radius:12px; padding:12px 14px; font-size:14px; margin:0 0 14px}
+  .skeleton{color:var(--text-faint); font-family:var(--font-mono); font-size:13px; padding:12px 0}
+
+  .explain h2{font-family:var(--font-display); font-weight:600; font-size:20px; margin:30px 0 8px}
+  .explain p, .explain li{color:var(--text-dim); font-size:15px; max-width:70ch}
+
+  .cta{margin:36px 0 0; background:var(--bg-inset); border:1px solid var(--border); border-radius:18px; padding:28px 24px}
+  .cta .eyebrow{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--meter-6); margin:0 0 10px}
+  .cta h2{font-family:var(--font-display); font-weight:600; font-size:clamp(20px,3.2vw,25px); line-height:1.2; margin:0 0 10px; max-width:34ch}
+  .cta p{color:var(--text-dim); font-size:15px; max-width:60ch; margin:0 0 18px}
+  .btn{display:inline-block; background:var(--meter-6); color:#0b0d10; font-family:var(--font-display); font-weight:600; font-size:15px; text-decoration:none; padding:12px 22px; border-radius:10px}
+  .btn:hover{background:var(--meter-5)}
+  footer{margin:30px 0 48px; display:flex; flex-wrap:wrap; gap:6px 16px; font-family:var(--font-mono); font-size:12px; color:var(--text-faint)}
+  footer a{color:var(--text-dim); text-decoration:none; border-bottom:1px solid var(--border)}
+  footer .sep{color:var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <a class="mark" href="./"><span class="dot"></span>public api tester</a>
+    <a class="ghlink" href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">open source &nearr;</a>
+  </div>
+
+  <header class="hero">
+    <h1>Public API tester</h1>
+    <p class="lede">Paste a JSON or XML API URL and see it the way an analytics tool will: which part of the response holds the rows, what each column’s type is, what’s missing or suspicious — plus a CSV export and the exact settings to connect it as a live dataset.</p>
+    <p class="privacy-line">Free, no sign-up. Your browser calls the API directly — nothing goes through a QuantumLayers server, and nothing is stored.</p>
+  </header>
+
+  <main>
+    <section class="panel" aria-labelledby="req-h">
+      <h2 id="req-h">Request</h2>
+      <p class="sub">Try a keyless public dataset below, or paste any API endpoint. GET requests only.</p>
+      <div class="field">
+        <label class="lbl">Try a public dataset</label>
+        <div class="presets" id="presets"></div>
+      </div>
+      <form id="reqForm" autocomplete="off">
+        <div class="row">
+          <div>
+            <label class="lbl" for="url">API URL</label>
+            <input id="url" name="url" type="url" placeholder="https://api.example.com/v1/data?format=json" required spellcheck="false" />
+          </div>
+          <div>
+            <label class="lbl" for="path">Response path <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+            <input id="path" name="path" type="text" placeholder="auto — e.g. data or 1" spellcheck="false" />
+          </div>
+        </div>
+        <details class="paste" id="authBox">
+          <summary>+ Authorization header (only if the API needs one)</summary>
+          <div class="field">
+            <label class="lbl" for="authHeader">Authorization header value</label>
+            <input id="authHeader" type="text" placeholder="Bearer …" spellcheck="false" />
+            <p class="hint">Sent only to the API above, from your browser. Adding a header makes the browser do a CORS pre-check first, which some APIs refuse — if a key can go in the URL instead, prefer that.</p>
+          </div>
+        </details>
+        <div class="actions" style="margin-top:12px">
+          <button class="btn-primary" type="submit" id="goBtn">Test API &rarr;</button>
+          <span class="hint" id="keyNote"></span>
+        </div>
+      </form>
+      <details class="paste" id="pasteBox">
+        <summary>Or paste a response body / open a saved file (JSON, XML or CSV)</summary>
+        <div class="field">
+          <textarea id="body" spellcheck="false" placeholder='{"data":[{"date":"2024-01-01","value":1.2}, …]}'></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn-ghost" type="button" id="parseBtn">Parse pasted body</button>
+          <label class="btn-ghost" for="file" style="display:inline-block">Open file&hellip;</label>
+          <input type="file" id="file" accept=".json,.xml,.csv,.txt,application/json,text/xml,text/csv" style="display:none" />
+        </div>
+        <p class="hint">Use this when an API blocks browser calls (no CORS): open the URL in a new tab, copy what it returns, paste it here.</p>
+      </details>
+    </section>
+
+    <section id="out" aria-live="polite"></section>
+
+    <section class="explain">
+      <h2>What this checks</h2>
+      <ul>
+        <li><b>Where the rows are.</b> Most APIs wrap their data — <code>{"data": [...]}</code>, <code>[paging, rows]</code>, columnar arrays, maps keyed by date, SDMX. The tester finds the table the same way QuantumLayers’ REST connector does, shows the <em>response path</em> it used, and suggests a better one when the automatic pick looks wrong.</li>
+        <li><b>Column types.</b> Each column is typed with QuantumLayers’ own rules (integer, float, date, datetime, text) — including treating ID and postcode-like columns as text, not numbers.</li>
+        <li><b>Data quality.</b> Missing values, sentinel codes like <code>-999</code>, numbers delivered as strings, columns that are entirely empty, list indexes flattened into dozens of columns, and signs that you only got the first page of results.</li>
+        <li><b>Whether a browser can call it.</b> If the API doesn’t send CORS headers, browsers can’t read it directly. That doesn’t matter for a server-side connector — paste the body to test it anyway.</li>
+      </ul>
+    </section>
+  </main>
+
+  <section class="cta">
+    <p class="eyebrow">one test vs. a live dataset</p>
+    <h2>This fetched the API once. QuantumLayers keeps it fresh.</h2>
+    <p>Connect the same URL and response path as a REST dataset in QuantumLayers and it re-syncs on a schedule, from the server (no CORS limits), with charts, statistics, monitor alerts and AI insights on top.</p>
+    <a class="btn" href="https://quantumlayers.com/ql-register" target="_blank" rel="noopener">Connect this API free &rarr;</a>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span><span class="sep">&middot;</span>
+    <span>built by <a href="https://quantumlayers.com" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+  </footer>
+</div>
+
+<script>
+/* =========================================================================
+   Public API tester — 100% client-side. No QuantumLayers account or call.
+   Parsing: ./api-parse.js (port of QL's REST-connector parser).
+   Typing:  ../ql-stats.js inferType() (port of QL's ql_infer_type()).
+   ========================================================================= */
+
+// Keyless datasets from QuantumLayers' built-in REST templates
+// (includes/templates.php), trimmed to small date ranges so they load fast.
+const PRESETS = [
+  { name: "World Bank · GDP per capita", url: "https://api.worldbank.org/v2/country/USA;CHN;JPN;DEU;IND;GBR;FRA;BRA/indicator/NY.GDP.PCAP.CD?format=json&date=2000:2024&per_page=20000", path: "1" },
+  { name: "IMF · real GDP growth (SDMX)", url: "https://api.imf.org/external/sdmx/3.0/data/dataflow/IMF.RES/WEO/+/USA+CHN+JPN+DEU+IND+GBR+FRA+BRA.NGDP_RPCH.A", path: "" },
+  { name: "Open-Meteo · 16-day forecast", url: "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&timezone=auto&forecast_days=16&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max", path: "daily" },
+  { name: "Open-Meteo · weather history", url: "https://archive-api.open-meteo.com/v1/archive?latitude=52.52&longitude=13.41&timezone=auto&start_date=2024-01-01&end_date=2024-12-31&daily=temperature_2m_mean,precipitation_sum,wind_speed_10m_max", path: "daily" },
+  { name: "Open-Meteo · air quality", url: "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=52.52&longitude=13.41&timezone=auto&past_days=7&forecast_days=2&hourly=pm10,pm2_5,nitrogen_dioxide,ozone,european_aqi", path: "hourly" },
+  { name: "NASA POWER · daily climate", url: "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,T2M_MAX,T2M_MIN,PRECTOTCORR,RH2M&community=AG&start=20240101&end=20241231&latitude=42.03&longitude=-93.62&format=JSON", path: "properties.parameter" },
+  { name: "NOAA · weather alerts (CA)", url: "https://api.weather.gov/alerts/active?area=CA", path: "features" },
+  { name: "NOAA · 7-day forecast (NYC)", url: "https://api.weather.gov/gridpoints/OKX/33,35/forecast", path: "properties.periods" },
+  { name: "NOAA · daily observations", url: "https://www.ncei.noaa.gov/access/services/data/v1?format=json&units=metric&includeStationName=true&stations=USW00094728&dataset=daily-summaries&dataTypes=TMAX,TMIN,PRCP&startDate=2024-01-01&endDate=2024-12-31", path: "" },
+  { name: "FRED · unemployment", url: "https://api.stlouisfed.org/fred/series/observations?api_key=YOUR_FRED_API_KEY&file_type=json&series_id=UNRATE", path: "observations", key: true },
+  { name: "OpenWeather · 5-day forecast", url: "https://api.openweathermap.org/data/2.5/forecast?q=London,GB&units=metric&appid=YOUR_OPENWEATHER_API_KEY", path: "list", key: true },
+];
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtInt = (n) => Number(n).toLocaleString();
+const fmtNum = (v) => {
+  if (v == null || !Number.isFinite(v)) return "—";
+  const a = Math.abs(v);
+  return v.toLocaleString(undefined, { maximumFractionDigits: a >= 100 ? 1 : a >= 1 ? 2 : 4 });
+};
+const fmtPct = (x) => (x * 100).toLocaleString(undefined, { maximumFractionDigits: x < 0.01 && x > 0 ? 1 : 0 }) + "%";
+function meterHTML(score06) {
+  const on = Math.max(0, Math.min(6, Math.round(score06)));
+  let s = '<span class="strength-meter" aria-label="' + on + ' of 6">';
+  for (let i = 0; i < 6; i++) s += `<span class="${i < on ? "filled" : ""}"></span>`;
+  return s + "</span>";
+}
+const kindTag = (t) => `<span class="kind-tag">KIND · ${esc(t)}</span>`;
+
+// ---------------------------------------------------------------------
+// presets / URL hash
+// ---------------------------------------------------------------------
+function renderPresets(activeUrl) {
+  $("#presets").innerHTML = PRESETS.map((p, i) =>
+    `<button type="button" class="chip ${p.url === activeUrl ? "active" : ""}" data-preset="${i}">${esc(p.name)}${p.key ? '<span class="tag">needs key</span>' : ""}</button>`
+  ).join("");
+}
+document.addEventListener("click", (e) => {
+  const chip = e.target.closest("[data-preset]");
+  if (chip) {
+    const p = PRESETS[Number(chip.dataset.preset)];
+    $("#url").value = p.url; $("#path").value = p.path;
+    renderPresets(p.url); updateKeyNote();
+    if (!p.key) runFetch();
+    else {
+      // Select the YOUR_..._KEY placeholder so typing replaces it.
+      const m = /YOUR_[A-Z_]+/.exec(p.url);
+      $("#url").focus();
+      if (m) $("#url").setSelectionRange(m.index, m.index + m[0].length);
+      $("#out").innerHTML = "";
+    }
+    return;
+  }
+  const sp = e.target.closest("[data-use-path]");
+  if (sp) { $("#path").value = sp.dataset.usePath; reparse(); return; }
+  const act = e.target.closest("[data-act]");
+  if (act) {
+    const a = act.dataset.act;
+    if (a === "csv") downloadCSV();
+    else if (a === "json") downloadJSON();
+    else if (a === "copy-settings") copySettings(act);
+    else if (a === "share") copyShare(act);
+  }
+});
+
+const KEY_PARAM = /^(api[_-]?key|apikey|appid|app_id|key|token|access[_-]?token|auth|secret|client[_-]?secret|securitytoken|password|signature|sig)$/i;
+function redactedUrl(url) {
+  try {
+    const u = new URL(url);
+    for (const k of [...u.searchParams.keys()]) if (KEY_PARAM.test(k)) u.searchParams.set(k, "YOUR_KEY");
+    return u.toString();
+  } catch (e) { return url; }
+}
+function keyParamsIn(url) {
+  try { return [...new URL(url).searchParams.entries()].filter(([k, v]) => KEY_PARAM.test(k) && v && !/^YOUR_/i.test(v)).map(([k]) => k); }
+  catch (e) { return []; }
+}
+function updateKeyNote() {
+  const u = $("#url").value.trim();
+  const keys = keyParamsIn(u);
+  const placeholder = /YOUR_[A-Z_]+/.exec(u);
+  $("#keyNote").innerHTML = placeholder
+    ? `<span class="warn">Replace <code>${esc(placeholder[0])}</code> with your own free key first.</span>`
+    : keys.length ? `Key parameter <code>${esc(keys.join(", "))}</code> stays in this browser; share links redact it.` : "";
+}
+$("#url").addEventListener("input", () => { updateKeyNote(); renderPresets($("#url").value.trim()); });
+
+function readHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("url")) { $("#url").value = h.get("url"); $("#path").value = h.get("path") || ""; return true; }
+  return false;
+}
+
+// ---------------------------------------------------------------------
+// fetch
+// ---------------------------------------------------------------------
+let last = null; // { body, contentType, status, ms, url, source }
+
+async function runFetch() {
+  const url = $("#url").value.trim();
+  if (!url) return;
+  updateKeyNote();
+  if (/YOUR_[A-Z_]+/.test(url)) { $("#out").innerHTML = `<div class="err-box"><b>Add your API key.</b> This URL still contains a placeholder (<code>${esc(/YOUR_[A-Z_]+/.exec(url)[0])}</code>). Most of these keys are free — the provider’s site explains how to get one.</div>`; return; }
+  let parsedUrl;
+  try { parsedUrl = new URL(url); } catch (e) { $("#out").innerHTML = `<div class="err-box"><b>That isn’t a valid URL.</b> Include the scheme, e.g. <code>https://</code>.</div>`; return; }
+  if (parsedUrl.protocol === "http:" && location.protocol === "https:") {
+    $("#out").innerHTML = `<div class="err-box"><b>Browsers block <code>http://</code> APIs from an <code>https://</code> page</b> (mixed content). Try the <code>https://</code> version of the URL. If the API has none, open it in a new tab and paste the response below — a server-side connector like QuantumLayers isn’t affected.</div>`;
+    $("#pasteBox").open = true;
+    return;
+  }
+  const btn = $("#goBtn"); btn.disabled = true;
+  $("#out").innerHTML = `<p class="skeleton">Calling ${esc(parsedUrl.host)}&hellip;</p>`;
+  const headers = { Accept: "application/json, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5" };
+  const auth = $("#authHeader").value.trim();
+  if (auth) headers.Authorization = auth;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000);
+  const t0 = performance.now();
+  try {
+    const res = await fetch(url, { headers, signal: ctrl.signal, credentials: "omit", referrerPolicy: "no-referrer", cache: "no-store" });
+    const body = await res.text();
+    last = {
+      body, url, source: "fetch", status: res.status, ok: res.ok, ms: Math.round(performance.now() - t0),
+      contentType: res.headers.get("content-type") || "", bytes: new Blob([body]).size,
+      total: res.headers.get("x-total-count"), link: res.headers.get("link"),
+    };
+    // Make the address bar shareable — but never write an API key into it.
+    try {
+      if (keyParamsIn(url).length) history.replaceState(null, "", location.pathname + location.search);
+      else history.replaceState(null, "", "#" + new URLSearchParams({ url, path: $("#path").value.trim() }).toString());
+    } catch (e) {}
+    reparse();
+  } catch (err) {
+    const aborted = err && err.name === "AbortError";
+    $("#out").innerHTML = `
+      <div class="err-box">
+        <b>${aborted ? "The API didn’t answer within 30 seconds." : "Your browser couldn’t read a response from this API."}</b>
+        ${aborted ? "" : `<p style="margin:8px 0 0">The most common reason is that the API doesn’t allow calls from web pages (it sends no <code>Access-Control-Allow-Origin</code> header), so the browser hides the response. That limits <em>this page</em> only — server-side connectors, including QuantumLayers’ REST datasets, aren’t subject to CORS. Other causes: a typo in the host name, the API being down, or ${auth ? "the API rejecting the CORS pre-check that the Authorization header triggers" : "a network filter"}.</p>`}
+        <p style="margin:8px 0 0"><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open the URL in a new tab &nearr;</a>, copy what it returns, and paste it into “Or paste a response body” above to test the data anyway.</p>
+      </div>`;
+    $("#pasteBox").open = true;
+  } finally {
+    clearTimeout(timer);
+    btn.disabled = false;
+  }
+}
+
+$("#reqForm").addEventListener("submit", (e) => { e.preventDefault(); runFetch(); });
+$("#path").addEventListener("change", () => { if (last) reparse(); });
+$("#parseBtn").addEventListener("click", () => {
+  const body = $("#body").value;
+  if (!body.trim()) return;
+  last = { body, source: "paste", url: $("#url").value.trim(), bytes: new Blob([body]).size };
+  reparse();
+});
+$("#file").addEventListener("change", (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { last = { body: String(r.result), source: "file", fileName: f.name, url: $("#url").value.trim(), bytes: f.size }; reparse(); };
+  r.readAsText(f);
+});
+
+// ---------------------------------------------------------------------
+// parse + analyse
+// ---------------------------------------------------------------------
+const parseOpts = {
+  parseXml: (s) => new DOMParser().parseFromString(s.replace(/\sxmlns="[^"]*"/, ""), "application/xml"),
+  parseCsv: (s) => {
+    const p = Papa.parse(s.trim(), { header: true, skipEmptyLines: "greedy", dynamicTyping: false });
+    return { headers: (p.meta.fields || []).filter((h) => h !== ""), rows: p.data };
+  },
+};
+
+let current = null; // { result, columns }
+
+function reparse() {
+  if (!last) return;
+  const path = $("#path").value.trim();
+  const result = QLApiParse.parseApiResponse(last.body, path, parseOpts);
+  const suggestion = QLApiParse.suggestPath(result);
+  // An error reply like {"error":"invalid api key"} is perfectly "tabular"
+  // (one record) — never present a non-2xx answer as data.
+  if (last.source === "fetch" && !last.ok) { renderError({ ok: false, error: "The API returned an error (HTTP " + last.status + ")." }, null); return; }
+  if (!result.ok) { renderError(result, suggestion); return; }
+  const columns = profileColumns(result.rows, result.headers);
+  current = { result, columns, suggestion };
+  render(result, columns, suggestion);
+}
+
+const SENTINELS = new Set([-999, -9999, -99999, -999.9, -99.99, -9999.9, 9999, 99999, -1e30]);
+function profileColumns(rows, headers) {
+  return headers.map((h) => {
+    const raw = rows.map((r) => (r[h] === undefined ? null : r[h]));
+    const nonEmpty = raw.filter((v) => v !== null && v !== "");
+    const type = QLStats.inferType(nonEmpty, h);
+    const numeric = type === "integer" || type === "float";
+    const nums = numeric ? nonEmpty.map((v) => Number(v)).filter(Number.isFinite) : [];
+    const sentinels = numeric ? nums.filter((v) => SENTINELS.has(v)).length : 0;
+    const asStrings = numeric ? nonEmpty.filter((v) => typeof v === "string").length : 0;
+    const distinct = new Set(nonEmpty.map((v) => (typeof v === "object" ? JSON.stringify(v) : String(v)))).size;
+    const col = {
+      name: h, type, numeric, n: raw.length, missing: raw.length - nonEmpty.length,
+      distinct, sentinels, asStrings, idLike: QLStats.nameSuggestsIdentifier(h),
+      sample: nonEmpty.slice(0, 3).map((v) => String(v)),
+    };
+    if (numeric) {
+      const clean = nums.filter((v) => !SENTINELS.has(v));
+      const d = QLStats.describe(clean);
+      Object.assign(col, { min: d.min, max: d.max, mean: d.mean, median: d.median, series: raw.map((v) => (v === null || v === "" || SENTINELS.has(Number(v)) ? null : Number(v))) });
+    } else if (type === "date" || type === "datetime") {
+      const sorted = nonEmpty.map(String).sort();
+      col.min = sorted[0]; col.max = sorted[sorted.length - 1];
+    } else {
+      const counts = {};
+      nonEmpty.forEach((v) => { const k = String(v); counts[k] = (counts[k] || 0) + 1; });
+      const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+      if (top) { col.top = top[0]; col.topShare = top[1] / nonEmpty.length; }
+    }
+    return col;
+  });
+}
+
+function findings(result, columns) {
+  const F = [];
+  const rows = result.rows.length;
+  const dateCols = columns.filter((c) => c.type === "date" || c.type === "datetime");
+  const numCols = columns.filter((c) => c.numeric && !c.idLike);
+  const empty = columns.filter((c) => c.missing === c.n);
+  const patchy = columns.filter((c) => c.missing > 0 && c.missing < c.n && c.missing / c.n >= 0.2);
+  const sentinel = columns.filter((c) => c.sentinels > 0);
+  const stringNums = columns.filter((c) => c.numeric && c.asStrings > 0);
+  const indexCols = result.headers.filter((h) => /(^|\.)\d+(\.|$)/.test(h));
+  const constant = columns.filter((c) => c.distinct === 1 && c.n > 1 && c.missing === 0);
+
+  if (rows >= 2) F.push(["good", `<b>${fmtInt(rows)} rows × ${columns.length} columns</b> detected (${esc(formatLabel(result.format))}).`]);
+  else F.push(["warn", `Only <b>${rows} row</b> — this looks like a single record rather than a dataset. If the API returns a list somewhere deeper, set a response path.`]);
+  if (dateCols.length) F.push(["good", `Date column${dateCols.length > 1 ? "s" : ""}: ${dateCols.map((c) => `<code>${esc(c.name)}</code>`).join(", ")} — ready for time-series charts and trend detection.`]);
+  else if (rows >= 2) F.push(["warn", "No date column was recognised. Time-series charts need one (ISO dates like <code>2024-01-31</code>, <code>2024-01</code>, <code>2024-Q1</code>, or a column named year/date/period)."]);
+  if (numCols.length) F.push(["good", `${numCols.length} numeric column${numCols.length > 1 ? "s" : ""} to analyse: ${numCols.slice(0, 6).map((c) => `<code>${esc(c.name)}</code>`).join(", ")}${numCols.length > 6 ? ", …" : ""}.`]);
+  else if (rows >= 2) F.push(["warn", "No numeric columns — you can count and group, but not sum, average or correlate."]);
+  if (stringNums.length) F.push(["info", `${stringNums.map((c) => `<code>${esc(c.name)}</code>`).join(", ")} ${stringNums.length > 1 ? "are" : "is"} sent as text (<code>"3.7"</code>) but ${stringNums.length > 1 ? "are" : "is"} numeric — QuantumLayers types ${stringNums.length > 1 ? "them" : "it"} as numbers automatically; a spreadsheet may not.`]);
+  if (sentinel.length) F.push(["warn", `Sentinel codes such as <code>-999</code> appear in ${sentinel.map((c) => `<code>${esc(c.name)}</code> (${c.sentinels})`).join(", ")}. They usually mean “missing”, and will drag averages down if treated as real values. (They’re excluded from the min/mean/max shown below.)`]);
+  if (empty.length) F.push(["warn", `${empty.length} column${empty.length > 1 ? "s are" : " is"} entirely empty: ${empty.slice(0, 6).map((c) => `<code>${esc(c.name)}</code>`).join(", ")}${empty.length > 6 ? ", …" : ""}.`]);
+  if (patchy.length) F.push(["warn", `Patchy columns (≥ 20% missing): ${patchy.slice(0, 6).map((c) => `<code>${esc(c.name)}</code> ${fmtPct(c.missing / c.n)}`).join(", ")}.`]);
+  if (constant.length && rows > 2) F.push(["info", `${constant.length} column${constant.length > 1 ? "s hold" : " holds"} the same value on every row (${constant.slice(0, 4).map((c) => `<code>${esc(c.name)}</code>`).join(", ")}) — metadata, not data.`]);
+  if (indexCols.length > 3) F.push(["warn", `${indexCols.length} column names contain list positions (e.g. <code>${esc(indexCols[0])}</code>) — a nested list was flattened sideways into columns. Point the response path at that list instead if it holds the rows you want.`]);
+  if (columns.length > 150) F.push(["warn", `${columns.length} columns after flattening nested objects — consider a deeper response path.`]);
+
+  // pagination hints
+  const pag = paginationHint(result.data, rows);
+  if (pag) F.push(["warn", pag]);
+  if (result.kind === "csv") F.push(["info", "This body is CSV. QuantumLayers’ REST connector reads JSON and XML; import a CSV URL with <em>Import from URL</em> instead."]);
+  if (result.pathMissing) F.push(["bad", `The response path <code>${esc($("#path").value.trim())}</code> wasn’t found, so the whole document was used (that’s also what QuantumLayers does).`]);
+  return F;
+}
+
+function paginationHint(data, rows) {
+  if (!data || typeof data !== "object") return null;
+  // World Bank: [ {page, pages, per_page, total}, rows ]
+  if (Array.isArray(data) && data[0] && typeof data[0] === "object" && "pages" in data[0] && Number(data[0].pages) > 1) {
+    return `Page ${esc(data[0].page)} of ${esc(data[0].pages)} (${fmtInt(data[0].total)} rows in total). Raise <code>per_page</code> in the URL to get everything in one call.`;
+  }
+  const flat = typeof data === "object" && !Array.isArray(data) ? data : {};
+  const meta = Object.assign({}, flat, flat.meta || {}, flat.pagination || {}, flat.paging || {}, flat.response && typeof flat.response === "object" ? flat.response : {});
+  const total = Number(meta.total ?? meta.totalCount ?? meta.total_count ?? meta.count ?? meta.totalResults ?? meta.total_results);
+  const next = meta.next ?? meta.next_page ?? meta.nextPage ?? meta.nextPageToken ?? meta.next_cursor ?? (meta.links && meta.links.next);
+  if (Number.isFinite(total) && total > rows) return `The response reports <b>${fmtInt(total)}</b> records but returned ${fmtInt(rows)} — results are paginated. Look for a <code>limit</code>/<code>per_page</code>/<code>length</code> parameter to fetch more per call.`;
+  if (next) return `The response includes a “next page” pointer — this is one page of a larger result.`;
+  if (last && last.link && /rel="?next/.test(last.link)) return "The <code>Link</code> header points to a next page — this is one page of a larger result.";
+  return null;
+}
+
+function formatLabel(f) {
+  const map = {
+    direct_array: "a list of records", single_object: "a single record", pure_columnar: "columnar arrays",
+    period_keyed_map: "values keyed by period", sdmx_json: "SDMX-JSON", ga4_report: "a Google Analytics 4 report",
+    column_oriented: "columns + data arrays", headers_rows: "headers + rows arrays", fields_records: "fields + records arrays", csv: "CSV",
+  };
+  if (map[f]) return map[f];
+  const m = /^nested_(.+)$/.exec(f);
+  return m ? "records under “" + m[1].replace(/_nested_/g, " → ").replace(/_direct_array$/, "") + "”" : f;
+}
+
+function readiness(result, columns) {
+  let s = 0;
+  const rows = result.rows.length;
+  if (rows >= 2) s++;
+  if (rows >= 20) s++;
+  if (columns.some((c) => c.numeric && !c.idLike)) s++;
+  if (columns.some((c) => c.type === "date" || c.type === "datetime")) s++;
+  const cells = columns.reduce((a, c) => a + c.n, 0), miss = columns.reduce((a, c) => a + c.missing, 0);
+  if (cells && miss / cells < 0.1) s++;
+  if (!columns.some((c) => c.sentinels) && result.headers.filter((h) => /(^|\.)\d+(\.|$)/.test(h)).length <= 3 && !result.pathMissing) s++;
+  const words = ["Not usable as a table yet", "Barely tabular", "Needs work", "Usable with care", "Good", "Analysis-ready", "Analysis-ready"];
+  return { score: s, label: words[s] };
+}
+
+// ---------------------------------------------------------------------
+// render
+// ---------------------------------------------------------------------
+function statusLine() {
+  if (!last) return "";
+  const bits = [];
+  if (last.source === "fetch") {
+    bits.push(`HTTP <b class="${last.ok ? "ok" : "bad"}">${last.status}</b>`);
+    bits.push(`<b>${fmtInt(last.ms)}</b> ms`);
+    if (last.contentType) bits.push(`<b>${esc(last.contentType.split(";")[0])}</b>`);
+  } else bits.push(last.source === "file" ? `file <b>${esc(last.fileName)}</b>` : "<b>pasted body</b>");
+  bits.push(`<b>${last.bytes >= 1048576 ? (last.bytes / 1048576).toFixed(1) + " MB" : last.bytes >= 1024 ? (last.bytes / 1024).toFixed(1) + " KB" : last.bytes + " B"}</b>`);
+  if (last.source === "fetch") bits.push(`browser access <b class="ok">allowed (CORS)</b>`);
+  return `<div class="status">${bits.join("")}</div>`;
+}
+
+function suggestionHTML(sug) {
+  if (!sug) return "";
+  const why = sug.reason === "not-tabular" ? "No table was found at the current path." : sug.reason === "index-columns" ? "The automatic pick flattened a list sideways into columns." : "A deeper node holds many more rows.";
+  return `<div class="sugg">${why} Try response path <button type="button" class="btn-ghost" data-use-path="${esc(sug.path)}">${esc(sug.path === "" ? "(none)" : sug.path)}</button> — ${fmtInt(sug.rows)} rows as ${esc(sug.how)}.</div>`;
+}
+
+function renderError(result, sug) {
+  current = null;
+  let extra = "";
+  if (last && last.source === "fetch" && !last.ok) extra = `<p style="margin:8px 0 0">The API answered <b>HTTP ${last.status}</b>. Check the URL, parameters and key. The start of its reply:</p><pre class="mono" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;margin:8px 0 0">${esc(last.body.slice(0, 1200))}</pre>`;
+  else if (result.data) {
+    const cands = QLApiParse.candidatePaths(result.data);
+    if (cands.length) extra = `<p style="margin:8px 0 0">Nodes that could hold the rows:</p><div class="presets">${cands.map((c) => `<button type="button" class="chip" data-use-path="${esc(c.path)}">${esc(c.path || "(root)")} · ${fmtInt(c.rows)}</button>`).join("")}</div>`;
+    else extra = `<p style="margin:8px 0 0">Top-level keys: ${Object.keys(result.data).slice(0, 20).map((k) => `<code>${esc(k)}</code>`).join(" ")}</p>`;
+  } else if (last) extra = `<pre class="mono" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;margin:8px 0 0">${esc(last.body.slice(0, 600))}</pre>`;
+  $("#out").innerHTML = statusLine() + suggestionHTML(sug) + `<div class="err-box"><b>${esc(result.error || "Couldn’t read a table from this response.")}</b>${extra}</div>`;
+}
+
+function render(result, columns, sug) {
+  const rd = readiness(result, columns);
+  const F = findings(result, columns);
+  const path = result.path;
+  const shown = result.rows.slice(0, 100);
+  const colsShown = result.headers.slice(0, 60);
+  const typeOf = Object.fromEntries(columns.map((c) => [c.name, c]));
+
+  const table = `
+    <div class="table-scroll"><table class="t">
+      <thead><tr>${colsShown.map((h) => `<th title="${esc(h)}">${esc(h)}<small>${esc(typeOf[h].type)}</small></th>`).join("")}</tr></thead>
+      <tbody>${shown.map((r) => `<tr>${colsShown.map((h) => {
+        const v = r[h];
+        if (v === null || v === undefined || v === "") return '<td class="null">null</td>';
+        return `<td class="${typeOf[h].numeric ? "num" : ""}" title="${esc(v)}">${esc(v)}</td>`;
+      }).join("")}</tr>`).join("")}</tbody>
+    </table></div>
+    <p class="hint">${result.rows.length > 100 ? `First 100 of ${fmtInt(result.rows.length)} rows. ` : ""}${result.headers.length > 60 ? `First 60 of ${result.headers.length} columns. ` : ""}The CSV export has everything.</p>`;
+
+  const colsHTML = columns.map((c) => {
+    let st = "";
+    if (c.numeric) st = `min ${fmtNum(c.min)} · median ${fmtNum(c.median)} · max ${fmtNum(c.max)}`;
+    else if (c.type === "date" || c.type === "datetime") st = `${esc(c.min)} → ${esc(c.max)}`;
+    else if (c.top != null) st = `top “${esc(String(c.top).slice(0, 28))}” (${fmtPct(c.topShare)})`;
+    const miss = c.missing ? ` · <span class="${c.missing / c.n >= 0.2 ? "warn" : ""}">${fmtPct(c.missing / c.n)} missing</span>` : "";
+    return `<div class="col"><div class="ty">${esc(c.type)}${c.idLike && !c.numeric ? " · id/code" : ""}</div><div class="nm">${esc(c.name)}</div><div class="st">${st}</div><div class="st">${fmtInt(c.distinct)} distinct${miss}${c.sentinels ? ` · <span class="warn">${c.sentinels} sentinel</span>` : ""}</div>${c.numeric ? spark(c.series) : ""}</div>`;
+  }).join("");
+
+  const qlUrl = redactedUrl(last.url || "");
+  $("#out").innerHTML = `
+    ${statusLine()}
+    ${suggestionHTML(sug)}
+    <section class="panel">
+      <div class="verdict">${kindTag("API RESPONSE")} ${meterHTML(rd.score)} <span class="v">${esc(rd.label)}</span></div>
+      <div class="tiles">
+        <div class="tile"><span class="n">${fmtInt(result.rows.length)}</span><span class="l">rows</span></div>
+        <div class="tile"><span class="n">${result.headers.length}</span><span class="l">columns</span></div>
+        <div class="tile"><span class="n">${columns.filter((c) => c.numeric).length}</span><span class="l">numeric</span></div>
+        <div class="tile"><span class="n">${columns.filter((c) => c.type === "date" || c.type === "datetime").length}</span><span class="l">date</span></div>
+        <div class="tile"><span class="n mono" style="font-size:16px">${esc(path === "" ? "(none)" : path)}</span><span class="l">response path</span></div>
+      </div>
+      <ul class="findings">${F.map(([k, t]) => `<li class="${k}">${t}</li>`).join("")}</ul>
+    </section>
+
+    <section class="panel">
+      <h2>Preview</h2>
+      <div class="actions" style="margin:0 0 12px">
+        <button type="button" class="btn-ghost" data-act="csv">Download CSV</button>
+        <button type="button" class="btn-ghost" data-act="json">Download rows as JSON</button>
+        ${last.source === "fetch" ? `<button type="button" class="btn-ghost" data-act="share">Copy share link</button>` : ""}
+        <span class="hint" id="actStatus" style="margin:0"></span>
+      </div>
+      ${table}
+    </section>
+
+    <section class="panel">
+      <h2>Columns</h2>
+      <p class="sub">Typed with QuantumLayers’ own rules. Nested objects are flattened with dots (<code>country.value</code>), the way QuantumLayers stores them.</p>
+      <div class="cols">${colsHTML}</div>
+    </section>
+
+    ${last.url && result.kind !== "csv" ? `
+    <section class="panel">
+      <h2>Connection settings</h2>
+      <p class="sub">Paste these into a REST API dataset (QuantumLayers → New dataset → REST API) to sync it on a schedule.</p>
+      <dl class="settings">
+        <dt>URL</dt><dd><code>${esc(qlUrl)}</code>${qlUrl !== last.url ? ' <span class="hint">(key redacted — paste your own)</span>' : ""}</dd>
+        <dt>Method</dt><dd><code>GET</code></dd>
+        <dt>Response path</dt><dd><code>${esc(path === "" ? "(leave empty)" : path)}</code></dd>
+        <dt>Auth</dt><dd>${$("#authHeader").value.trim() ? "Bearer / API key header" : keyParamsIn(last.url).length ? "key in URL" : "none"}</dd>
+      </dl>
+      <div class="actions" style="margin-top:12px"><button type="button" class="btn-ghost" data-act="copy-settings">Copy settings</button></div>
+    </section>` : ""}
+  `;
+}
+
+function spark(series) {
+  const pts = series.map((v, i) => [i, v]).filter(([, v]) => v !== null);
+  if (pts.length < 3) return "";
+  const w = 200, h = 28, p = 2;
+  let mn = Infinity, mx = -Infinity;
+  pts.forEach(([, v]) => { if (v < mn) mn = v; if (v > mx) mx = v; });
+  const rng = mx - mn || 1, n = series.length - 1 || 1;
+  const step = Math.max(1, Math.floor(pts.length / 400));
+  const d = pts.filter((_, i) => i % step === 0).map(([i, v], k) => `${k ? "L" : "M"}${(p + (i / n) * (w - 2 * p)).toFixed(1)},${(h - p - ((v - mn) / rng) * (h - 2 * p)).toFixed(1)}`).join("");
+  return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" height="${h}" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="1.4" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+// ---------------------------------------------------------------------
+// exports
+// ---------------------------------------------------------------------
+function csvCell(v) {
+  if (v === null || v === undefined) return "";
+  const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+  return /[",\r\n]/.test(s) || /^\s|\s$/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function fileBase() {
+  try { const u = new URL(last.url); return (u.host.replace(/^www\.|^api\./, "") + u.pathname).replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").slice(0, 60) || "api-data"; }
+  catch (e) { return last && last.fileName ? last.fileName.replace(/\.[^.]+$/, "") : "api-data"; }
+}
+function download(name, text, type) {
+  const blob = new Blob([text], { type });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function downloadCSV() {
+  if (!current) return;
+  const { rows, headers } = current.result;
+  const lines = [headers.map(csvCell).join(",")].concat(rows.map((r) => headers.map((h) => csvCell(r[h])).join(",")));
+  download(fileBase() + ".csv", "﻿" + lines.join("\r\n"), "text/csv;charset=utf-8");
+}
+function downloadJSON() {
+  if (!current) return;
+  download(fileBase() + ".json", JSON.stringify(current.result.rows, null, 2), "application/json");
+}
+function flash(msg) { const el = $("#actStatus"); if (el) { el.textContent = msg; setTimeout(() => (el.textContent = ""), 2500); } }
+function copyText(text, okMsg) {
+  if (!navigator.clipboard) { flash("Clipboard not available in this browser."); return; }
+  navigator.clipboard.writeText(text).then(() => flash(okMsg), () => flash("Couldn’t copy."));
+}
+function copySettings() {
+  const path = current.result.path;
+  copyText(`URL: ${redactedUrl(last.url)}\nMethod: GET\nResponse path: ${path === "" ? "(leave empty)" : path}`, "Settings copied.");
+}
+function copyShare() {
+  const u = new URL(location.href);
+  u.hash = new URLSearchParams({ url: redactedUrl(last.url), path: $("#path").value.trim() }).toString();
+  copyText(u.toString(), redactedUrl(last.url) !== last.url ? "Link copied (API key removed)." : "Link copied.");
+}
+
+// ---------------------------------------------------------------------
+// boot
+// ---------------------------------------------------------------------
+function bootFromHash() {
+  if (readHash()) { renderPresets($("#url").value.trim()); updateKeyNote(); if (!/YOUR_/.test($("#url").value)) runFetch(); }
+}
+renderPresets("");
+bootFromHash();
+// replaceState() (used after each fetch) doesn't fire this — only a pasted
+// or clicked share link does.
+window.addEventListener("hashchange", bootFromHash);
+</script>
+</body>
+</html>

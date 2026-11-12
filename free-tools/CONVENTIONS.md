@@ -13,19 +13,52 @@ read this end to end before writing HTML.
 > QL-backed sign-in-first pattern (`ql-client.js`, the states in the next
 > section) rather than `whats-in-this-csv`'s client-only shape.
 
+## Standalone client-side tools
+
+Per direction from QL's operator (2026-11-12), the collection also hosts
+tools that are **100% independent of QuantumLayers**: no sign-in, no
+`ql-client.js`, no call to QL's backend — everything runs in the visitor's
+browser. `whats-in-this-csv`, `public-api-tester`, `correlation-matrix` and
+`ab-test-calculator` are in this family. The sign-in-first rules below apply
+only to QL-backed tools. For standalone tools:
+
+- **Privacy copy** is the opposite of the QL-backed line: say plainly that
+  it's free, needs no sign-up, and that data stays in the browser — and make
+  sure that's literally true (no analytics beacons, no uploads; a tool that
+  calls a third-party API, like `public-api-tester`, says the browser calls
+  that API directly).
+- **No anonymous-mode concerns** — state (a) *is* the working tool, usable
+  with zero clicks beyond choosing input. Offer a built-in sample so a
+  crawler-free first visit shows a real result in one click.
+- **Match QL where QL does the same thing.** Shared maths lives in
+  [`ql-stats.js`](./ql-stats.js) (tested against SciPy) and includes a port
+  of QL's column typing (`inferType()` = `ql_infer_type()`). Port QL logic
+  rather than inventing a parallel rule, so a visitor who later connects the
+  same data in QL sees consistent results.
+- **Small sibling modules are fine** when they make logic testable in Node
+  (e.g. `public-api-tester/api-parse.js`, `../ql-stats.js`) — still plain
+  `<script>` tags, still no build step. Add a test under `tests/`.
+- **Charts** don't have to be Chart.js — there's no QL config to render.
+  Small inline SVG is preferred over pulling in a library.
+- **CTA**: still exactly one — a band at the bottom linking to
+  `https://quantumlayers.com/ql-register`, framed as what the live product
+  adds (scheduled sync, monitoring, more analysis), never as a gate.
+- Same visual tokens, KIND tag + amber meter, SEO rules and README shape;
+  the README's "How it works" says it's client-side and needs no account.
+
 ## The sign-in-first pattern
 
 ⚠️ **Per direction from QL's operator, there is no anonymous public-dataset
 mode.** An earlier version of this doc specified a "dual-source" pattern
 — an anonymous visitor driving the tool against a curated public dataset,
 with a logged-in visitor as the upsell path. That's been retired for the
-whole collection: **every tool always requires signing in.** An anonymous
+whole collection: **every QL-backed tool always requires signing in** (standalone client-side tools, above, are a separate family). An anonymous
 visitor never sees computed QL output of any kind — they see the tool's
 explanation and a register/sign-in prompt, full stop. There is no public
 demo dataset to curate, and `DEPLOYMENT.md`'s prerequisite for one no
 longer applies to any tool in this collection.
 
-Every tool has exactly one UI, with exactly one data source: **the signed-
+Every QL-backed tool has exactly one UI, with exactly one data source: **the signed-
 in user's own QuantumLayers datasets.** The conversion moment is the
 register/sign-in step itself — not a wall in front of a working demo (there
 is no demo to wall off), but the honest, only way to see the tool run at
