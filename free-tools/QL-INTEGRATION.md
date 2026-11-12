@@ -69,7 +69,7 @@ wins**, and the affected sections below have been corrected in place:
 | `ql_user_signin` `remember` | Read with `isset()`, so *any* value (including `false`) turns "remember me" on. `QL.login()` only sends it when truthy. |
 | `ql_upload_dataset` | Uses `wp_send_json_success`, so the payload is nested: `{ success, data: { message, dataset_id, dataset_name } }`. Accepted MIME types: `text/csv`, `text/plain`, `application/csv`, `application/vnd.ms-excel`. Processing is synchronous. |
 | `ql_get_recommended_charts` | Returns **`{ charts: [...], analysis_summary }`**, and every entry *does* carry a ready-to-render `chart_data` (candidates whose chart fails to generate are dropped server-side). The `candidates` shape without `chart_data` belongs to a different function — the lightweight discovery behind QL's MCP/agent `get_recommended_charts` tool. See the corrected section below. |
-| Chart types | `ql_get_chart_data` handles `histogram`, `time_series`, `stacked_area`, `scatter`, `bar`, `horizontal_bar`, `pie`, `doughnut`, `regression`, `box_plot`, `violin`, `bubble`, `heatmap`/`matrix` (aliases), plus `column_types` and `missing_data`. **There is no `line` or `area` handler** — they return "Unknown chart type". |
+| Chart types | `ql_get_chart_data` handles `histogram`, `time_series`, `stacked_area`, `scatter`, `bar`, `horizontal_bar`, `pie`, `doughnut`, `regression`, `box_plot`, `violin`, `bubble`, `heatmap`/`matrix` (aliases), plus `column_types` and `missing_data`. **Line and area charts exist under other names:** `time_series` returns a Chart.js `line` config on a time axis, and `stacked_area` is the same with `fill: true` (a plain area chart with one value column). A literal `chart_type: line` or `area` returns "Unknown chart type" — the API guide's Quick Reference table, which lists them, is wrong (it also misnames `box_plot`, `heatmap` and `time_series` params). |
 | `box_plot` / `violin` | `y_column` required (numeric). `x_column` is **optional**: omitted → one box for the whole column. When given it must be a string column or a numeric column with < 1 % distinct values. |
 | Aggregation keywords | `bar`/`horizontal_bar`: `sum`, `average` (also `avg`/`mean`) — anything else silently becomes `sum`. `pie`/`doughnut`: `sum`, `average`, `min`, `max`; omit `value_column` to count rows. `heatmap`: `average` (default), `sum`, `min`, `max`, `count`. `time_series`/`stacked_area`: `none` (raw points), `sum`, `mean`/`average`, `min`, `max`, `count`, `median`. |
 | `ql_get_statistical_summary` | Its `count` field is the column's **distinct** count (`dataset_columns.distinct_count`), not the non-null count. Use `ql_get_dataset_detail`'s `row_count − null_count` for that. |
@@ -296,8 +296,10 @@ categories in `x_column`" and `heatmap` "aggregates `z_column` for every
 unique `(x_column, y_column)` coordinate pair," which settles those two
 in favor of the first table's naming. `line` and `area` aren't described
 in prose at all (only in the quick-reference table) — and QL's server has
-**no handler for either** (verified against `charts.php`; both answer
-"Unknown chart type"), so `instant-chart-maker` no longer offers them. The
+**no handler for either name** (verified against `charts.php`; both answer
+"Unknown chart type"). The charts themselves are `time_series` (line) and
+`stacked_area` (area), which `instant-chart-maker` labels "Line (time
+series)" and "Area / stacked area". The
 server code also settles the table conflict for good: `bar`/`horizontal_bar`
 take `category_column` + `value_columns[]`; `box_plot`/`violin` and
 `heatmap` take `x_column`/`y_column` (+ `z_column`); `time_series`/

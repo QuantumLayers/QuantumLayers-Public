@@ -281,8 +281,10 @@ const FIELD_DEFS = {
 const CHART_TYPES = {
   bar:            { label: "Bar",            fields: ["category", "valueMulti", "aggregation"] },
   horizontal_bar: { label: "Horizontal bar", fields: ["category", "valueMulti", "aggregation"] },
-  // No "line"/"area": QL's ql_get_chart_data has no handler for either and
-  // answers "Unknown chart type" — a line over time is time_series.
+  // No literal "line"/"area" chart_type: QL's ql_get_chart_data answers
+  // "Unknown chart type" for both. Line and area charts are QL's
+  // time_series (Chart.js "line" on a time axis) and stacked_area (same,
+  // fill: true — a plain area chart with one value column), below.
   pie:            { label: "Pie",            fields: ["category", "value", "aggPie", "limit"] },
   doughnut:       { label: "Doughnut",       fields: ["category", "value", "aggPie", "limit"] },
   scatter:        { label: "Scatter",        fields: ["x", "y", "colorOpt", "sizeOpt"] },
@@ -291,8 +293,8 @@ const CHART_TYPES = {
   violin:         { label: "Violin",         fields: ["x", "y"] },
   heatmap:        { label: "Heatmap",        fields: ["x", "y", "z", "aggHeat"] },
   histogram:      { label: "Histogram",      fields: ["column"] },
-  time_series:    { label: "Time series",    fields: ["time", "valueMulti", "aggTime", "interval"] },
-  stacked_area:   { label: "Stacked area",   fields: ["time", "valueMulti", "aggTime", "interval"] },
+  time_series:    { label: "Line (time series)",    fields: ["time", "valueMulti", "aggTime", "interval"] },
+  stacked_area:   { label: "Area / stacked area",   fields: ["time", "valueMulti", "aggTime", "interval"] },
   regression:     { label: "Regression",     fields: ["y", "xMulti"] },
 };
 const MAX_RECOMMENDATIONS = 5;
