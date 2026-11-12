@@ -44,6 +44,7 @@
   --ql-btn-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset, 0 10px 30px -8px rgba(109, 93, 235, 0.65);
   --ql-btn-shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.18) inset, 0 14px 36px -8px rgba(109, 93, 235, 0.8);
   --ql-wave-bg: url("https://quantumlayers.com/wp-content/uploads/2025/12/1000013672-purple.png");
+  --ql-wave-bg-mobile: var(--ql-wave-bg);
 
   /* --- free-tools tokens, remapped --- */
   --font-display: var(--ql-font-display);
@@ -90,25 +91,220 @@
   --panel-slate: var(--ql-muted);
 }
 
-/* --- page ground: the site's wave image under a veil --- */
-html { background: var(--ql-bg); }
+/* --- page ground: the site's animated waves ---------------------------
+   The block between the BEGIN/END markers is copied verbatim from the QL
+   plugin's assets/common-dark.css (the same rules quantumlayers.com runs):
+   two copies of the wave image drifting at different speeds, touch and
+   portrait variants, and a prefers-reduced-motion opt-out. Re-copy it when
+   that file changes. */
+html { background: #000; }
 body {
   background: transparent !important;
   background-image: none !important;
   color: var(--ql-text);
   font-family: var(--ql-font-body);
-  position: relative;
 }
+
+/* BEGIN copied from QuantumLayers assets/common-dark.css */
+body {
+    position: relative; /* Essential for positioning the pseudo-element */
+    overflow-x: hidden; /* Prevent scrollbar from scaled background */
+}
+
+/* Two overlapping, semi-transparent copies of the same wave image drifting
+   at different speeds/angles create a more complex, layered motion than a
+   single background could, without needing extra image assets. */
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    top: -10%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
+    background-image: var(--ql-wave-bg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1;
+    will-change: transform;
+    pointer-events: none;
+}
+
 body::before {
+    opacity: 1;
+    animation: ql-bg-drift-3 26s ease-in-out infinite;
+}
+
+body::after {
+    position: fixed;
+    inset: -15%;
+    background-image: var(--ql-wave-bg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.3;
+    mix-blend-mode: lighten;
+    filter: blur(1px) hue-rotate(24deg) saturate(1.35);
+    animation: ql-bg-drift-1 32s ease-in-out infinite;
+    will-change: transform;
+    pointer-events: none;
+}
+
+@keyframes ql-bg-drift-1 {
+    0%   { transform: scale(1)    translate(0%, 0%)    rotate(180deg); }
+    33%  { transform: scale(1.12) translate(-2%, 1.5%)  rotate(182deg); }
+    66%  { transform: scale(1.2)  translate(2%, -1%)    rotate(178deg); }
+    100% { transform: scale(1)    translate(0%, 0%)    rotate(180deg); }
+}
+
+@keyframes ql-bg-drift-2 {
+    0%   { transform: scaleX(-2) scale(1.15) translate(0%, 0%)    rotate(0deg); }
+    50%  { transform: scaleX(-1) scale(1.3)  translate(3%, -2%)  rotate(1.2deg); }
+    100% { transform: scaleX(-2) scale(1.15) translate(0%, 0%)    rotate(0deg); }
+}
+
+@keyframes ql-bg-drift-3 {
+    0%   { transform: scale(1.25) translate(0%, 0%)   rotate(0deg); }
+    50%  { transform: scale(1.4)  translate(-3%, 2%)  rotate(-2deg); }
+    100% { transform: scale(1.25) translate(0%, 0%)   rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before,
+    body::after {
+        animation: none !important;
+    }
+}
+
+/* ===== Touch devices (phones/tablets, any orientation) =====
+   Why the desktop rules look magnified and soft on a phone:
+   - The wave image is only 1536x1024 px. Phones render at 2-3 device pixels
+     per CSS pixel, so even with no zoom at all a landscape iPhone
+     (844 CSS px = 2532 device px wide) already upscales it ~1.65x.
+   - The desktop drift then scales the layer by up to 1.4x on top of the
+     120% oversizing, i.e. ~2.8x upscaling (vs ~1.6x on a 1x laptop).
+     The old mobile override only applied below 600px, so landscape phones
+     (640-930px wide) got the full desktop zoom.
+   - Animating scale() on a will-change layer makes mobile GPUs rasterise
+     the layer once and stretch that bitmap while zooming, which softens it
+     further (mobile browsers also cap raster resolution of big layers).
+   - The layers were sized in %, i.e. relative to the fixed containing
+     block, which mobile browsers can enlarge beyond the visible screen
+     (e.g. when page content overflows horizontally). Explicit viewport
+     units pin the size to the actual screen.
+
+   So on touch devices: size the layers explicitly in vw/lvh with a small
+   overscan, never scale() (pan + tiny sway only, so the texture is never
+   stretched), drop the blur filter, and allow a separate, higher-
+   resolution source via --ql-wave-bg-mobile (set it to a ~3072px-wide
+   version of the image for sharp results on 3x screens). */
+:root {
+    --ql-wave-bg-mobile: var(--ql-wave-bg);
+}
+
+@media (hover: none) and (pointer: coarse), (max-width: 600px) {
+    body::before,
+    body::after {
+        inset: auto;
+        top: -5vh;
+        top: -5lvh;
+        left: -5vw;
+        width: 110vw;
+        height: 110vh;
+        height: 110lvh;
+        margin: 0;
+        background-image: var(--ql-wave-bg-mobile);
+        background-size: cover;
+        background-position: center;
+        transform-origin: center center;
+    }
+
+    body::before {
+        transform: rotate(0deg);
+        animation: ql-bg-pan-mobile 16s ease-in-out infinite;
+    }
+
+    body::after {
+        filter: hue-rotate(24deg) saturate(1.35);
+        transform: rotate(180deg);
+        animation: ql-bg-pan-mobile-alt 22s ease-in-out infinite;
+    }
+
+    /* Movement stays inside the 5% overscan on each side. */
+    @keyframes ql-bg-pan-mobile {
+        0%   { transform: translate(0%, 0%)       rotate(0deg); }
+        33%  { transform: translate(-4%, 2.5%)    rotate(-0.5deg); }
+        66%  { transform: translate(4%, -2%)      rotate(0.5deg); }
+        100% { transform: translate(0%, 0%)       rotate(0deg); }
+    }
+
+    @keyframes ql-bg-pan-mobile-alt {
+        0%   { transform: translate(0%, 0%)       rotate(180deg); }
+        50%  { transform: translate(4%, -2.5%)    rotate(179.5deg); }
+        100% { transform: translate(0%, 0%)       rotate(180deg); }
+    }
+}
+
+/* Portrait touch screens: a 3:2 landscape image under `cover` would only
+   show ~30% of its width. Swap the layer's width/height (width = screen
+   height, height = screen width, +15% overscan), centre it and rotate it
+   90deg so the whole wave fits the tall screen. */
+@media (hover: none) and (pointer: coarse) and (orientation: portrait),
+       (max-width: 600px) and (orientation: portrait) {
+    body::before,
+    body::after {
+        top: 50%;
+        left: 50%;
+        width: 115vh;
+        width: 115lvh;
+        height: 115vw;
+    }
+
+    body::before {
+        transform: translate(-50%, -50%) rotate(90deg);
+        animation-name: ql-bg-pan-mobile-portrait;
+    }
+
+    body::after {
+        transform: translate(-50%, -50%) rotate(270deg);
+        animation-name: ql-bg-pan-mobile-portrait-alt;
+    }
+
+    /* The trailing translate is in the rotated frame: its first value moves
+       the layer up/down the screen, its second left/right. */
+    @keyframes ql-bg-pan-mobile-portrait {
+        0%   { transform: translate(-50%, -50%) rotate(90deg)   translate(0%, 0%); }
+        33%  { transform: translate(-50%, -50%) rotate(88.5deg) translate(-4%, 2%); }
+        66%  { transform: translate(-50%, -50%) rotate(91.5deg) translate(4%, -2%); }
+        100% { transform: translate(-50%, -50%) rotate(90deg)   translate(0%, 0%); }
+    }
+
+    @keyframes ql-bg-pan-mobile-portrait-alt {
+        0%   { transform: translate(-50%, -50%) rotate(270deg)   translate(0%, 0%); }
+        50%  { transform: translate(-50%, -50%) rotate(268.5deg) translate(4%, -2%); }
+        100% { transform: translate(-50%, -50%) rotate(270deg)   translate(0%, 0%); }
+    }
+}
+
+/* If the animation still doesn't run on a phone, check whether "Reduce
+   motion" (iOS) / "Remove animations" (Android, also enabled by some
+   battery-saver modes) is on: the prefers-reduced-motion rule above
+   deliberately stops it. */
+/* END copied from QuantumLayers assets/common-dark.css */
+
+/* Tools put dense text and tables on top of the waves, so a fixed veil sits
+   between them and the content: lighter at the top (the hero shows the waves
+   like the homepage does), darker further down. html::after is painted after
+   body's pseudo-elements at the same z-index, i.e. above the waves and below
+   the page content. */
+html::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(11, 10, 18, 0.35) 0%, rgba(11, 10, 18, 0.88) 420px, rgba(11, 10, 18, 0.94) 100%),
-    var(--ql-wave-bg) center top / cover no-repeat,
-    var(--ql-bg);
+  background: linear-gradient(180deg, rgba(11, 10, 18, 0.25) 0%, rgba(11, 10, 18, 0.7) 55%, rgba(11, 10, 18, 0.86) 100%);
 }
 a { color: var(--ql-primary-soft); }
 ::selection { background: rgba(139, 124, 246, 0.35); }
@@ -204,7 +400,7 @@ h1 .hl { background: none; -webkit-text-fill-color: var(--ql-primary-soft); colo
 .chip.active { border-color: var(--ql-primary); color: var(--ql-primary-soft); }
 
 /* --- surfaces --- */
-.panel, .card, figure.chart, .f, .filebar, .maker .picker, .maker .chart-panel, .col-card {
+.panel, .card, figure.chart, .findings .f, .filebar, .maker .picker, .maker .chart-panel, .col-card {
   background: var(--ql-card);
   border: 1px solid var(--ql-border);
   border-radius: var(--ql-radius);

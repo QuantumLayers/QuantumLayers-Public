@@ -119,7 +119,9 @@ Every page loads [`ql-theme.css`](./ql-theme.css) **last** in `<head>`
 quantumlayers.com design system: the same `--ql-*` tokens as the site's
 custom CSS (violet `#8b7cf6` / `#5b4bd8`, surfaces `#15121f` / `#1c1830`,
 borders `rgba(196,181,253,.14)`, Inter body, Space Grotesk display), the
-gradient primary button, glass-gradient cards, the wave background and the
+gradient primary button, glass-gradient cards, the animated wave background
+(copied verbatim from the QL plugin's `assets/common-dark.css`; re-copy it
+when that changes) and the
 site header (logo, Free tools, Pricing, Help, Blog, GitHub, Login,
 Register). It remaps the older tool tokens below onto those values, so
 existing tool CSS keeps working, and it's dark-only like the site.
