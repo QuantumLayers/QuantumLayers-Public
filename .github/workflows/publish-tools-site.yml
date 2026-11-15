@@ -1,0 +1,45 @@
+# Publishes free-tools/ to the `tools-site` branch, with the folder's
+# contents at the branch root. Hostinger's Git deployment clones that branch
+# into public_html/tools, so free-tools/x/ is served at
+# https://quantumlayers.com/tools/x/ (see free-tools/README.md, "Hosting").
+#
+# tools-site keeps a normal, append-only history (one commit per publish,
+# never force-pushed) so Hostinger can update it with a plain pull.
+#
+# Runs when free-tools/ changes on main, and after every "Refresh public
+# datasets" run: commits made by that workflow's GITHUB_TOKEN don't trigger
+# `push` workflows, but its completion does trigger `workflow_run`.
+name: Publish tools site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "free-tools/**"
+      - ".github/workflows/publish-tools-site.yml"
+  workflow_run:
+    workflows: ["Refresh public datasets"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-tools-site
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main          # workflow_run would otherwise check out the triggering commit
+          fetch-depth: 1
+
+      - name: Publish free-tools/ to tools-site
+        run: bash .github/scripts/publish-tools-site.sh

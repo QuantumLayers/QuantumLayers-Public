@@ -63,11 +63,13 @@ section rather than reusing this retired version of it.
 
 ## Where the tools are served
 
-`free-tools/` is published as `https://quantumlayers.com/tools/` by a deploy
-hook on the quantumlayers.com host (push to `main` → deploy). Served from that
-origin, cross-origin concerns for the QL-backed tools go away entirely. The
-dataset pages are rebuilt weekly by `.github/workflows/refresh-datasets.yml`,
-whose commits trigger the same hook. See README's "Hosting" section.
+`free-tools/` is published as `https://quantumlayers.com/tools/`:
+`.github/workflows/publish-tools-site.yml` copies it to the root of the
+`tools-site` branch (on changes to `free-tools/` on `main` and after each
+weekly dataset refresh), and Hostinger's Git deployment pulls that branch into
+`public_html/tools` via a GitHub webhook. Served from that origin,
+cross-origin concerns for the QL-backed tools go away entirely. See README's
+"Hosting" section for the exact Hostinger settings.
 
 ## Failing gracefully
 
