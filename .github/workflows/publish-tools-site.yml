@@ -17,6 +17,7 @@ on:
     paths:
       - "free-tools/**"
       - ".github/workflows/publish-tools-site.yml"
+      - ".github/scripts/publish-tools-site.sh"
   workflow_run:
     workflows: ["Refresh public datasets"]
     types: [completed]

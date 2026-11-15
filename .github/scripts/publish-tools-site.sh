@@ -39,6 +39,36 @@ cp -a free-tools/. "$WORK/site/"
 rm -rf "$WORK/site/tests" "$WORK/site/datasets/build.js"
 find "$WORK/site" -path "$WORK/site/.git" -prune -o -name '*.md' -type f -print0 | xargs -0 -r rm -f
 
+# Cache-busting: the host serves .css/.js with a 7-day max-age, so a page
+# could pair new HTML with a stale stylesheet. Stamp every local stylesheet
+# and script reference with a hash of the file it points to
+# (ql-theme.css -> ql-theme.css?v=1a2b3c4d5e): a changed file gets a new URL,
+# an unchanged one keeps its cached copy. Only the published copy is
+# rewritten; the sources on main stay clean.
+python3 - "$WORK/site" <<'PY'
+import hashlib, pathlib, re, sys
+root = pathlib.Path(sys.argv[1]).resolve()
+ref = re.compile(r'(\b(?:src|href)=")([^"#?:]+\.(?:css|js))(?:\?v=[0-9a-f]+)?(")')
+hashes = {}
+def stamp(page):
+    def sub(m):
+        target = (page.parent / m.group(2)).resolve()
+        if root not in target.parents or not target.is_file():
+            return m.group(0)  # external or missing: leave as is
+        if target not in hashes:
+            hashes[target] = hashlib.sha256(target.read_bytes()).hexdigest()[:10]
+        return f'{m.group(1)}{m.group(2)}?v={hashes[target]}{m.group(3)}'
+    return ref.sub(sub, page.read_text(encoding='utf-8'))
+n = 0
+for page in root.rglob('*.html'):
+    if '.git' in page.parts:
+        continue
+    new = stamp(page)
+    if new != page.read_text(encoding='utf-8'):
+        page.write_text(new, encoding='utf-8'); n += 1
+print(f'cache-busting: stamped asset links in {n} pages ({len(hashes)} assets)')
+PY
+
 cat > "$WORK/site/README.md" <<EOF
 # tools-site (generated, don't edit)
 
