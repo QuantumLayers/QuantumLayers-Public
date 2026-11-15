@@ -298,26 +298,15 @@ const SHARED_HEAD = `<link rel="preconnect" href="https://fonts.googleapis.com" 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />`;
 
-const LOGO = 'https://quantumlayers.com/wp-content/uploads/2026/08/cropped-image-rounded.png';
-/** The quantumlayers.com site header (styled by the shared site theme). */
-function siteHeader(hub, campaign) {
-  const q = utm(campaign, 'header');
-  return `<header class="ql-site-header">
-  <div class="ql-site-header-inner">
-    <a class="ql-logo" href="https://quantumlayers.com/?${q}"><img src="${LOGO}" alt="QuantumLayers" width="40" height="40" /></a>
-    <nav class="ql-nav" aria-label="Site">
-      <a class="ql-link" href="${hub}" aria-current="page">Free tools</a>
-      <a class="ql-link" href="https://quantumlayers.com/pricing?${q}">Pricing</a>
-      <a class="ql-link" href="https://quantumlayers.com/help">Help</a>
-      <a class="ql-link" href="https://quantumlayers.com/blog">Blog</a>
-    </nav>
-    <div class="ql-nav-right">
-      <a class="ql-link ql-hide-sm" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools/datasets" target="_blank" rel="noopener">GitHub</a>
-      <a class="ql-link ql-hide-sm" href="https://quantumlayers.com/ql-login">Login</a>
-      <a class="ql-link" href="https://quantumlayers.com/ql-register?${q}">Register</a>
-    </div>
-  </div>
-</header>
+/** Link row at the top of every page (styled by ../ql-theme.css). */
+function topLinks(hub, campaign) {
+  const q = utm(campaign, 'toplinks');
+  return `  <nav class="ql-toplinks" aria-label="QuantumLayers">
+    <a class="ql-brand" href="https://quantumlayers.com/?${q}">QuantumLayers</a>
+    <a href="${hub}">Free Tools</a>
+    <a href="https://quantumlayers.com/ql-register?${q}">Register for a Free Account</a>
+    <a href="https://quantumlayers.com/blog?${q}">Read our Blog</a>
+  </nav>
 `;
 }
 
@@ -377,8 +366,8 @@ ${seriesCSS()}
 <script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>
 </head>
 <body>
-${siteHeader('../../', 'dataset-' + ds.slug)}<div class="wrap">
-  <nav class="crumbs"><a href="../../">Free data tools</a> / <a href="../">Public datasets</a> / ${esc(ds.source)}</nav>
+<div class="wrap">
+${topLinks('../../', 'dataset-' + ds.slug)}  <nav class="crumbs"><a href="../../">Free data tools</a> / <a href="../">Public datasets</a> / ${esc(ds.source)}</nav>
 
   <header class="hero">
     <h1>${esc(ds.title)}</h1>
@@ -485,8 +474,8 @@ ${SHARED_HEAD}
 <script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>
 </head>
 <body>
-${siteHeader('../', 'datasets-hub')}<div class="wrap">
-  <nav class="crumbs"><a href="../">Free data tools</a> / Public datasets</nav>
+<div class="wrap">
+${topLinks('../', 'datasets-hub')}  <nav class="crumbs"><a href="../">Free data tools</a> / Public datasets</nav>
   <header class="hero">
     <h1>Free public datasets</h1>
     <p class="lede">Curated economic, weather and climate datasets from official public APIs, each with a chart, key figures, field definitions, the exact API URL, and a CSV download. Rebuilt from the source every week.</p>

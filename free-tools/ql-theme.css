@@ -309,44 +309,28 @@ html::after {
 a { color: var(--ql-primary-soft); }
 ::selection { background: rgba(139, 124, 246, 0.35); }
 
-/* --- site header (matches quantumlayers.com) --- */
-.ql-site-header {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: rgba(11, 10, 18, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--ql-border);
-}
-.ql-site-header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  height: 64px;
-  padding: 0 16px;
+/* --- top link row (QuantumLayers · Free Tools · Register · Blog) --- */
+.ql-toplinks {
   display: flex;
-  align-items: center;
-  gap: 18px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 24px;
+  padding: 22px 0 0;
+  font: 500 14px/1.4 var(--ql-font-body);
 }
-.ql-logo { display: flex; align-items: center; flex: 0 0 auto; }
-.ql-logo img { width: 40px; height: 40px; border-radius: 9px; display: block; }
-.ql-nav, .ql-nav-right { display: flex; align-items: center; gap: 4px; }
-.ql-nav-right { margin-left: auto; }
-.ql-site-header a.ql-link {
-  font: 500 14px/1 var(--ql-font-body);
-  letter-spacing: 0.01em;
+.ql-toplinks a {
   color: #d9d6e8;
   text-decoration: none;
-  padding: 8px 10px;
-  border-radius: 7px;
-  white-space: nowrap;
+  border-bottom: 1px solid transparent;
 }
-.ql-site-header a.ql-link:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
-.ql-site-header a.ql-link[aria-current] { color: #fff; }
-@media (max-width: 720px) {
-  .ql-nav .ql-link:not([aria-current]), .ql-nav-right .ql-hide-sm { display: none; }
-  .ql-site-header-inner { gap: 8px; }
+.ql-toplinks a:hover { color: #fff; border-bottom-color: var(--ql-border-strong); }
+.ql-toplinks a.ql-brand {
+  font: 700 16px/1.4 var(--ql-font-display);
+  letter-spacing: -0.01em;
+  color: #fff;
 }
+.ql-toplinks a[href*="ql-register"] { color: var(--ql-primary-soft); }
+.ql-toplinks a[href*="ql-register"]:hover { color: #fff; border-bottom-color: var(--ql-primary); }
 
 .crumbs { font-family: var(--ql-font-body); font-size: 13px; color: var(--ql-faint); margin: 18px 0 0; }
 .crumbs a { color: var(--ql-muted); text-decoration: none; }

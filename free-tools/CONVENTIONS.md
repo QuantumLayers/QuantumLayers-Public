@@ -121,13 +121,14 @@ custom CSS (violet `#8b7cf6` / `#5b4bd8`, surfaces `#15121f` / `#1c1830`,
 borders `rgba(196,181,253,.14)`, Inter body, Space Grotesk display), the
 gradient primary button, glass-gradient cards, the animated wave background
 (copied verbatim from the QL plugin's `assets/common-dark.css`; re-copy it
-when that changes) and the
-site header (logo, Free tools, Pricing, Help, Blog, GitHub, Login,
-Register). It remaps the older tool tokens below onto those values, so
+when that changes), plus a plain
+row of top links (QuantumLayers, Free Tools, Register for a Free Account,
+Read our Blog) at the top of `.wrap` — deliberately not a copy of the site's
+header bar. It remaps the older tool tokens below onto those values, so
 existing tool CSS keeps working, and it's dark-only like the site.
 
-For a new page: copy the `<header class="ql-site-header">` block and the
-crumbs line from any tool (or use `siteHeader()` in `datasets/build.js`),
+For a new page: copy the `<nav class="ql-toplinks">` block and the crumbs
+line from any tool (or use `topLinks()` in `datasets/build.js`),
 write the page's CSS against the tokens below, and load `ql-theme.css` after
 it. When the site's design changes, update `ql-theme.css`; individual
 tools shouldn't need edits. The KIND tag and strength meter remain the
