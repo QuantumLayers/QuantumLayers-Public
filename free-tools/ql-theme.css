@@ -304,37 +304,137 @@ html::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(11, 10, 18, 0.25) 0%, rgba(11, 10, 18, 0.7) 55%, rgba(11, 10, 18, 0.86) 100%);
+  background: linear-gradient(180deg, rgba(11, 10, 18, 0.3) 0%, rgba(11, 10, 18, 0.74) 42%, rgba(11, 10, 18, 0.88) 100%);
 }
 a { color: var(--ql-primary-soft); }
 ::selection { background: rgba(139, 124, 246, 0.35); }
 
-/* --- top link row (QuantumLayers · Free Tools · Register · Blog) --- */
+/* --- top bar: brand on the left, link buttons on the right ------------- */
+/* One page width everywhere, so the bar never jumps between tools. */
+.wrap { max-width: 1080px !important; padding-left: 20px !important; padding-right: 20px !important; }
+
 .ql-toplinks {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 24px;
-  padding: 22px 0 0;
-  font: 500 14px/1.4 var(--ql-font-body);
+  align-items: center;
+  gap: 10px;
+  padding: 26px 0 18px;
+  border-bottom: 1px solid var(--ql-border);
+  font-family: var(--ql-font-body);
 }
 .ql-toplinks a {
-  color: #d9d6e8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 7px;
+  font: 600 14px/1 var(--ql-font-body);
+  letter-spacing: 0.01em;
   text-decoration: none;
-  border-bottom: 1px solid transparent;
-}
-.ql-toplinks a:hover { color: #fff; border-bottom-color: var(--ql-border-strong); }
-.ql-toplinks a.ql-brand {
-  font: 700 16px/1.4 var(--ql-font-display);
-  letter-spacing: -0.01em;
+  white-space: nowrap;
   color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
-.ql-toplinks a[href*="ql-register"] { color: var(--ql-primary-soft); }
-.ql-toplinks a[href*="ql-register"]:hover { color: #fff; border-bottom-color: var(--ql-primary); }
+.ql-toplinks a:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--ql-border-strong); color: #fff; }
+.ql-toplinks a:focus-visible { outline: 2px solid var(--ql-primary-soft); outline-offset: 3px; }
 
-.crumbs { font-family: var(--ql-font-body); font-size: 13px; color: var(--ql-faint); margin: 18px 0 0; }
-.crumbs a { color: var(--ql-muted); text-decoration: none; }
-.crumbs a:hover { color: #fff; }
+/* brand: logo + wordmark, no button chrome, pushes the buttons right */
+.ql-toplinks a.ql-brand {
+  margin-right: auto;
+  padding: 0;
+  background: none;
+  border: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  font: 700 19px/1 var(--ql-font-display);
+  letter-spacing: -0.02em;
+}
+.ql-toplinks a.ql-brand::before {
+  content: "";
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: url("https://quantumlayers.com/wp-content/uploads/2026/08/cropped-image-rounded.png") center / cover no-repeat;
+  box-shadow: 0 0 0 1px rgba(196, 181, 253, 0.18);
+}
+.ql-toplinks a.ql-brand:hover { background: none; }
+
+/* primary action, last in the row: same gradient button as the site */
+.ql-toplinks a[href*="ql-register"] {
+  order: 10;
+  background: var(--ql-btn-gradient);
+  border-color: transparent;
+  box-shadow: var(--ql-btn-shadow);
+}
+.ql-toplinks a[href*="ql-register"]:hover { box-shadow: var(--ql-btn-shadow-hover); transform: translateY(-1px); }
+
+@media (max-width: 680px) {
+  .ql-toplinks { padding-top: 18px; gap: 8px; }
+  .ql-toplinks a { height: 36px; padding: 0 12px; font-size: 13px; }
+  .ql-toplinks a.ql-brand { flex: 1 0 100%; margin: 0 0 6px; justify-content: flex-start; font-size: 18px; }
+  .ql-toplinks a:not(.ql-brand) { flex: 1 1 0; }
+  .ql-toplinks a[href*="ql-register"] { flex: 1 0 100%; }
+}
+
+/* breadcrumb → the homepage's violet pill (sits where its "AI-native analytics" pill does) */
+.crumbs, .ql-subbar .crumbs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 44px 0 0;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--ql-border-strong);
+  border-radius: 999px;
+  background: rgba(139, 124, 246, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--ql-primary-soft);
+  font: 500 0.8rem/1.4 var(--ql-font-body);
+  letter-spacing: 0.04em;
+}
+.crumbs a { color: #fff; text-decoration: none; }
+.crumbs a:hover { color: var(--ql-primary-soft); }
+.ql-subbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ql-subbar .auth-status { margin-top: 44px; }
+@media (max-width: 680px) { .crumbs, .ql-subbar .crumbs, .ql-subbar .auth-status { margin-top: 28px; } }
+
+/* hero spacing under the pill */
+.hero { padding: 18px 0 8px !important; }
+.hero h1, .hero + * h1 { margin-top: 0; }
+.lede { max-width: 64ch; }
+
+/* --- interface text in Inter, like the site; mono stays for data only --- */
+label.lbl, .ctl-l, .tile .l, .chip, .btn-ghost, .seg button, .tabs button,
+.sec-label, .filebar, .filebar .again, .zone .sample, .zone .s, .status,
+.legend, .export-row button, .dict-actions button, .auth-status, .auth-status button,
+.btn-link, .invite-bar a, .rec-chip .label, .recs .label, .grp h3, .field label,
+.dataset-row .meta, .terms, .tabs, .ql-subbar, footer, footer a, .related, .note, .hint,
+.privacy-line, .privacy, .cap-note, .empty-note, .skeleton, details.paste summary,
+details.profile summary, .settings dt, .ds-list span, table.t th, .tbl th, .dict th,
+.cta .ladder .from, figcaption {
+  font-family: var(--ql-font-body) !important;
+}
+label.lbl, .ctl-l, .tile .l, .grp h3, .field label, .settings dt, .sec-label,
+table.t th, .tbl th, .dict th {
+  letter-spacing: 0.08em;
+}
+.tile .l { font-size: 0.7rem; font-weight: 600; color: var(--ql-faint); }
+.chip, .btn-ghost, .export-row button, .dict-actions button { font-weight: 500; letter-spacing: 0.01em; }
+.btn-ghost, a.btn-ghost { display: inline-flex; align-items: center; }
+.auth-status button {
+  border-radius: 7px; padding: 8px 14px; font-weight: 600 !important;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.16); color: #fff;
+}
+footer { font-size: 13px; padding-top: 18px; border-top: 1px solid var(--ql-border); }
 
 /* --- typography --- */
 .hero h1, h1 {
