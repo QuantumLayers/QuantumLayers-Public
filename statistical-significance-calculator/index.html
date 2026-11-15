@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Statistical significance calculator — p-value for two proportions or two means | QuantumLayers</title>
+<meta name="description" content="Statistical significance calculator: get the p-value and confidence interval for a difference between two conversion rates (z-test) or two averages (Welch t-test, Mann–Whitney). Plain-language verdict. Free, runs in your browser." />
+<link rel="canonical" href="https://quantumlayers.com/tools/statistical-significance-calculator/" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../ab-test-calculator/calc.css" />
+<script src="../ql-stats.js"></script>
+<link rel="stylesheet" href="../ql-theme.css" />
+</head>
+<body data-default-tab="conv">
+<header class="ql-site-header">
+  <div class="ql-site-header-inner">
+    <a class="ql-logo" href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=statistical-significance-calculator&amp;utm_content=header"><img src="https://quantumlayers.com/wp-content/uploads/2026/08/cropped-image-rounded.png" alt="QuantumLayers" width="40" height="40" /></a>
+    <nav class="ql-nav" aria-label="Site">
+      <a class="ql-link" href="../" aria-current="page">Free tools</a>
+      <a class="ql-link" href="https://quantumlayers.com/pricing?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=statistical-significance-calculator&amp;utm_content=header">Pricing</a>
+      <a class="ql-link" href="https://quantumlayers.com/help">Help</a>
+      <a class="ql-link" href="https://quantumlayers.com/blog">Blog</a>
+    </nav>
+    <div class="ql-nav-right">
+      <a class="ql-link ql-hide-sm" href="https://github.com/quantumlayers/quantumlayers-public/tree/main/free-tools/ab-test-calculator" target="_blank" rel="noopener">GitHub</a>
+      <a class="ql-link ql-hide-sm" href="https://quantumlayers.com/ql-login">Login</a>
+      <a class="ql-link" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=statistical-significance-calculator&amp;utm_content=header">Register</a>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="crumbs"><a href="../">Free data tools</a> / Statistical significance calculator</nav>
+
+  <header class="hero">
+    <h1>Statistical significance calculator</h1>
+    <p class="lede">Is the difference between two groups real, or could it be chance? Compare two rates (sign-ups, clicks, defects) or two averages (order value, time on task) and get the p-value, a confidence interval and a plain-language verdict.</p>
+    <p class="privacy-line">Free, no sign-up. All maths runs in your browser; nothing is sent anywhere.</p>
+  </header>
+
+  <main>
+    <div id="calc"></div>
+
+    <section class="explain">
+      <h2>How statistical significance works</h2>
+      <ul>
+        <li><b>Significant</b> means a difference this large would rarely appear if the two groups were really the same — at 95% confidence, “rarely” is less than 5% of the time (p &lt; 0.05). It says nothing about whether the difference is <em>big enough to matter</em>; check the confidence interval and effect size for that.</li>
+        <li><b>Rates or averages?</b> Use the <em>Conversion rates</em> tab when each person either did or didn’t do something. Use <em>Averages</em> for amounts — revenue, minutes, scores.</li>
+        <li><b>Skewed data</b> (a few huge orders) makes averages unreliable. Paste the raw values in the Averages tab to also get a Mann–Whitney test, which compares the groups by rank instead.</li>
+        <li><b>Many comparisons</b> inflate false positives: test 20 metrics and one will look significant by luck. Decide the main metric up front.</li>
+        <li><b>Methods.</b> Conversion rates: two-sided pooled two-proportion z-test (equivalent to a 2×2 chi-square), Wald interval for the difference, delta-method interval for the relative lift. Averages: Welch’s t-test and Cohen’s d; Mann–Whitney U on raw values. Sample size: normal approximation for two proportions. All checked against SciPy.</li>
+      </ul>
+      <p class="related">Related: <a href="../ab-test-calculator/">A/B test calculator</a><a href="../sample-size-calculator/">Sample size calculator</a><a href="../correlation-matrix/">Correlation matrix calculator</a><a href="https://quantumlayers.com/ab-testing-statistics">Guide: A/B testing statistics</a><a href="../">All free data tools</a></p>
+    </section>
+  </main>
+
+  <section class="cta">
+    <p class="eyebrow">one test vs. every metric</p>
+    <h2>Know when a metric really changed — without running the numbers by hand.</h2>
+    <p>QuantumLayers connects to your database, analytics or spreadsheets, runs significance tests like these across every segment, and monitors your key metrics so you’re emailed when something statistically shifts.</p>
+    <a class="btn" href="https://quantumlayers.com/ql-register?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=statistical-significance-calculator&amp;utm_content=cta" target="_blank" rel="noopener">Monitor your metrics free &rarr;</a>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span><span class="sep">&middot;</span>
+    <span>built by <a href="https://quantumlayers.com/?utm_source=quantumlayers-tools&amp;utm_medium=free-tool&amp;utm_campaign=statistical-significance-calculator&amp;utm_content=footer" target="_blank" rel="noopener">QuantumLayers</a></span><span class="sep">&middot;</span>
+    <a href="https://github.com/quantumlayers/quantumlayers-public" target="_blank" rel="noopener">fork it on GitHub</a>
+  </footer>
+</div>
+<script src="../ab-test-calculator/calc.js"></script>
+</body>
+</html>
