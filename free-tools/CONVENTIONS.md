@@ -121,10 +121,12 @@ custom CSS (violet `#8b7cf6` / `#5b4bd8`, surfaces `#15121f` / `#1c1830`,
 borders `rgba(196,181,253,.14)`, Inter body, Space Grotesk display), the
 gradient primary button, glass-gradient cards, the animated wave background
 (copied verbatim from the QL plugin's `assets/common-dark.css`; re-copy it
-when that changes), plus a plain
-row of top links (QuantumLayers, Free Tools, Register for a Free Account,
-Read our Blog) at the top of `.wrap` — deliberately not a copy of the site's
-header bar. It remaps the older tool tokens below onto those values, so
+when that changes), plus a top bar
+at the start of `.wrap` (`<nav class="ql-toplinks">`: logo + QuantumLayers on
+the left; Free Tools and Read our Blog as outline buttons; Register for a Free
+Account as the gradient button). The breadcrumb under it renders as the
+homepage's violet pill, interface text is Inter (IBM Plex Mono only for data),
+and every page shares one 1080px width. It remaps the older tool tokens below onto those values, so
 existing tool CSS keeps working, and it's dark-only like the site.
 
 For a new page: copy the `<nav class="ql-toplinks">` block and the crumbs
