@@ -40,6 +40,14 @@ const MANIFEST_PATH = path.join(DIR, 'manifest.json');
 const manifest = fs.existsSync(MANIFEST_PATH) ? JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8')) : {};
 const TODAY = new Date().toISOString().slice(0, 10);
 
+const QL_ORG = { '@type': 'Organization', name: 'QuantumLayers', url: 'https://quantumlayers.com' };
+const CATALOG_REF = {
+  '@type': 'DataCatalog',
+  name: 'QuantumLayers public datasets',
+  description: 'Curated economic, weather and climate datasets from official public APIs (World Bank, IMF, NOAA, NASA POWER, Open-Meteo), each with a chart, field definitions, the API URL and a CSV download.',
+  url: `${SITE}/datasets/`,
+};
+
 const args = process.argv.slice(2);
 const argVal = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null; };
 const ONLY = argVal('--only');
@@ -341,13 +349,13 @@ function datasetPage(ds, t, sr, meta) {
     license: ds.license_url,
     isAccessibleForFree: true,
     creator: { '@type': 'Organization', name: ds.source, url: ds.source_url },
-    publisher: { '@type': 'Organization', name: 'QuantumLayers', url: 'https://quantumlayers.com' },
+    publisher: QL_ORG,
     isBasedOn: ds.api_url,
     temporalCoverage: xs.length ? `${xs[0]}/${xs[xs.length - 1]}` : undefined,
     dateModified: meta.changed,
     variableMeasured: t.cols.filter(numeric).map((c) => ({ '@type': 'PropertyValue', name: c, description: fieldDesc(c) })),
     distribution: [{ '@type': 'DataDownload', encodingFormat: 'text/csv', contentUrl: url + csvName }],
-    includedInDataCatalog: { '@type': 'DataCatalog', name: 'QuantumLayers public datasets', url: `${SITE}/datasets/` },
+    includedInDataCatalog: CATALOG_REF,
   };
   const unit = sr.unit === 'US$' ? 'US$' : sr.unit;
 
@@ -457,8 +465,24 @@ function hubPage(entries) {
   const bySource = new Map();
   for (const e of entries) { if (!bySource.has(e.ds.source)) bySource.set(e.ds.source, []); bySource.get(e.ds.source).push(e); }
   const jsonld = {
-    '@context': 'https://schema.org', '@type': 'DataCatalog', name: 'QuantumLayers public datasets', url: `${SITE}/datasets/`,
-    dataset: entries.map((e) => ({ '@type': 'Dataset', name: e.ds.title, url: `${SITE}/datasets/${e.ds.slug}/` })),
+    '@context': 'https://schema.org',
+    ...CATALOG_REF,
+    creator: QL_ORG,
+    publisher: QL_ORG,
+    isAccessibleForFree: true,
+    // Every listed Dataset carries the fields Google's Dataset rich results
+    // check (description required; creator + license recommended), otherwise
+    // Search Console reports the hub's catalog entries as invalid items.
+    dataset: entries.map((e) => ({
+      '@type': 'Dataset',
+      name: e.ds.title,
+      description: e.ds.description,
+      url: `${SITE}/datasets/${e.ds.slug}/`,
+      license: e.ds.license_url,
+      isAccessibleForFree: true,
+      creator: { '@type': 'Organization', name: e.ds.source, url: e.ds.source_url },
+      publisher: QL_ORG,
+    })),
   };
   return `<!DOCTYPE html>
 <html lang="en">
